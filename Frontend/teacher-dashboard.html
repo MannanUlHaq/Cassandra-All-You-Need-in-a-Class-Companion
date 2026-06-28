@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Class Management - Cassandra AI Class Companion">
+  <title>Class Management | Cassandra</title>
+  <link rel="icon" type="image/png" href="Assets/favicon.png">
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,300;12..96,400;12..96,500;12..96,600;12..96,700&display=swap" rel="stylesheet">
+  
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <style>
+    :root {
+      --primary: #0060e7;
+      --primary-dark: #004ba8;
+      --primary-light: #3082ff;
+      --primary-alpha: rgba(0, 96, 231, 0.1);
+      
+      --bg-body: #f4f7f9;
+      --bg-surface: #ffffff;
+      --bg-main: #F8FAFC;
+      
+      --text-main: #0f172a;
+      --text-muted: #64748b;
+      --text-secondary: #475569;
+      
+      --border-color: #e2e8f0;
+      
+      --spacing-xs: 0.25rem;
+      --spacing-sm: 0.5rem;
+      --spacing-md: 1rem;
+      --spacing-lg: 1.5rem;
+      --spacing-xl: 2rem;
+      
+      --radius-sm: 8px;
+      --radius-md: 12px;
+      --radius-lg: 16px;
+      --radius-xl: 24px;
+      
+      --shadow-sm: 0 1px 3px rgba(0,0,0,0.05), 0 1px 2px rgba(0,0,0,0.03);
+      --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.05), 0 2px 4px -1px rgba(0,0,0,0.03);
+      --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.05), 0 4px 6px -2px rgba(0,0,0,0.03);
+      --shadow-xl: 0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04);
+      --shadow-hover: 0 20px 25px -5px rgba(0,0,0,0.08), 0 10px 10px -5px rgba(0,0,0,0.04);
+      
+      --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Bricolage Grotesque', sans-serif; 
+      background-color: var(--bg-body);
+      color: var(--text-main); 
+      line-height: 1.5; 
+      overflow-x: hidden;
+    }
+
+    /* LOADING VIEW */
+    #loadingView { height: 100vh; display: flex; align-items: center; justify-content: center; background: var(--bg-body); }
+    .spinner-container { text-align: center; color: var(--primary); }
+    .spinner-container i { font-size: 3rem; }
+    .spinner-container p { margin-top: 1rem; font-weight: 600; color: var(--text-main); }
+
+    /* DASHBOARD VIEW */
+    .app-container { display: flex; height: 100vh; overflow: hidden; width: 100%; background-color: var(--bg-body); }
+    .sidebar { width: 280px; background-color: var(--bg-surface); border-right: 1px solid var(--border-color); display: flex; flex-direction: column; transition: var(--transition); z-index: 40; }
+    .sidebar-header { padding: var(--spacing-lg); display: flex; align-items: center; border-bottom: 1px solid var(--border-color); height: 80px; }
+    .sidebar-header img { height: 40px; width: auto; object-fit: contain; }
+    .sidebar-nav { padding: var(--spacing-md); flex: 1; overflow-y: auto; }
+    .sidebar-nav-title { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); font-weight: 600; margin: var(--spacing-md) 0 var(--spacing-sm) var(--spacing-sm); }
+    .sidebar-nav-item { display: flex; align-items: center; gap: var(--spacing-md); padding: 10px 16px; color: var(--text-main); text-decoration: none; border-radius: var(--radius-sm); font-weight: 500; transition: var(--transition); margin-bottom: 4px; cursor: pointer; }
+    .sidebar-nav-item:hover { background-color: var(--bg-body); transform: translateX(4px); }
+    .sidebar-nav-item.active { background-color: var(--primary-alpha); color: var(--primary); font-weight: 600; }
+    .sidebar-nav-item.active i { color: var(--primary); }
+    .sidebar-nav-item i { font-size: 1.1rem; color: var(--text-muted); width: 24px; text-align: center; transition: var(--transition); }
+    .class-color-dot { width: 12px; height: 12px; border-radius: 50%; margin-left: 6px; margin-right: 6px; }
+
+    .main-wrapper { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+    .header { height: 80px; background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(12px); border-bottom: 1px solid var(--border-color); display: flex; align-items: center; justify-content: space-between; padding: 0 var(--spacing-xl); z-index: 30; position: sticky; top: 0; }
+    .sidebar-toggle { display: none; background: none; border: none; font-size: 1.5rem; color: var(--text-main); cursor: pointer; }
+    .header-actions { display: flex; align-items: center; gap: var(--spacing-md); margin-left: auto; }
+    .header-icon { display: flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: 50%; color: var(--text-muted); text-decoration: none; transition: var(--transition); font-size: 1.25rem; background-color: transparent; cursor: pointer; overflow: hidden; }
+    .header-icon img { width: 100%; height: 100%; object-fit: cover; }
+    .header-icon:hover { background-color: var(--bg-body); color: var(--primary); }
+
+    .main-content { flex: 1; padding: var(--spacing-xl); overflow-y: auto; }
+    .page-header { display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: var(--spacing-md); margin-bottom: var(--spacing-xl); animation: fadeInDown 0.5s ease-out; }
+    .page-title { font-size: 2rem; font-weight: 700; color: var(--text-main); letter-spacing: -0.02em; }
+    .page-subtitle { color: var(--text-muted); font-size: 1rem; margin-top: 4px; }
+
+    .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 10px 20px; border-radius: var(--radius-sm); font-family: inherit; font-weight: 600; font-size: 0.95rem; cursor: pointer; border: 1px solid transparent; transition: var(--transition); text-decoration: none; }
+    .btn:active { transform: scale(0.97); }
+    .btn:disabled { opacity: 0.7; cursor: not-allowed; }
+    .btn-primary { background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%); color: white; box-shadow: 0 4px 12px rgba(0, 96, 231, 0.25); }
+    .btn-primary:hover:not(:disabled) { background: linear-gradient(135deg, var(--primary-light) 0%, var(--primary) 100%); box-shadow: 0 6px 16px rgba(0, 96, 231, 0.35); transform: translateY(-1px); }
+    .btn-secondary { background-color: var(--bg-body); color: var(--text-main); border-color: var(--border-color); }
+    .btn-secondary:hover { background-color: var(--border-color); }
+    .btn-outline { background-color: transparent; color: var(--text-main); border-color: var(--border-color); }
+    .btn-outline:hover { border-color: var(--primary); color: var(--primary); background-color: var(--primary-alpha); }
+    .btn-danger { color: #ef4444; border-color: #ef4444; }
+    .btn-danger:hover { background-color: rgba(239, 68, 68, 0.1); border-color: #dc2626; color: #dc2626; }
+    .btn-sm { padding: 6px 12px; font-size: 0.85rem; }
+
+    .classes-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: var(--spacing-lg); }
+
+    .class-card { background: var(--bg-surface); border-radius: var(--radius-md); box-shadow: var(--shadow-sm); border: 1px solid var(--border-color); overflow: hidden; transition: var(--transition); opacity: 0; animation: fadeInUp 0.6s ease-out forwards; display: flex; flex-direction: column; position: relative; cursor: pointer; }
+    .class-card:hover { transform: translateY(-6px); box-shadow: var(--shadow-hover); border-color: rgba(0, 96, 231, 0.2); }
+    
+    .card-top-accent { height: 6px; width: 100%; }
+    .card-top-accent.blue { background: linear-gradient(90deg, #3b82f6, #2563eb); }
+    .card-top-accent.green { background: linear-gradient(90deg, #10b981, #059669); }
+    .card-top-accent.purple { background: linear-gradient(90deg, #8b5cf6, #6d28d9); }
+    .card-top-accent.amber { background: linear-gradient(90deg, #f59e0b, #d97706); }
+    .card-top-accent.rose { background: linear-gradient(90deg, #f43f5e, #e11d48); }
+
+    .class-card-body { padding: var(--spacing-lg); flex: 1; }
+    .class-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: var(--spacing-sm); }
+    .class-name-wrap { display: flex; flex-direction: column; gap: 4px; }
+    .class-name { font-size: 1.25rem; font-weight: 700; color: var(--text-main); line-height: 1.2; }
+    .section-badge { display: inline-block; font-size: 0.75rem; font-weight: 600; background-color: var(--bg-body); color: var(--text-muted); padding: 2px 8px; border-radius: 12px; border: 1px solid var(--border-color); width: fit-content; }
+    .course-code-badge { font-size: 0.75rem; font-weight: 700; color: var(--primary-dark); background-color: var(--primary-alpha); padding: 4px 8px; border-radius: var(--radius-sm); letter-spacing: 0.5px; }
+    .course-name { font-size: 1rem; color: var(--text-muted); font-weight: 500; margin-bottom: var(--spacing-md); }
+    
+    .class-meta { display: flex; align-items: center; gap: 8px; color: var(--text-muted); font-size: 0.9rem; font-weight: 500; padding-top: var(--spacing-md); border-top: 1px dashed var(--border-color); justify-content: space-between;}
+    .class-meta span strong { color: var(--primary-dark); }
+    .class-meta i { color: var(--primary); }
+    
+    .class-card-footer { padding: var(--spacing-md) var(--spacing-lg); background-color: #fafbfc; border-top: 1px solid var(--border-color); display: flex; justify-content: flex-end; gap: var(--spacing-sm); }
+
+    .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.4); backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center; z-index: 100; opacity: 0; visibility: hidden; transition: all 0.3s ease; }
+    .modal-overlay.active { opacity: 1; visibility: visible; }
+    .modal { background: var(--bg-surface); width: 100%; max-width: 500px; border-radius: var(--radius-lg); box-shadow: var(--shadow-lg); transform: translateY(20px) scale(0.95); transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); overflow: hidden; }
+    .modal-overlay.active .modal { transform: translateY(0) scale(1); }
+    
+    .modal-header { padding: var(--spacing-lg) var(--spacing-xl); border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; background-color: #fcfcfd; }
+    .modal-title { font-size: 1.25rem; font-weight: 700; color: var(--text-main); }
+    .modal-close { background: none; border: none; font-size: 1.25rem; color: var(--text-muted); cursor: pointer; transition: var(--transition); width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border-radius: 50%; }
+    .modal-close:hover { background-color: var(--border-color); color: var(--text-main); }
+    
+    .modal-body { padding: var(--spacing-xl); }
+    .form-input { width: 100%; padding: 10px 14px; border: 1px solid var(--border-color); border-radius: var(--radius-sm); font-family: inherit; font-size: 0.95rem; color: var(--text-main); transition: var(--transition); background-color: #fff; }
+    .form-input:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px var(--primary-alpha); }
+    
+    .modal-footer { padding: var(--spacing-md) var(--spacing-xl); border-top: 1px solid var(--border-color); display: flex; justify-content: flex-end; gap: var(--spacing-md); background-color: #fcfcfd; }
+
+    @keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes fadeInDown { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+    
+    #loadingSpinner { text-align: center; width: 100%; padding: 3rem; color: var(--primary); font-size: 1.5rem; }
+
+    @media (max-width: 1024px) {
+      .sidebar { position: fixed; left: -280px; height: 100vh; }
+      .sidebar.open { left: 0; box-shadow: var(--shadow-lg); }
+      .sidebar-toggle { display: block; }
+      .header { padding: 0 var(--spacing-md); }
+    }
+  </style>
+</head>
+<body>
+
+  <div id="loadingView">
+    <div class="spinner-container">
+      <i class="fas fa-spinner fa-spin"></i>
+      <p>Loading Cassandra...</p>
+    </div>
+  </div>
+
+  <div class="app-container" id="dashboardView" style="display: none;">
+    
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-header">
+        <a href="teacher-dashboard.html" class="logo" style="text-decoration: none;">
+          <img src="Assets/Cassandra-Logo.png" alt="Cassandra" onerror="this.outerHTML='<h2 style=\'color: var(--primary); font-weight: 800; font-size: 1.5rem; margin: 0; text-decoration: none;\'>Cassandra.</h2>'" style="height: 40px; width: auto; object-fit: contain;">
+        </a>
+      </div>
+      
+      <nav class="sidebar-nav">
+        <p class="sidebar-nav-title">Main Menu</p>
+        <a href="teacher-dashboard.html" class="sidebar-nav-item active">
+          <i class="fas fa-home"></i> <span>Dashboard</span>
+        </a>
+        
+        <p class="sidebar-nav-title" style="margin-top: var(--spacing-lg);">Your Classes</p>
+        <div id="sidebarClassesList">
+            <span style="font-size: 0.8rem; color: var(--text-muted); padding-left: 1rem;">Loading...</span>
+        </div>
+        
+        <p class="sidebar-nav-title" style="margin-top: var(--spacing-lg);">Account</p>
+        <a href="teacher-profile.html" class="sidebar-nav-item">
+          <i class="fas fa-user"></i> <span>Profile</span>
+        </a>
+        <a onclick="logoutUser()" class="sidebar-nav-item" style="cursor: pointer;">
+          <i class="fas fa-sign-out-alt"></i> <span>Logout</span>
+        </a>
+      </nav>
+    </aside>
+
+    <div class="main-wrapper">
+      
+      <header class="header">
+        <button class="sidebar-toggle" id="sidebarToggle" aria-label="Toggle sidebar">
+          <i class="fas fa-bars"></i>
+        </button>
+        
+        <div class="header-actions">
+          <a href="teacher-profile.html" class="header-icon" id="headerProfileCircle" title="Profile">
+            <i class="fas fa-user-circle"></i>
+          </a>
+          <a onclick="logoutUser()" class="header-icon" title="Logout" style="cursor: pointer;">
+            <i class="fas fa-sign-out-alt"></i>
+          </a>
+        </div>
+      </header>
+
+      <main class="main-content">
+        <header class="page-header">
+          <div>
+            <h1 class="page-title">Welcome Back!</h1>
+            <p class="page-subtitle">Manage your classes, courses, and students effortlessly.</p>
+          </div>
+          <button class="btn btn-primary" onclick="openModal('createClassModal')">
+            <i class="fas fa-plus"></i> Create Class
+          </button>
+        </header>
+
+        <section class="classes-grid" id="classesGrid">
+            <div id="loadingSpinner"><i class="fas fa-spinner fa-spin"></i> Loading Classes...</div>
+        </section>
+      </main>
+    </div>
+  </div>
+
+  <div id="createClassModal" class="modal-overlay">
+    <div class="modal">
+      <div class="modal-header">
+        <h3 class="modal-title">Create New Class</h3>
+        <button class="modal-close" onclick="closeModal('createClassModal')"><i class="fas fa-times"></i></button>
+      </div>
+      <div class="modal-body">
+        <form id="createClassForm">
+          <div class="form-group"><label class="form-label">Class Name</label><input type="text" id="createClassName" class="form-input" required></div>
+          <div class="form-group"><label class="form-label">Section Name</label><input type="text" id="createSectionName" class="form-input" required></div>
+          <div class="form-group"><label class="form-label">Course Name</label><input type="text" id="createCourseName" class="form-input" required></div>
+          <div class="form-group"><label class="form-label">Course Code</label><input type="text" id="createCourseCode" class="form-input" required></div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="closeModal('createClassModal')">Cancel</button>
+        <button type="submit" form="createClassForm" class="btn btn-primary" id="btnCreateClass">Create Class</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="editClassModal" class="modal-overlay">
+    <div class="modal">
+      <div class="modal-header">
+        <h3 class="modal-title">Edit Class</h3>
+        <button class="modal-close" onclick="closeModal('editClassModal')"><i class="fas fa-times"></i></button>
+      </div>
+      <div class="modal-body">
+        <form id="editClassForm">
+          <input type="hidden" id="editCourseId">
+          <div class="form-group"><label class="form-label">Class Name</label><input type="text" id="editClassName" class="form-input" required></div>
+          <div class="form-group"><label class="form-label">Section Name</label><input type="text" id="editSectionName" class="form-input" required></div>
+          <div class="form-group"><label class="form-label">Course Name</label><input type="text" id="editCourseName" class="form-input" required></div>
+          <div class="form-group"><label class="form-label">Course Code</label><input type="text" id="editCourseCode" class="form-input" required></div>
+        </form>
+      </div>
+      <div class="modal-footer" style="justify-content: space-between;">
+        <button type="button" class="btn btn-outline btn-danger" onclick="confirmDeleteClass()">Delete</button>
+        <div style="display: flex; gap: var(--spacing-md);">
+          <button type="button" class="btn btn-secondary" onclick="closeModal('editClassModal')">Cancel</button>
+          <button type="submit" form="editClassForm" class="btn btn-primary" id="btnSaveClass">Save</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="deleteConfirmModal" class="modal-overlay">
+    <div class="modal" style="max-width: 400px;">
+      <div class="modal-header">
+        <h3 class="modal-title">Delete Class</h3>
+        <button class="modal-close" onclick="closeModal('deleteConfirmModal')"><i class="fas fa-times"></i></button>
+      </div>
+      <div class="modal-body">
+        <p>Are you sure you want to delete this class?</p>
+        <input type="hidden" id="deleteCourseId">
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="closeModal('deleteConfirmModal')">Cancel</button>
+        <button class="btn btn-danger" onclick="executeDeleteClass()" id="btnConfirmDelete">Delete Class</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // SUPABASE CONFIG
+    const SUPABASE_URL = 'https://lchcfsgexlkjxrhfjrna.supabase.co'; 
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxjaGNmc2dleGxranhyaGZqcm5hIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2MDI4NDIxNywiZXhwIjoyMDc1ODYwMjE3fQ.u8xbJWho6qFVW5f7tmhtK9hq5X5ApQVC4QK04jfjj0k'; 
+    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    
+    let currentTeacherId = null;
+    let allCurrentClasses = [];
+    const colorsList = ['blue', 'green', 'purple', 'amber', 'rose'];
+    // Added HEX map to align sidebar dots with cards
+    const colorHexMap = { 
+        blue: '#3b82f6', 
+        green: '#10b981', 
+        purple: '#8b5cf6', 
+        amber: '#f59e0b', 
+        rose: '#f43f5e' 
+    };
+
+    document.addEventListener('DOMContentLoaded', async () => {
+        const { data: { session } } = await supabaseClient.auth.getSession();
+        
+        if (session && session.user) {
+            currentTeacherId = session.user.id;
+            // Unhide Dashboard
+            document.getElementById('loadingView').style.display = 'none';
+            document.getElementById('dashboardView').style.display = 'flex';
+            loadClasses();
+        } else {
+            // Not Logged In, redirect safely to login and replace history!
+            window.location.replace('teacher-login.html');
+        }
+
+        // Listen for Auth changes in background
+        supabaseClient.auth.onAuthStateChange((event, session) => {
+            if (event === 'SIGNED_OUT') {
+                currentTeacherId = null;
+                window.location.replace('teacher-login.html');
+            }
+        });
+    });
+
+    async function loadClasses() {
+        const grid = document.getElementById('classesGrid');
+        const { data: classes, error } = await supabaseClient
+            .from('class')
+            .select('*')
+            .eq('teacher_id', currentTeacherId)
+            .order('course_name', { ascending: true });
+
+        if (error) {
+            grid.innerHTML = '<p style="color:red; text-align:center; width:100%; padding: 2rem;">Error loading classes.</p>';
+            return;
+        }
+        allCurrentClasses = classes;
+        renderClasses(classes);
+    }
+
+    function renderClasses(classes) {
+        const grid = document.getElementById('classesGrid');
+        const sidebarList = document.getElementById('sidebarClassesList');
+        grid.innerHTML = ''; sidebarList.innerHTML = '';
+
+        if (classes.length === 0) {
+            grid.innerHTML = '<div style="grid-column: 1/-1; text-align: center; padding: 40px;"><h3>No classes found</h3><p>Click "Create Class" to get started.</p></div>';
+            return;
+        }
+
+        classes.forEach((cls, index) => {
+            const colorName = colorsList[index % colorsList.length];
+            const hexColor = colorHexMap[colorName] || 'var(--primary)'; // Map color name to hex
+            let displayName = cls.class_name;
+            let sectionName = "General";
+            if (displayName && displayName.includes(' - ')) {
+                const parts = displayName.split(' - ');
+                displayName = parts[0]; sectionName = parts[1];
+            }
+
+            const card = document.createElement('article');
+            card.className = 'class-card';
+            card.style.animationDelay = `${(index % 5) * 0.1}s`;
+            card.onclick = () => window.location.href = `teacher-courses.html?id=${cls.course_id}`;
+            
+            card.innerHTML = `
+                <div class="card-top-accent ${colorName}"></div>
+                <div class="class-card-body">
+                  <div class="class-header">
+                    <div class="class-name-wrap">
+                      <h3 class="class-name">${displayName}</h3>
+                      <span class="section-badge">${sectionName}</span>
+                    </div>
+                    <div class="course-code-badge">${cls.course_code}</div>
+                  </div>
+                  <h4 class="course-name">${cls.course_name}</h4>
+                  <div class="class-meta">
+                    <div><i class="fas fa-key"></i> Code: <strong>${cls.class_code}</strong></div>
+                  </div>
+                </div>
+                <div class="class-card-footer">
+                  <button class="btn btn-sm btn-outline" onclick="event.stopPropagation(); triggerEdit('${cls.course_id}')"><i class="fas fa-edit"></i> Edit</button>
+                </div>
+            `;
+            grid.appendChild(card);
+
+            const sidebarItem = document.createElement('a');
+            sidebarItem.className = 'sidebar-nav-item';
+            sidebarItem.onclick = () => window.location.href = `teacher-courses.html?id=${cls.course_id}`;
+            sidebarItem.innerHTML = `
+                <div class="class-color-dot" style="background-color: ${hexColor};"></div>
+                <span style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${displayName}</span>
+            `;
+            sidebarList.appendChild(sidebarItem);
+        });
+    }
+
+    document.getElementById('createClassForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const payload = {
+            course_id: crypto.randomUUID(), class_id: crypto.randomUUID(),
+            course_name: document.getElementById('createCourseName').value,
+            course_code: document.getElementById('createCourseCode').value,
+            teacher_id: currentTeacherId,
+            class_name: `${document.getElementById('createClassName').value} - ${document.getElementById('createSectionName').value}`,
+            class_code: Math.random().toString(36).substring(2, 8).toUpperCase()
+        };
+        await supabaseClient.from('class').insert([payload]);
+        closeModal('createClassModal'); e.target.reset(); loadClasses();
+    });
+
+    function triggerEdit(courseId) {
+        const cls = allCurrentClasses.find(c => c.course_id === courseId);
+        if (!cls) return;
+        document.getElementById('editCourseId').value = cls.course_id;
+        document.getElementById('editClassName').value = cls.class_name.split(' - ')[0] || cls.class_name;
+        document.getElementById('editSectionName').value = cls.class_name.split(' - ')[1] || '';
+        document.getElementById('editCourseName').value = cls.course_name;
+        document.getElementById('editCourseCode').value = cls.course_code;
+        openModal('editClassModal');
+    }
+
+    document.getElementById('editClassForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const courseId = document.getElementById('editCourseId').value;
+        await supabaseClient.from('class').update({
+            class_name: `${document.getElementById('editClassName').value} - ${document.getElementById('editSectionName').value}`,
+            course_name: document.getElementById('editCourseName').value,
+            course_code: document.getElementById('editCourseCode').value
+        }).eq('course_id', courseId);
+        closeModal('editClassModal'); loadClasses();
+    });
+
+    function confirmDeleteClass() {
+        document.getElementById('deleteCourseId').value = document.getElementById('editCourseId').value;
+        closeModal('editClassModal'); openModal('deleteConfirmModal');
+    }
+
+    async function executeDeleteClass() {
+        await supabaseClient.from('class').delete().eq('course_id', document.getElementById('deleteCourseId').value);
+        closeModal('deleteConfirmModal'); loadClasses();
+    }
+
+    // Unified logout method
+    async function logoutUser() { 
+        await supabaseClient.auth.signOut(); 
+        // Redirect completely, dropping current dashboard from memory
+        window.location.replace('teacher-login.html');
+    }
+
+    const sidebar = document.getElementById('sidebar');
+    document.getElementById('sidebarToggle').addEventListener('click', () => sidebar.classList.toggle('open'));
+
+    function openModal(id) { const m = document.getElementById(id); m.style.display = 'flex'; setTimeout(() => m.classList.add('active'), 10); }
+    function closeModal(id) { const m = document.getElementById(id); m.classList.remove('active'); setTimeout(() => m.style.display = 'none', 300); }
+  </script>
+</body>
+</html>

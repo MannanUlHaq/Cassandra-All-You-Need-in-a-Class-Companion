@@ -1,0 +1,658 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Cassandra | Hybrid Camera</title>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,500;12..96,600;12..96,700&display=swap" rel="stylesheet">
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Supabase -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+    <style>
+        /* Brand Colors & Light Theme CSS Variables */
+        :root {
+            --primary: #0060e7;
+            --primary-dark: #004ba8;
+            --primary-light: #3082ff;
+            --primary-alpha: rgba(0, 96, 231, 0.1);
+            
+            --bg-main: #f4f7f9;
+            --bg-surface: #ffffff;
+            
+            --text-main: #0f172a;
+            --text-muted: #64748b;
+            --border-color: #e2e8f0;
+            
+            --danger: #ef4444;
+            --success: #10b981;
+            
+            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            
+            --shadow-sm: 0 1px 2px rgba(0,0,0,0.05);
+            --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.05), 0 2px 4px -1px rgba(0,0,0,0.03);
+            --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.05), 0 4px 6px -2px rgba(0,0,0,0.03);
+        }
+
+        * { 
+            box-sizing: border-box; 
+            margin: 0; 
+            padding: 0; 
+            -webkit-tap-highlight-color: transparent; 
+        }
+
+        body {
+            background: var(--bg-main);
+            color: var(--text-main);
+            font-family: 'Bricolage Grotesque', sans-serif;
+            height: 100dvh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* --- Top Status Bar --- */
+        #status-bar {
+            padding: max(1rem, env(safe-area-inset-top)) 1.5rem 1rem;
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border-color);
+            z-index: 50;
+        }
+
+        .brand-text {
+            font-weight: 700;
+            font-size: 1.1rem;
+            letter-spacing: -0.5px;
+            color: var(--text-main);
+        }
+        .brand-text span { color: var(--primary); }
+
+        .status-badge {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: var(--bg-surface);
+            padding: 0.4rem 0.8rem;
+            border-radius: 50px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            border: 1px solid var(--border-color);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .dot {
+            width: 8px;
+            height: 8px;
+            background: var(--danger);
+            border-radius: 50%;
+            transition: var(--transition);
+        }
+        
+        .dot.ok {
+            background: var(--success);
+            box-shadow: 0 0 10px rgba(16, 185, 129, 0.4);
+            animation: pulse-success 2s infinite;
+        }
+
+        @keyframes pulse-success {
+            0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.3); }
+            70% { box-shadow: 0 0 0 6px rgba(16, 185, 129, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+        }
+
+        /* --- Screens --- */
+        #init-screen {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+            text-align: center;
+            position: relative;
+        }
+
+        /* Subtle background glow for light theme */
+        #init-screen::before {
+            content: '';
+            position: absolute;
+            width: 300px;
+            height: 300px;
+            background: var(--primary);
+            border-radius: 50%;
+            filter: blur(120px);
+            opacity: 0.08;
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        .icon-wrapper {
+            width: 90px;
+            height: 90px;
+            background: var(--bg-surface);
+            border-radius: 28px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 1rem;
+            border: 1px solid var(--border-color);
+            box-shadow: var(--shadow-md);
+            position: relative;
+            z-index: 1;
+        }
+
+        .icon-wrapper svg {
+            width: 40px;
+            height: 40px;
+            stroke: var(--primary);
+        }
+
+        h2 {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 0.75rem;
+            position: relative;
+            z-index: 1;
+        }
+
+        p.subtitle {
+            color: var(--text-muted);
+            font-size: 1rem;
+            line-height: 1.5;
+            margin-bottom: 2.5rem;
+            max-width: 280px;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* --- Buttons --- */
+        .btn {
+            border: none;
+            border-radius: 16px;
+            font-family: inherit;
+            font-size: 1.1rem;
+            font-weight: 600;
+            padding: 1.1rem 2rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.75rem;
+            transition: var(--transition);
+            position: relative;
+            z-index: 1;
+        }
+
+        .btn:active { transform: scale(0.96); }
+
+        .btn-blue {
+            background: var(--primary);
+            color: white;
+            box-shadow: 0 8px 25px rgba(0, 96, 231, 0.25);
+            width: 100%;
+            max-width: 300px;
+        }
+
+        .btn-blue:disabled {
+            background: var(--primary-dark);
+            opacity: 0.7;
+            cursor: not-allowed;
+        }
+
+        .btn-gray {
+            background: var(--bg-surface);
+            color: var(--text-main);
+            border: 1px solid var(--border-color);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .slide-badge {
+            display: inline-flex;
+            align-items: center;
+            background: var(--primary-alpha);
+            color: var(--primary);
+            padding: 0.5rem 1rem;
+            border-radius: 50px;
+            font-weight: 700;
+            font-size: 0.9rem;
+            margin-bottom: 1.5rem;
+            border: 1px solid rgba(0, 96, 231, 0.2);
+            z-index: 1;
+        }
+
+        /* --- Preview Screen --- */
+        #preview-screen {
+            display: none;
+            flex: 1;
+            flex-direction: column;
+            position: relative;
+        }
+
+        .image-wrapper {
+            flex: 1;
+            background: #000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+
+        #img-preview {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+
+        #controls {
+            padding: 1.5rem;
+            padding-bottom: max(1.5rem, env(safe-area-inset-bottom));
+            background: var(--bg-surface);
+            border-top: 1px solid var(--border-color);
+            display: flex;
+            gap: 1rem;
+        }
+
+        .full-width { flex: 1; }
+
+        /* --- Processing Overlay --- */
+        #processing-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            z-index: 100;
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        #processing-overlay.visible {
+            display: flex;
+            opacity: 1;
+        }
+
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 4px solid var(--primary-alpha);
+            border-top-color: var(--primary);
+            border-radius: 50%;
+            animation: spin 1s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+            margin-bottom: 1.5rem;
+        }
+
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        .overlay-title { font-size: 1.25rem; font-weight: 600; margin-bottom: 0.5rem; color: var(--text-main); }
+        .overlay-text { color: var(--text-muted); font-size: 0.95rem; }
+
+        /* --- Toast Notification --- */
+        .toast {
+            position: fixed;
+            top: max(5rem, env(safe-area-inset-top));
+            left: 50%;
+            transform: translateX(-50%) translateY(-20px);
+            background: var(--success);
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border-radius: 50px;
+            font-weight: 600;
+            font-size: 0.95rem;
+            box-shadow: 0 10px 25px rgba(16, 185, 129, 0.3);
+            opacity: 0;
+            transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+            z-index: 200;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            pointer-events: none;
+            white-space: nowrap;
+        }
+        .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+        .toast.error { background: var(--danger); box-shadow: 0 10px 25px rgba(239, 68, 68, 0.3); }
+
+    </style>
+</head>
+<body>
+
+    <!-- Hidden Canvas for Blur Processing & Image Compression -->
+    <canvas id="process-canvas" style="display: none;"></canvas>
+
+    <!-- Top Status Bar -->
+    <div id="status-bar">
+        <div class="brand-text">Cassandra</div>
+        <div class="status-badge" id="connection-status">
+            <span class="dot" id="status-dot"></span> <span id="status-text">Disconnected</span>
+        </div>
+    </div>
+
+    <!-- Processing Overlay -->
+    <div id="processing-overlay">
+        <div class="spinner"></div>
+        <div class="overlay-title" id="overlay-title">Analyzing Image</div>
+        <div class="overlay-text" id="overlay-text">Checking quality and blur...</div>
+    </div>
+
+    <!-- Initial Camera Launch Screen -->
+    <div id="init-screen">
+        <div class="icon-wrapper">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
+                <circle cx="12" cy="13" r="4"></circle>
+            </svg>
+        </div>
+        <h2>Lecture Camera</h2>
+        
+        <div class="slide-badge hidden" id="slide-indicator">
+            <i class="fas fa-file-pdf" style="margin-right: 0.4rem;"></i> Slide 1 Active
+        </div>
+
+        <p class="subtitle">Take photos of the whiteboard to sync with your current slide.</p>
+        
+        <label class="btn btn-blue" id="camera-btn" style="opacity: 0.5; pointer-events: none;">
+            <i class="fas fa-camera"></i> Open Camera
+            <input type="file" id="camera-input" accept="image/*" capture="environment" style="display: none;" disabled>
+        </label>
+        
+        <p id="error-message" style="color: var(--danger); margin-top: 1rem; font-size: 0.9rem; font-family: monospace;"></p>
+        
+        <button onclick="alert('Please close this page and scan the QR code from the PC screen again to link the session.')" class="btn btn-gray" style="margin-top: 2rem; width: auto; font-size: 0.85rem; padding: 0.75rem 1.5rem; box-shadow: none;">
+            Connection Issues? Rescan QR
+        </button>
+    </div>
+
+    <!-- Image Preview & Send Screen -->
+    <div id="preview-screen">
+        <div class="image-wrapper">
+            <img id="img-preview" alt="Whiteboard Preview">
+        </div>
+        <div id="controls">
+            <button class="btn btn-gray full-width" onclick="cancelPreview()" id="retake-btn">
+                <i class="fas fa-redo"></i> Retake
+            </button>
+            <button class="btn btn-blue full-width" onclick="sendImage()" id="send-btn">
+                <i class="fas fa-paper-plane"></i> Send Image
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // --- 1. CONFIGURATION & URL PARAMS ---
+        const SUPABASE_URL = 'https://lchcfsgexlkjxrhfjrna.supabase.co'; 
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxjaGNmc2dleGxranhyaGZqcm5hIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2MDI4NDIxNywiZXhwIjoyMDc1ODYwMjE3fQ.u8xbJWho6qFVW5f7tmhtK9hq5X5ApQVC4QK04jfjj0k'; 
+        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        const urlParams = new URLSearchParams(window.location.search);
+        const courseId = urlParams.get('course_id');
+        const sessionId = urlParams.get('session_id');
+
+        let currentBlob = null;
+        let syncedSlidePosition = 1;
+        const BLUR_THRESHOLD = 150; 
+
+        // Elements
+        const ui = {
+            initScreen: document.getElementById('init-screen'),
+            previewScreen: document.getElementById('preview-screen'),
+            imgPreview: document.getElementById('img-preview'),
+            overlay: document.getElementById('processing-overlay'),
+            overlayTitle: document.getElementById('overlay-title'),
+            overlayText: document.getElementById('overlay-text'),
+            statusText: document.getElementById('status-text'),
+            statusDot: document.getElementById('status-dot'),
+            slideIndicator: document.getElementById('slide-indicator'),
+            sendBtn: document.getElementById('send-btn'),
+            retakeBtn: document.getElementById('retake-btn'),
+            cameraBtn: document.getElementById('camera-btn'),
+            cameraInput: document.getElementById('camera-input'),
+            errorMsg: document.getElementById('error-message')
+        };
+
+        // --- 2. INITIALIZATION ---
+        if (courseId && sessionId) {
+            ui.statusDot.classList.add('ok');
+            ui.statusText.textContent = 'Session Linked';
+            ui.cameraBtn.style.opacity = '1';
+            ui.cameraBtn.style.pointerEvents = 'all';
+            ui.cameraInput.disabled = false;
+            ui.slideIndicator.classList.remove('hidden');
+            
+            // HYBRID SPECIFIC: Periodically check which slide the PC is on to update UI
+            setInterval(async () => {
+                try {
+                    const { data } = await supabaseClient.storage.from('lecture_images').createSignedUrl(`${courseId}/${sessionId}/sync_state.json`, 60);
+                    if (data && data.signedUrl) {
+                        const res = await fetch(data.signedUrl + `&t=${Date.now()}`, { cache: "no-store" });
+                        if (res.ok) {
+                            const json = await res.json();
+                            syncedSlidePosition = json.currentPosition;
+                            ui.slideIndicator.innerHTML = `<i class="fas fa-file-pdf" style="margin-right: 0.4rem;"></i> Slide ${syncedSlidePosition} Active`;
+                        }
+                    }
+                } catch(e) {
+                    console.log("Polling state issue:", e);
+                }
+            }, 3000);
+
+        } else {
+            ui.statusText.textContent = 'Awaiting QR Scan';
+            ui.errorMsg.textContent = "Please scan the QR code from your computer screen.";
+        }
+
+        // --- 3. ADVANCED IMAGE COMPRESSION ---
+        async function compressImage(file, maxWidth = 1600, quality = 0.6) {
+            return new Promise((resolve, reject) => {
+                const img = new Image();
+                img.src = URL.createObjectURL(file);
+                
+                img.onload = () => {
+                    const canvas = document.createElement('canvas');
+                    let width = img.width;
+                    let height = img.height;
+
+                    if (width > maxWidth) {
+                        height = Math.round(height * (maxWidth / width));
+                        width = maxWidth;
+                    }
+
+                    canvas.width = width;
+                    canvas.height = height;
+                    
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, width, height);
+
+                    canvas.toBlob((blob) => {
+                        if (blob) {
+                            resolve(blob);
+                        } else {
+                            reject(new Error('Canvas to Blob failed'));
+                        }
+                    }, 'image/jpeg', quality);
+                };
+                
+                img.onerror = (err) => reject(err);
+            });
+        }
+
+        // --- 4. BLUR DETECTION ---
+        function checkBlurry(imageBitmap) {
+            const canvas = document.getElementById('process-canvas');
+            const ctx = canvas.getContext('2d');
+
+            const MAX_WIDTH = 500;
+            const scale = Math.min(1, MAX_WIDTH / imageBitmap.width);
+            canvas.width = imageBitmap.width * scale;
+            canvas.height = imageBitmap.height * scale;
+
+            ctx.drawImage(imageBitmap, 0, 0, canvas.width, canvas.height);
+            const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            const data = imageData.data;
+            const width = canvas.width;
+            const height = canvas.height;
+
+            const gray = new Uint8Array(width * height);
+            for (let i = 0; i < data.length; i += 4) {
+                gray[i / 4] = 0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2];
+            }
+
+            let mean = 0, count = 0;
+            const laplacianValues = [];
+
+            for (let y = 1; y < height - 1; y++) {
+                for (let x = 1; x < width - 1; x++) {
+                    const idx = y * width + x;
+                    const val = gray[idx - width] + gray[idx - 1] + gray[idx + 1] + gray[idx + width] - (4 * gray[idx]);
+                    laplacianValues.push(val);
+                    mean += val;
+                    count++;
+                }
+            }
+            mean /= count;
+
+            let variance = 0;
+            for (let i = 0; i < laplacianValues.length; i++) {
+                variance += Math.pow(laplacianValues[i] - mean, 2);
+            }
+            return Math.round(variance / count);
+        }
+
+        // --- 5. CAMERA & PREVIEW HANDLING ---
+        ui.cameraInput.addEventListener('change', async (e) => {
+            if (e.target.files && e.target.files[0]) {
+                const file = e.target.files[0];
+                currentBlob = file; 
+                
+                ui.overlayTitle.textContent = "Analyzing Image";
+                ui.overlayText.textContent = "Checking quality and blur...";
+                ui.overlay.classList.add('visible');
+
+                try {
+                    const bitmap = await createImageBitmap(file);
+                    const blurScore = checkBlurry(bitmap);
+                    
+                    ui.overlay.classList.remove('visible');
+
+                    if (blurScore < BLUR_THRESHOLD) {
+                        alert("Image is slightly blurry. Please hold the camera steady and retake.");
+                        cancelPreview(); 
+                        return; 
+                    }
+
+                    showPreview();
+                } catch (err) {
+                    console.error(err);
+                    ui.overlay.classList.remove('visible');
+                    showPreview(); 
+                }
+            }
+        });
+
+        function showPreview() {
+            ui.imgPreview.src = URL.createObjectURL(currentBlob);
+            ui.initScreen.style.display = 'none';
+            ui.previewScreen.style.display = 'flex';
+        }
+
+        function cancelPreview() {
+            ui.previewScreen.style.display = 'none';
+            ui.initScreen.style.display = 'flex';
+            currentBlob = null;
+            ui.cameraInput.value = '';
+        }
+
+        // --- 6. CLOUD UPLOAD (HYBRID SYNCING) ---
+        async function sendImage() {
+            if (!currentBlob) return;
+            if (!courseId || !sessionId) {
+                alert("Missing session details. Please scan the QR code from the PC again.");
+                return;
+            }
+            
+            const oldText = ui.sendBtn.innerHTML;
+            ui.sendBtn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> Compressing...`;
+            ui.sendBtn.disabled = true;
+            ui.retakeBtn.disabled = true;
+
+            try {
+                const compressedBlob = await compressImage(currentBlob, 1600, 0.6);
+                ui.sendBtn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> Checking Sync...`;
+
+                const folderPath = `${courseId}/${sessionId}`;
+
+                // --- Final check on slide position right before upload to prevent desync ---
+                try {
+                    const { data: signedData } = await supabaseClient.storage.from('lecture_images').createSignedUrl(`${folderPath}/sync_state.json`, 60);
+                    
+                    if (signedData && signedData.signedUrl) {
+                        const res = await fetch(signedData.signedUrl + `&t=${Date.now()}`, { cache: "no-store" });
+                        if (res.ok) {
+                            const json = await res.json();
+                            if (json && json.currentPosition) {
+                                syncedSlidePosition = json.currentPosition;
+                            }
+                        }
+                    }
+                } catch (syncError) {
+                    console.warn("Could not read PC sync state before upload", syncError);
+                }
+                
+                ui.sendBtn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> Uploading...`;
+                
+                // HYBRID SPECIFIC: Upload exactly mapping to the current slide number
+                const fileName = `${folderPath}/wb_${syncedSlidePosition}.jpg`;
+
+                const { error: uploadError } = await supabaseClient.storage.from('lecture_images').upload(fileName, compressedBlob, {
+                    contentType: 'image/jpeg',
+                    upsert: true
+                });
+
+                if (uploadError) throw uploadError;
+
+                showToast(`Board attached to Slide ${syncedSlidePosition}!`);
+                cancelPreview();
+                
+            } catch (e) {
+                console.error(e);
+                showToast("Upload failed. Check connection.", "error");
+            } finally {
+                ui.sendBtn.innerHTML = oldText;
+                ui.sendBtn.disabled = false;
+                ui.retakeBtn.disabled = false;
+            }
+        }
+
+        // --- 7. UTILITIES ---
+        function showToast(message, type = 'success') {
+            const toast = document.createElement('div');
+            toast.className = `toast ${type === 'error' ? 'error' : ''}`;
+            const icon = type === 'error' ? 'fa-exclamation-triangle' : 'fa-check-circle'; 
+            toast.innerHTML = `<i class="fas ${icon}"></i> ${message}`;
+            document.body.appendChild(toast);
+            
+            requestAnimationFrame(() => toast.classList.add('show'));
+            
+            setTimeout(() => {
+                toast.classList.remove('show');
+                setTimeout(() => toast.remove(), 400);
+            }, 3000);
+        }
+    </script>
+</body>
+</html>

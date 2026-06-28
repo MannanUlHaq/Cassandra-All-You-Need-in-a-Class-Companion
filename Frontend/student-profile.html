@@ -1,0 +1,1469 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Student Profile | Cassandra</title>
+  <link rel="icon" type="image/png" href="Assets/favicon.png">
+
+  <!-- Google Fonts: Bricolage Grotesque -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,300;12..96,400;12..96,500;12..96,600;12..96,700&display=swap" rel="stylesheet">
+
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
+  <!-- SUPABASE SCRIPT IMPORT -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <style>
+    :root {
+      --primary: #0060e7;
+      --primary-dark: #004ba8;
+      --primary-light: #3082ff;
+      --primary-alpha: rgba(0, 96, 231, 0.1);
+      --primary-glow: rgba(0, 96, 231, 0.15);
+      
+      --bg-body: #f4f7f9;
+      --bg-surface: #ffffff;
+      --bg-main: #F8FAFC;
+      
+      --text-main: #0f172a;
+      --text-muted: #64748b;
+      --text-secondary: #475569;
+      
+      --border-color: #e2e8f0;
+      
+      --accent-green: #10b981;
+      --accent-red: #ef4444;
+      
+      --spacing-xs: 0.25rem;
+      --spacing-sm: 0.5rem;
+      --spacing-md: 1rem;
+      --spacing-lg: 1.5rem;
+      --spacing-xl: 2rem;
+      
+      --radius-sm: 8px;
+      --radius-md: 12px;
+      --radius-lg: 16px;
+      --radius-xl: 24px;
+      
+      --shadow-sm: 0 1px 3px rgba(0,0,0,0.05), 0 1px 2px rgba(0,0,0,0.03);
+      --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.05), 0 2px 4px -1px rgba(0,0,0,0.03);
+      --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.05), 0 4px 6px -2px rgba(0,0,0,0.03);
+      --shadow-hover: 0 20px 25px -5px rgba(0,0,0,0.08), 0 10px 10px -5px rgba(0,0,0,0.04);
+      
+      --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Bricolage Grotesque', sans-serif;
+      background-color: var(--bg-body);
+      color: var(--text-main);
+      min-height: 100vh;
+      line-height: 1.5;
+      overflow-x: hidden;
+    }
+
+    /* Loading State */
+    #pageLoader {
+        position: fixed;
+        inset: 0;
+        background: var(--bg-body);
+        z-index: 9999;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        color: var(--primary);
+    }
+
+    .app-container {
+      display: flex;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    .sidebar {
+      width: 280px;
+      background-color: var(--bg-surface);
+      border-right: 1px solid var(--border-color);
+      display: flex;
+      flex-direction: column;
+      transition: var(--transition);
+      z-index: 40;
+    }
+
+    .sidebar-header {
+      padding: var(--spacing-lg);
+      display: flex;
+      align-items: center;
+      border-bottom: 1px solid var(--border-color);
+      height: 80px;
+    }
+
+    .sidebar-header img {
+      height: 40px;
+      width: auto;
+      object-fit: contain;
+    }
+
+    .sidebar-nav {
+      padding: var(--spacing-md);
+      flex: 1;
+      overflow-y: auto;
+    }
+
+    .sidebar-nav-title {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-muted);
+      font-weight: 600;
+      margin: var(--spacing-md) 0 var(--spacing-sm) var(--spacing-sm);
+    }
+
+    .sidebar-nav-item {
+      display: flex;
+      align-items: center;
+      gap: var(--spacing-md);
+      padding: 10px 16px;
+      color: var(--text-main);
+      text-decoration: none;
+      border-radius: var(--radius-sm);
+      font-weight: 500;
+      transition: var(--transition);
+      margin-bottom: 4px;
+      cursor: pointer;
+    }
+
+    .sidebar-nav-item:hover {
+      background-color: var(--bg-body);
+      transform: translateX(4px);
+    }
+
+    .sidebar-nav-item.active {
+      background-color: var(--primary-alpha);
+      color: var(--primary);
+      font-weight: 600;
+    }
+
+    .sidebar-nav-item.active i {
+      color: var(--primary);
+    }
+
+    .sidebar-nav-item i {
+      font-size: 1.1rem;
+      color: var(--text-muted);
+      width: 24px;
+      text-align: center;
+      transition: var(--transition);
+    }
+    
+    .class-color-dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      margin-left: 6px;
+      margin-right: 6px;
+    }
+
+    .main-wrapper {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .header {
+      height: 80px;
+      background: rgba(255, 255, 255, 0.85);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 var(--spacing-xl);
+      z-index: 30;
+      position: sticky;
+      top: 0;
+    }
+
+    .sidebar-toggle {
+      display: none;
+      background: none;
+      border: none;
+      font-size: 1.5rem;
+      color: var(--text-main);
+      cursor: pointer;
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: var(--spacing-md);
+      margin-left: auto;
+    }
+
+    .header-icon {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      color: var(--text-muted);
+      text-decoration: none;
+      transition: var(--transition);
+      font-size: 1.25rem;
+      background-color: transparent;
+      cursor: pointer;
+      overflow: hidden;
+    }
+    
+    .header-icon img { width: 100%; height: 100%; object-fit: cover; }
+
+    .header-icon:hover {
+      background-color: var(--bg-body);
+      color: var(--primary);
+    }
+
+    .main-content {
+      flex: 1;
+      padding: var(--spacing-xl);
+      overflow-y: auto;
+    }
+
+    .page-header {
+      margin-bottom: var(--spacing-xl);
+      animation: fadeInDown 0.5s ease-out;
+    }
+
+    .page-title {
+      font-size: 2rem;
+      font-weight: 700;
+      color: var(--text-main);
+      letter-spacing: -0.02em;
+      margin-bottom: 4px;
+    }
+
+    .page-subtitle {
+      color: var(--text-muted);
+      font-size: 1rem;
+    }
+
+    .profile-grid {
+      display: grid;
+      grid-template-columns: 340px 1fr;
+      gap: var(--spacing-xl);
+      max-width: 1400px;
+      animation: fadeInUp 0.6s ease-out forwards;
+    }
+
+    .profile-card {
+      background: var(--bg-surface);
+      border-radius: var(--radius-lg);
+      padding: var(--spacing-xl);
+      box-shadow: var(--shadow-sm);
+      border: 1px solid var(--border-color);
+      height: fit-content;
+      text-align: center;
+      transition: var(--transition);
+    }
+
+    .profile-card:hover {
+      box-shadow: var(--shadow-md);
+      transform: translateY(-2px);
+    }
+
+    .profile-image-container {
+      position: relative;
+      width: 180px;
+      height: 180px;
+      margin: 0 auto 24px;
+    }
+
+    .profile-image {
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 4px solid var(--primary-alpha);
+      transition: var(--transition);
+      box-shadow: var(--shadow-sm);
+    }
+
+    .profile-image-container:hover .profile-image {
+      border-color: var(--primary);
+      transform: scale(1.02);
+    }
+
+    .profile-image-overlay {
+      position: absolute;
+      inset: 0;
+      border-radius: 50%;
+      background: rgba(15, 23, 42, 0.5);
+      backdrop-filter: blur(2px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      transition: var(--transition);
+      cursor: pointer;
+    }
+
+    .profile-image-container:hover .profile-image-overlay {
+      opacity: 1;
+    }
+
+    .profile-image-overlay i {
+      color: white;
+      font-size: 2rem;
+      transform: translateY(10px);
+      transition: var(--transition);
+    }
+
+    .profile-image-container:hover .profile-image-overlay i {
+      transform: translateY(0);
+    }
+
+    .image-actions {
+      position: absolute;
+      bottom: 8px;
+      right: 8px;
+      display: flex;
+      gap: 8px;
+    }
+
+    .image-action-btn {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      border: 1px solid var(--border-color);
+      background: var(--bg-surface);
+      color: var(--primary);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: var(--shadow-sm);
+      transition: var(--transition);
+    }
+
+    .image-action-btn:hover {
+      background: var(--primary);
+      color: white;
+      border-color: var(--primary);
+      transform: scale(1.1);
+    }
+
+    .profile-name {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--text-main);
+      margin-bottom: 8px;
+    }
+
+    .profile-role {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--primary-alpha);
+      color: var(--primary-dark);
+      padding: 6px 16px;
+      border-radius: 20px;
+      font-size: 0.875rem;
+      font-weight: 600;
+    }
+
+    .info-section {
+      display: flex;
+      flex-direction: column;
+      gap: var(--spacing-xl);
+    }
+
+    .info-card {
+      background: var(--bg-surface);
+      border-radius: var(--radius-lg);
+      padding: var(--spacing-xl);
+      box-shadow: var(--shadow-sm);
+      border: 1px solid var(--border-color);
+      transition: var(--transition);
+    }
+
+    .info-card:hover {
+      box-shadow: var(--shadow-md);
+    }
+
+    .card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: var(--spacing-xl);
+      padding-bottom: var(--spacing-md);
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .card-title {
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: var(--text-main);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .card-title i {
+      color: var(--primary);
+      font-size: 1.25rem;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 10px 20px;
+      border-radius: var(--radius-sm);
+      font-family: inherit;
+      font-weight: 600;
+      font-size: 0.95rem;
+      cursor: pointer;
+      border: 1px solid transparent;
+      transition: var(--transition);
+      text-decoration: none;
+    }
+
+    .btn:active {
+      transform: scale(0.97);
+    }
+
+    .btn:disabled {
+      opacity: 0.7;
+      cursor: not-allowed;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+      color: white;
+      box-shadow: 0 4px 12px rgba(0, 96, 231, 0.25);
+    }
+
+    .btn-primary:hover:not(:disabled) {
+      background: linear-gradient(135deg, var(--primary-light) 0%, var(--primary) 100%);
+      box-shadow: 0 6px 16px rgba(0, 96, 231, 0.35);
+      transform: translateY(-1px);
+    }
+
+    .btn-outline {
+      background-color: transparent;
+      color: var(--text-main);
+      border-color: var(--border-color);
+    }
+
+    .btn-outline:hover {
+      border-color: var(--primary);
+      color: var(--primary);
+      background: var(--primary-alpha);
+    }
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: var(--spacing-lg);
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .form-group.full-width {
+      grid-column: 1 / -1;
+    }
+
+    .form-label {
+      font-size: 0.875rem;
+      font-weight: 600;
+      color: var(--text-main);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .input-with-icon {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+
+    .input-with-icon > i {
+      position: absolute;
+      left: 1rem;
+      color: var(--text-muted);
+      z-index: 2;
+    }
+
+    .form-input {
+      width: 100%;
+      padding: 12px 16px 12px 42px;
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-sm);
+      font-size: 0.95rem;
+      font-family: inherit;
+      color: var(--text-main);
+      transition: var(--transition);
+      background: var(--bg-surface);
+    }
+
+    .form-input:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px var(--primary-alpha);
+    }
+
+    /* Readonly Inputs */
+    .form-input[readonly] {
+      background-color: #f1f5f9;
+      color: var(--text-muted);
+      cursor: not-allowed;
+      border-color: var(--border-color);
+    }
+
+    .form-input[readonly]:focus {
+      box-shadow: none;
+      border-color: var(--border-color);
+    }
+
+    .toggle-password {
+      position: absolute;
+      right: 1rem;
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      cursor: pointer;
+      padding: 4px;
+      z-index: 2;
+      transition: var(--transition);
+    }
+    
+    .toggle-password:hover {
+      color: var(--primary);
+    }
+
+    /* Password Rules Styles */
+    .password-rules {
+      list-style: none;
+      margin-top: 0.75rem;
+      padding: 0;
+      font-size: 0.825rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+    }
+
+    .password-rules li {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      color: var(--text-muted);
+      transition: var(--transition);
+    }
+
+    .password-rules li i {
+      font-size: 0.85rem;
+      width: 14px;
+      text-align: center;
+    }
+
+    .password-rules li.valid { color: var(--accent-green); }
+    .password-rules li.valid i::before { content: "\f00c"; } /* fa-check */
+
+    .password-rules li.invalid { color: var(--accent-red); }
+    .password-rules li.invalid i::before { content: "\f00d"; } /* fa-times */
+
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.4);
+      backdrop-filter: blur(4px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      opacity: 0;
+      visibility: hidden;
+      transition: all 0.3s ease;
+    }
+
+    .modal-overlay.active {
+      opacity: 1;
+      visibility: visible;
+    }
+
+    .modal {
+      background: var(--bg-surface);
+      border-radius: var(--radius-lg);
+      width: 90%;
+      max-width: 500px;
+      box-shadow: var(--shadow-lg);
+      transform: translateY(20px) scale(0.95);
+      transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+      overflow: hidden;
+    }
+
+    .modal-overlay.active .modal {
+      transform: translateY(0) scale(1);
+    }
+
+    .modal-header {
+      padding: var(--spacing-lg) var(--spacing-xl);
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background-color: #fcfcfd;
+    }
+
+    .modal-title {
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: var(--text-main);
+    }
+
+    .modal-close {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      border: none;
+      background: transparent;
+      color: var(--text-muted);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.25rem;
+      transition: var(--transition);
+    }
+
+    .modal-close:hover {
+      background: var(--border-color);
+      color: var(--text-main);
+    }
+
+    .modal-body {
+      padding: var(--spacing-xl);
+    }
+
+    .upload-area {
+      border: 2px dashed var(--border-color);
+      border-radius: var(--radius-md);
+      padding: 48px 32px;
+      text-align: center;
+      cursor: pointer;
+      transition: var(--transition);
+      background: var(--bg-main);
+      margin-bottom: var(--spacing-lg);
+    }
+
+    .upload-area:hover {
+      border-color: var(--primary);
+      background: var(--primary-alpha);
+    }
+
+    .upload-area i {
+      font-size: 3rem;
+      color: var(--primary-light);
+      margin-bottom: 16px;
+      transition: var(--transition);
+    }
+
+    .upload-area:hover i {
+      color: var(--primary);
+      transform: translateY(-4px);
+    }
+
+    .upload-area-text {
+      color: var(--text-muted);
+      font-size: 0.95rem;
+    }
+
+    .upload-area-text span {
+      color: var(--primary);
+      font-weight: 600;
+    }
+
+    .modal-footer {
+      padding: var(--spacing-md) var(--spacing-xl);
+      border-top: 1px solid var(--border-color);
+      display: flex;
+      justify-content: flex-end;
+      gap: var(--spacing-md);
+      background-color: #fcfcfd;
+    }
+
+    .toast {
+      position: fixed;
+      bottom: 32px;
+      left: 50%;
+      transform: translateX(-50%) translateY(100px);
+      background: var(--text-main);
+      color: white;
+      padding: 16px 24px;
+      border-radius: 50px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      box-shadow: var(--shadow-lg);
+      opacity: 0;
+      transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+      z-index: 2000;
+      font-weight: 500;
+      font-size: 0.95rem;
+    }
+
+    .toast.show {
+      transform: translateX(-50%) translateY(0);
+      opacity: 1;
+    }
+
+    .toast i {
+      color: var(--accent-green);
+      font-size: 1.2rem;
+    }
+    
+    .toast.error i {
+      color: var(--accent-red);
+    }
+
+    @keyframes fadeInUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes fadeInDown {
+      from { opacity: 0; transform: translateY(-10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @media (max-width: 1024px) {
+      .profile-grid { grid-template-columns: 1fr; }
+      .sidebar { position: fixed; left: -280px; height: 100vh; }
+      .sidebar.open { left: 0; box-shadow: var(--shadow-lg); }
+      .sidebar-toggle { display: block; }
+      .header { padding: 0 var(--spacing-md); }
+    }
+
+    @media (max-width: 640px) {
+      .form-grid { grid-template-columns: 1fr; }
+      .main-content { padding: var(--spacing-md); }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Loading State -->
+  <div id="pageLoader">
+      <i class="fas fa-spinner fa-spin" style="font-size: 3rem; margin-bottom: 1rem;"></i>
+      <h3 style="color: var(--text-main);">Loading Profile...</h3>
+  </div>
+
+  <div class="app-container">
+
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-header">
+        <a href="student-dashboard.html" style="text-decoration: none;">
+          <img src="Assets/Cassandra-Logo.png" alt="Cassandra" onerror="this.outerHTML='<h2 style=\'color: var(--primary); font-weight: 800; font-size: 1.5rem; margin: 0;\'>Cassandra.</h2>'" style="height: 40px; width: auto; object-fit: contain;">
+        </a>
+      </div>
+
+      <nav class="sidebar-nav">
+        <p class="sidebar-nav-title">MAIN MENU</p>
+        <a href="student-dashboard.html" class="sidebar-nav-item">
+          <i class="fas fa-home"></i> <span>Dashboard</span>
+        </a>
+
+        <p class="sidebar-nav-title" style="margin-top: var(--spacing-lg);">YOUR CLASSES</p>
+        <div id="sidebarClassesList">
+            <span style="font-size: 0.8rem; color: var(--text-muted); padding-left: 1rem;">Loading...</span>
+        </div>
+
+        <p class="sidebar-nav-title" style="margin-top: var(--spacing-lg);">ACCOUNT</p>
+        <a href="student-profile.html" class="sidebar-nav-item active">
+          <i class="fas fa-user"></i> <span>Profile</span>
+        </a>
+        <a onclick="logoutUser()" class="sidebar-nav-item" style="cursor: pointer;">
+          <i class="fas fa-sign-out-alt"></i> <span>Logout</span>
+        </a>
+      </nav>
+    </aside>
+
+    <!-- Main Content Wrapper -->
+    <div class="main-wrapper">
+
+      <!-- Header -->
+      <header class="header">
+        <button class="sidebar-toggle" id="sidebarToggle" aria-label="Toggle sidebar">
+          <i class="fas fa-bars"></i>
+        </button>
+
+        <div class="header-actions">
+          <a href="student-profile.html" class="header-icon" id="headerProfileCircle" title="Profile">
+            <i class="fas fa-user-circle"></i>
+          </a>
+          <a onclick="logoutUser()" class="header-icon" title="Logout" style="cursor: pointer;">
+            <i class="fas fa-sign-out-alt"></i>
+          </a>
+        </div>
+      </header>
+
+      <!-- Main Area -->
+      <main class="main-content">
+        <div class="page-header">
+          <h1 class="page-title">My Profile</h1>
+          <p class="page-subtitle">View your personal information, manage your photo, and update security settings.</p>
+        </div>
+
+        <div class="profile-grid">
+
+          <!-- Left: Profile Card -->
+          <div class="profile-card">
+            <div class="profile-image-container">
+              <img src="" alt="Profile" class="profile-image" id="profileImage">
+
+              <div class="profile-image-overlay" onclick="openImageModal()">
+                <i class="fas fa-camera"></i>
+              </div>
+
+              <div class="image-actions">
+                <button class="image-action-btn" onclick="openImageModal()" title="Change Photo">
+                  <i class="fas fa-pen"></i>
+                </button>
+              </div>
+            </div>
+
+            <h2 class="profile-name" id="displayProfileName">Loading...</h2>
+            <span class="profile-role">
+              <i class="fas fa-graduation-cap"></i>
+              Student
+            </span>
+          </div>
+
+          <!-- Right: Info Sections -->
+          <div class="info-section">
+
+            <!-- Personal Information (Read-Only) -->
+            <div class="info-card">
+              <div class="card-header">
+                <h3 class="card-title">
+                  <i class="fas fa-user-circle"></i>
+                  Personal Information
+                </h3>
+              </div>
+
+              <div class="form-grid">
+                <div class="form-group">
+                  <label class="form-label" for="name">Full Name</label>
+                  <div class="input-with-icon">
+                    <i class="fas fa-user"></i>
+                    <input type="text" id="name" class="form-input" readonly placeholder="Loading name...">
+                  </div>
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label" for="instituteName">University Name</label>
+                  <div class="input-with-icon">
+                    <i class="fas fa-university"></i>
+                    <input type="text" id="instituteName" class="form-input" readonly placeholder="Loading university...">
+                  </div>
+                </div>
+
+                <div class="form-group full-width">
+                  <label class="form-label" for="emailAddress">Email Address</label>
+                  <div class="input-with-icon">
+                    <i class="fas fa-envelope"></i>
+                    <input type="email" id="emailAddress" class="form-input" readonly placeholder="Loading email...">
+                  </div>
+                </div>
+                
+                <div class="form-group full-width" style="margin-top: 0.5rem;">
+                  <p style="font-size: 0.85rem; color: var(--text-muted); display: flex; align-items: center; gap: 6px;">
+                    <i class="fas fa-info-circle"></i> Personal information cannot be changed after registration.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <!-- Security Settings -->
+            <div class="info-card">
+              <div class="card-header">
+                <h3 class="card-title">
+                  <i class="fas fa-shield-alt"></i>
+                  Security Settings
+                </h3>
+              </div>
+
+              <form id="passwordForm" onsubmit="updatePassword(event)">
+                <div class="form-grid">
+                  <div class="form-group full-width">
+                    <label class="form-label" for="oldPassword">Current Password</label>
+                    <div class="input-with-icon">
+                      <i class="fas fa-unlock-alt"></i>
+                      <input type="password" class="form-input" id="oldPassword" placeholder="Enter current password to verify" required>
+                      <button type="button" class="toggle-password" onclick="togglePasswordVisibility('oldPassword')">
+                        <i class="fas fa-eye"></i>
+                      </button>
+                    </div>
+                  </div>
+
+                  <div class="form-group">
+                    <label class="form-label" for="newPassword">New Password</label>
+                    <div class="input-with-icon">
+                      <i class="fas fa-lock"></i>
+                      <input type="password" class="form-input" id="newPassword" placeholder="Enter new password" required minlength="8">
+                      <button type="button" class="toggle-password" onclick="togglePasswordVisibility('newPassword')">
+                        <i class="fas fa-eye"></i>
+                      </button>
+                    </div>
+                    
+                    <!-- Dynamic Password Rules List -->
+                    <ul class="password-rules" id="passwordRules">
+                      <li id="rule-length" class="invalid"><i class="fas fa-times"></i> At least 8 characters</li>
+                      <li id="rule-upper" class="invalid"><i class="fas fa-times"></i> At least 1 uppercase letter</li>
+                      <li id="rule-lower" class="invalid"><i class="fas fa-times"></i> At least 1 lowercase letter</li>
+                      <li id="rule-number" class="invalid"><i class="fas fa-times"></i> At least 1 number</li>
+                      <li id="rule-special" class="invalid"><i class="fas fa-times"></i> At least 1 special character (!@#$%^&*)</li>
+                    </ul>
+                  </div>
+
+                  <div class="form-group">
+                    <label class="form-label" for="confirmPassword">Confirm New Password</label>
+                    <div class="input-with-icon">
+                      <i class="fas fa-lock"></i>
+                      <input type="password" class="form-input" id="confirmPassword" placeholder="Confirm new password" required minlength="8">
+                      <button type="button" class="toggle-password" onclick="togglePasswordVisibility('confirmPassword')">
+                        <i class="fas fa-eye"></i>
+                      </button>
+                    </div>
+                  </div>
+
+                  <div class="form-group full-width" style="margin-top: 1rem;">
+                    <button type="submit" class="btn btn-outline" id="updatePasswordBtn">
+                      <i class="fas fa-key"></i> Update Password
+                    </button>
+                  </div>
+                </div>
+              </form>
+            </div>
+
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <!-- Image Upload Modal -->
+  <div class="modal-overlay" id="imageModal">
+    <div class="modal">
+      <div class="modal-header">
+        <h3 class="modal-title">Update Profile Photo</h3>
+        <button class="modal-close" onclick="closeImageModal()">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+
+      <div class="modal-body">
+        <div class="upload-area" onclick="document.getElementById('profilePhotoInput').click()" id="uploadAreaDropzone">
+          <i class="fas fa-cloud-upload-alt"></i>
+          <p class="upload-area-text" id="uploadText">
+            <span>Click to browse</span> or drag and drop<br>
+            <small style="color: var(--text-muted); margin-top: 8px; display: block;">JPG, PNG, GIF up to 50MB</small>
+          </p>
+          <div id="imagePreviewContainer" style="display: none; margin-top: 15px;">
+            <img id="imagePreview" src="" style="width: 120px; height: 120px; border-radius: 50%; object-fit: cover; border: 3px solid var(--primary-alpha); box-shadow: var(--shadow-sm);">
+          </div>
+        </div>
+        <input type="file" id="profilePhotoInput" accept="image/jpeg, image/png, image/gif" style="display: none;" onchange="handleFileSelection(event)">
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn btn-outline" onclick="closeImageModal()">Cancel</button>
+        <button class="btn btn-primary" id="btnUploadPhoto" onclick="uploadProfilePhotoToSupabase()" disabled>
+          <i class="fas fa-upload"></i> Upload Photo
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification -->
+  <div class="toast" id="toast">
+    <i class="fas fa-check-circle"></i>
+    <span id="toastMessage">Changes saved successfully!</span>
+  </div>
+
+  <script>
+    // --- SUPABASE SETUP ---
+    const SUPABASE_URL = 'https://lchcfsgexlkjxrhfjrna.supabase.co'; 
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxjaGNmc2dleGxranhyaGZqcm5hIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2MDI4NDIxNywiZXhwIjoyMDc1ODYwMjE3fQ.u8xbJWho6qFVW5f7tmhtK9hq5X5ApQVC4QK04jfjj0k'; 
+    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    
+    let currentStudentId = null;
+    let selectedImageFile = null;
+
+    // --- PASSWORD RULES VARIABLES ---
+    let isPasswordStrong = false;
+    let passwordRequirements = {};
+
+    // --- INITIALIZATION ---
+    document.addEventListener('DOMContentLoaded', async () => {
+        // Verify User Session
+        const { data: { session } } = await supabaseClient.auth.getSession();
+        
+        if (session && session.user) {
+            currentStudentId = session.user.id;
+            
+            // Set fallback email first
+            document.getElementById('emailAddress').value = session.user.email;
+            
+            // Parallel load profile, image, and sidebar classes
+            await Promise.all([
+                fetchStudentProfile(),
+                loadProfileImage(),
+                loadSidebarClasses()
+            ]);
+            
+            // Hide Loader
+            document.getElementById('pageLoader').style.display = 'none';
+        } else {
+            // No session -> redirect to login
+            window.location.href = 'student-dashboard.html';
+        }
+
+        setupDragAndDrop();
+        
+        // --- PASSWORD STRENGTH VALIDATION LOGIC ---
+        const newPasswordInput = document.getElementById('newPassword');
+        passwordRequirements = {
+            length: { regex: /.{8,}/, el: document.getElementById('rule-length') },
+            upper: { regex: /[A-Z]/, el: document.getElementById('rule-upper') },
+            lower: { regex: /[a-z]/, el: document.getElementById('rule-lower') },
+            number: { regex: /[0-9]/, el: document.getElementById('rule-number') },
+            special: { regex: /[^A-Za-z0-9]/, el: document.getElementById('rule-special') }
+        };
+
+        newPasswordInput.addEventListener('input', (e) => {
+            const passwordValue = e.target.value;
+            let validCount = 0;
+
+            for (const req in passwordRequirements) {
+                const rule = passwordRequirements[req];
+                if (rule.regex.test(passwordValue)) {
+                    rule.el.classList.remove('invalid');
+                    rule.el.classList.add('valid');
+                    validCount++;
+                } else {
+                    rule.el.classList.remove('valid');
+                    rule.el.classList.add('invalid');
+                }
+            }
+            
+            isPasswordStrong = (validCount === Object.keys(passwordRequirements).length);
+        });
+    });
+
+    // --- FETCH DATA (USING "student" TABLE) ---
+    async function fetchStudentProfile() {
+        const { data, error } = await supabaseClient
+            .from('student')
+            .select('*')
+            .eq('student_id', currentStudentId)
+            .single();
+
+        if (data) {
+            if(data.name) {
+                document.getElementById('name').value = data.name;
+                document.getElementById('displayProfileName').textContent = data.name;
+            }
+            if(data.institute_name) {
+                document.getElementById('instituteName').value = data.institute_name;
+            }
+            if(data.email) {
+                document.getElementById('emailAddress').value = data.email;
+            }
+        } else {
+            // If no profile data exists, use email prefix as a fallback name display
+            const emailPrefix = document.getElementById('emailAddress').value.split('@')[0];
+            document.getElementById('displayProfileName').textContent = emailPrefix;
+        }
+        
+        updateAvatarFallback();
+    }
+    
+    // --- SIDEBAR CLASSES (Fetch enrolled classes) ---
+    async function loadSidebarClasses() {
+        const sidebarList = document.getElementById('sidebarClassesList');
+        
+        // First get enrollments for this student, then get class details
+        const { data: enrollments, error: enrollError } = await supabaseClient
+            .from('enrollment')
+            .select('class_id')
+            .eq('student_id', currentStudentId);
+
+        if (enrollError || !enrollments || enrollments.length === 0) {
+            sidebarList.innerHTML = '<span style="font-size: 0.85rem; padding: 10px 16px; color: var(--text-muted);">No enrolled classes</span>';
+            return;
+        }
+
+        // Get class details for enrolled classes
+        const classIds = enrollments.map(e => e.class_id);
+        const { data: classes, error: classError } = await supabaseClient
+            .from('class')
+            .select('*')
+            .in('class_id', classIds)
+            .order('course_name', { ascending: true });
+
+        if (classError || !classes || classes.length === 0) {
+            sidebarList.innerHTML = '<span style="font-size: 0.85rem; padding: 10px 16px; color: var(--text-muted);">No active classes</span>';
+            return;
+        }
+
+        sidebarList.innerHTML = '';
+        const colorsList = ['blue', 'green', 'purple', 'amber', 'rose'];
+        const colorMap = { blue: '#3b82f6', green: '#10b981', purple: '#8b5cf6', amber: '#f59e0b', rose: '#f43f5e' };
+
+        classes.forEach((cls, index) => {
+            const color = colorsList[index % colorsList.length];
+            
+            // Extract display name 
+            let displayName = cls.class_name || cls.course_name;
+            if (displayName && displayName.includes(' - ')) {
+                displayName = displayName.split(' - ')[0];
+            }
+
+            const sidebarItem = document.createElement('a');
+            sidebarItem.className = 'sidebar-nav-item';
+            sidebarItem.href = 'student-course-view.html'; // Direct back to dashboard
+            
+            sidebarItem.innerHTML = `
+                <div class="class-color-dot" style="background-color: ${colorMap[color]};"></div>
+                <span style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${displayName}</span>
+            `;
+            sidebarList.appendChild(sidebarItem);
+        });
+    }
+
+    async function loadProfileImage() {
+        const fileName = `${currentStudentId}/profile.jpg`;
+        const { data } = supabaseClient.storage.from('student_profile').getPublicUrl(fileName);
+        
+        if (data && data.publicUrl) {
+            // Force the browser to bypass its cache by adding a unique timestamp
+            const cacheBuster = '?t=' + new Date().getTime();
+            const finalUrl = data.publicUrl + cacheBuster;
+            
+            const imgElement = document.getElementById('profileImage');
+            
+            // Test if the image actually loads before applying it to the UI
+            const tempImg = new Image();
+            tempImg.onload = () => { 
+                imgElement.src = finalUrl; 
+            };
+            tempImg.onerror = () => { 
+                console.warn("Image found, but failed to load. Is the bucket set to Public?");
+                updateAvatarFallback(); 
+            };
+            tempImg.src = finalUrl;
+            
+        } else {
+            updateAvatarFallback();
+        }
+    }
+
+    function updateAvatarFallback() {
+        const name = document.getElementById('displayProfileName').textContent || 'Student';
+        const imgEl = document.getElementById('profileImage');
+        // Prevent infinite loops if fallback UI avatar also fails
+        imgEl.onerror = null; 
+        imgEl.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=0060e7&color=fff&size=400`;
+    }
+
+    // --- UPDATE PASSWORD LOGIC ---
+    function togglePasswordVisibility(fieldId) {
+        const field = document.getElementById(fieldId);
+        const icon = field.nextElementSibling.querySelector('i');
+        
+        if (field.type === 'password') {
+            field.type = 'text';
+            icon.classList.remove('fa-eye');
+            icon.classList.add('fa-eye-slash');
+        } else {
+            field.type = 'password';
+            icon.classList.remove('fa-eye-slash');
+            icon.classList.add('fa-eye');
+        }
+    }
+
+    async function updatePassword(e) {
+        e.preventDefault();
+        
+        const oldPass = document.getElementById('oldPassword').value;
+        const newPass = document.getElementById('newPassword').value;
+        const confirmPass = document.getElementById('confirmPassword').value;
+        
+        if (!isPasswordStrong) {
+            showToast('Please ensure your new password meets all strength requirements.', true);
+            return;
+        }
+
+        if (newPass !== confirmPass) {
+            showToast('New passwords do not match!', true);
+            return;
+        }
+        
+        const btn = document.getElementById('updatePasswordBtn');
+        const originalText = btn.innerHTML;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Updating...';
+        btn.disabled = true;
+
+        try {
+            // 1. Get Current User Email
+            const { data: { user }, error: userError } = await supabaseClient.auth.getUser();
+            if (userError) throw userError;
+
+            // 2. Verify Old Password using signInWithPassword
+            const { error: signInError } = await supabaseClient.auth.signInWithPassword({
+                email: user.email,
+                password: oldPass
+            });
+
+            if (signInError) {
+                throw new Error("Incorrect current password.");
+            }
+
+            // 3. Update to New Password
+            const { error: updateError } = await supabaseClient.auth.updateUser({
+                password: newPass
+            });
+
+            if (updateError) throw updateError;
+
+            document.getElementById('passwordForm').reset();
+            
+            // Reset visual indicators back to invalid
+            for (const req in passwordRequirements) {
+                const rule = passwordRequirements[req];
+                rule.el.classList.remove('valid');
+                rule.el.classList.add('invalid');
+            }
+            isPasswordStrong = false;
+            
+            showToast('Password updated securely!');
+
+        } catch (error) {
+            showToast(error.message, true);
+        } finally {
+            btn.innerHTML = originalText;
+            btn.disabled = false;
+        }
+    }
+
+    // --- IMAGE UPLOAD LOGIC ---
+    function openImageModal() {
+        document.getElementById('imageModal').classList.add('active');
+        // Reset state
+        selectedImageFile = null;
+        document.getElementById('profilePhotoInput').value = '';
+        document.getElementById('imagePreviewContainer').style.display = 'none';
+        document.getElementById('btnUploadPhoto').disabled = true;
+    }
+
+    function closeImageModal() {
+        document.getElementById('imageModal').classList.remove('active');
+    }
+
+    function handleFileSelection(event) {
+        const file = event.target.files[0];
+        processSelectedFile(file);
+    }
+
+    function processSelectedFile(file) {
+        if (file && file.type.startsWith('image/')) {
+            
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                const img = new Image();
+                img.src = event.target.result;
+                
+                img.onload = function() {
+                    // 1. Create a canvas to resize the image
+                    const canvas = document.createElement('canvas');
+                    const MAX_WIDTH = 400; // Perfect size for a profile picture
+                    const MAX_HEIGHT = 400;
+                    let width = img.width;
+                    let height = img.height;
+
+                    // Calculate aspect ratio
+                    if (width > height) {
+                        if (width > MAX_WIDTH) {
+                            height *= MAX_WIDTH / width;
+                            width = MAX_WIDTH;
+                        }
+                    } else {
+                        if (height > MAX_HEIGHT) {
+                            width *= MAX_HEIGHT / height;
+                            height = MAX_HEIGHT;
+                        }
+                    }
+
+                    canvas.width = width;
+                    canvas.height = height;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, width, height);
+
+                    // 2. Compress to JPEG at 80% quality
+                    canvas.toBlob((blob) => {
+                        // Replace the selected file with this new, tiny compressed blob
+                        selectedImageFile = new File([blob], "profile.jpg", {
+                            type: 'image/jpeg',
+                            lastModified: Date.now()
+                        });
+
+                        // Show the preview in the modal
+                        document.getElementById('imagePreview').src = canvas.toDataURL('image/jpeg', 0.8);
+                        document.getElementById('imagePreviewContainer').style.display = 'block';
+                        document.getElementById('btnUploadPhoto').disabled = false;
+                        
+                    }, 'image/jpeg', 0.8);
+                };
+            };
+            reader.readAsDataURL(file);
+        } else {
+            showToast('Please select a valid image file.', true);
+        }
+    }
+
+    async function uploadProfilePhotoToSupabase() {
+        if (!selectedImageFile || !currentStudentId) return;
+
+        const btn = document.getElementById('btnUploadPhoto');
+        const originalText = btn.innerHTML;
+        
+        try {
+            // 1. Set loading state
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Uploading...';
+            btn.disabled = true;
+
+            const fileName = `${currentStudentId}/profile.jpg`;
+
+            // 2. Perform upload to student_profile bucket
+            const { data, error } = await supabaseClient.storage
+                .from('student_profile')
+                .upload(fileName, selectedImageFile, {
+                    cacheControl: '3600', 
+                    upsert: true
+                });
+
+            // 3. If Supabase returns an error, force it into the catch block
+            if (error) throw new Error(error.message);
+
+            // 4. Success handling
+            showToast('Profile photo updated successfully!');
+            closeImageModal();
+            await loadProfileImage(); 
+
+        } catch (err) {
+            // Catch ALL errors and show them in the toast and console
+            console.error("FATAL UPLOAD ERROR:", err);
+            showToast('Upload failed: ' + err.message, true);
+        } finally {
+            // ALWAYS reset the button, preventing the infinite loop!
+            btn.innerHTML = originalText;
+            btn.disabled = false;
+        }
+    }
+
+    // Drag and Drop handlers
+    function setupDragAndDrop() {
+        const area = document.getElementById('uploadAreaDropzone');
+        
+        area.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            area.style.borderColor = 'var(--primary)';
+            area.style.background = 'var(--primary-alpha)';
+        });
+        
+        area.addEventListener('dragleave', () => {
+            area.style.borderColor = '';
+            area.style.background = '';
+        });
+        
+        area.addEventListener('drop', (e) => {
+            e.preventDefault();
+            area.style.borderColor = '';
+            area.style.background = '';
+            
+            if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+                processSelectedFile(e.dataTransfer.files[0]);
+            }
+        });
+    }
+
+    // --- UI/UX UTILITIES ---
+    const sidebar = document.getElementById('sidebar');
+    const sidebarToggle = document.getElementById('sidebarToggle');
+    sidebarToggle.addEventListener('click', () => sidebar.classList.toggle('open'));
+
+    // Close sidebar on mobile
+    document.addEventListener('click', (e) => {
+        if (window.innerWidth <= 1024) {
+            if (!sidebar.contains(e.target) && !sidebarToggle.contains(e.target)) {
+                sidebar.classList.remove('open');
+            }
+        }
+    });
+
+    // Close modals on background click
+    document.querySelectorAll('.modal-overlay').forEach(modal => {
+        modal.addEventListener('click', function(e) {
+            if (e.target === this) {
+                this.classList.remove('active');
+            }
+        });
+    });
+
+    function showToast(message, isError = false) {
+        const toast = document.getElementById('toast');
+        const icon = toast.querySelector('i');
+        
+        document.getElementById('toastMessage').textContent = message;
+        
+        if (isError) {
+            toast.classList.add('error');
+            icon.className = 'fas fa-exclamation-circle';
+        } else {
+            toast.classList.remove('error');
+            icon.className = 'fas fa-check-circle';
+        }
+        
+        toast.classList.add('show');
+        setTimeout(() => toast.classList.remove('show'), 3500);
+    }
+    
+    // Logout Handler
+    async function logoutUser() {
+        await supabaseClient.auth.signOut();
+        window.location.href = 'student-login.html';
+    }
+  </script>
+</body>
+</html>

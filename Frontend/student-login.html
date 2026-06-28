@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Student Login - Cassandra AI Class Companion">
+  <title>Student Login | Cassandra</title>
+  <link rel="icon" type="image/png" href="Assets/favicon.png">
+  
+  <!-- Google Fonts - Same as Teacher Login -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,200..800&family=Inter:wght@300;400;500;600&family=Montserrat:wght@500;600;700;800&family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+  
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+  <!-- SUPABASE SCRIPT IMPORT -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <style>
+    :root {
+      --primary: #0060e7;
+      --primary-dark: #004ba8;
+      --primary-light: #3082ff;
+      --primary-glow: rgba(0, 96, 231, 0.15);
+      
+      --bg-main: #F8FAFC;
+      --white: #FFFFFF;
+      --text-primary: #0F172A;
+      --text-secondary: #475569;
+      --text-muted: #94A3B8;
+      --border-color: #E2E8F0;
+      
+      --font-brand: 'Bricolage Grotesque', sans-serif;
+      --font-body: 'Inter', 'Roboto', sans-serif;
+      --radius-sm: 8px;
+      --radius-md: 12px;
+      --radius-lg: 24px;
+      --shadow-lg: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+      --transition-fast: all 0.2s ease-out;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: var(--font-body);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(135deg, rgba(255, 255, 255, 0.5) 0%, rgba(255, 255, 255, 0.5) 100%),
+            url('https://images.unsplash.com/photo-1524995997946-a1c2e315a42f?auto=format&fit=crop&q=80') center/cover no-repeat fixed;
+      padding: 2rem 1rem;
+      color: var(--text-primary);
+    }
+
+    h1, h2 { font-family: var(--font-brand); letter-spacing: -0.02em; }
+    a { text-decoration: none; color: inherit; transition: var(--transition-fast); }
+
+    .auth-container {
+      display: flex;
+      width: 100%;
+      max-width: 950px;
+      min-height: 600px;
+      background: var(--white);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-lg), 0 0 0 1px var(--border-color);
+      overflow: hidden;
+      opacity: 0; transform: translateY(20px);
+    }
+
+    .auth-welcome {
+      flex: 1;
+      background: linear-gradient(145deg, var(--primary-dark) 0%, var(--primary) 100%);
+      color: var(--white);
+      padding: 4rem 3.5rem;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      position: relative;
+    }
+
+    .auth-logo { margin-bottom: 3rem; }
+    .auth-logo img { height: auto !important; max-height: 45px !important; object-fit: contain; }
+    .auth-welcome h1 { font-size: 2.75rem; font-weight: 800; margin-bottom: 1.25rem; }
+    .auth-welcome p { font-size: 1.05rem; line-height: 1.7; color: rgba(255, 255, 255, 0.9); margin-bottom: 2.5rem; }
+    .auth-welcome .tagline {
+      font-size: 0.95rem; color: rgba(255, 255, 255, 0.7); margin-top: auto; padding-top: 2.5rem;
+      font-weight: 500; border-top: 1px solid rgba(255, 255, 255, 0.15); display: flex; align-items: center; gap: 0.5rem;
+    }
+
+    .auth-form-panel {
+      flex: 1; padding: 3.5rem 4rem; display: flex; flex-direction: column; justify-content: center; background: var(--white);
+    }
+
+    .auth-tabs { display: flex; gap: 2.5rem; margin-bottom: 2.5rem; border-bottom: 1px solid var(--border-color); }
+    .auth-tab { font-weight: 600; font-size: 1.05rem; color: var(--text-muted); padding-bottom: 1rem; border-bottom: 3px solid transparent; margin-bottom: -1px; cursor: pointer; }
+    .auth-tab.active { color: var(--primary); border-bottom-color: var(--primary); }
+    .auth-form-panel h2 { font-size: 1.75rem; font-weight: 700; margin-bottom: 2rem; }
+
+    .error-box { background: #FEE2E2; color: #DC2626; padding: 1rem; border-radius: var(--radius-sm); margin-bottom: 1.5rem; font-size: 0.9rem; font-weight: 500; display: none; }
+
+    .form-group { margin-bottom: 1.5rem; opacity: 0; transform: translateY(10px); }
+    .form-label { display: block; font-size: 0.875rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 0.5rem; }
+    .form-input-wrapper { position: relative; display: flex; align-items: center; }
+    .form-input-wrapper > i { position: absolute; left: 1rem; color: var(--text-muted); z-index: 2; }
+    .form-input {
+      width: 100%; padding: 0.875rem 3rem 0.875rem 2.75rem; border: 1px solid var(--border-color);
+      border-radius: var(--radius-md); font-size: 0.95rem; background: var(--bg-main); transition: var(--transition-fast);
+    }
+    .form-input:focus { outline: none; background: var(--white); border-color: var(--primary); box-shadow: 0 0 0 4px var(--primary-glow); }
+    .password-toggle { position: absolute; right: 1rem; font-size: 0.85rem; font-weight: 600; cursor: pointer; background: none; border: none; z-index: 2; color: var(--text-muted); }
+
+    .btn { display: inline-flex; align-items: center; justify-content: center; gap: 0.6rem; padding: 1rem 1.5rem; font-weight: 600; font-size: 1rem; border-radius: var(--radius-md); transition: all 0.3s; cursor: pointer; border: none; width: 100%; margin-top: 1rem; opacity: 0; transform: translateY(10px); }
+    .btn-primary { background: linear-gradient(135deg, var(--primary), var(--primary-dark)); color: var(--white); }
+    .btn-primary:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 8px 20px var(--primary-glow); }
+    .btn:disabled { opacity: 0.7; cursor: not-allowed; }
+
+    .auth-links, .auth-switch, .back-link { text-align: center; margin-top: 1.5rem; opacity: 0; transform: translateY(10px); font-size: 0.95rem; }
+    .auth-switch { padding-top: 1.5rem; border-top: 1px solid var(--border-color); color: var(--text-secondary); }
+    .auth-links a, .auth-switch a { color: var(--primary); font-weight: 600; }
+    .back-link { display: inline-flex; gap: 0.5rem; color: var(--text-muted); width: 100%; font-weight: 500; }
+
+    @media (max-width: 768px) {
+      .auth-container { flex-direction: column; min-height: auto; max-width: 550px; }
+      .auth-welcome { padding: 3rem 2rem; text-align: center; }
+      .auth-logo { justify-content: center; }
+    }
+  </style>
+</head>
+<body>
+  <main class="auth-container">
+    <section class="auth-welcome">
+       <div class="auth-logo">
+          <img src="Assets/Cassandra-Logo-footer.png" alt="Cassandra" onerror="this.outerHTML='<h2>Cassandra</h2>'" style="height: 45px; width: auto;">
+       </div>
+      <h1>Welcome, Student!</h1>
+      <p>Access your courses, notes, and learning materials all in one place. Stay organized and focused on what matters most – your education.</p>
+      <p class="tagline"><i class="fas fa-book-reader"></i> Your All-in-One Class Companion.</p>
+    </section>
+
+    <section class="auth-form-panel">
+      <div class="auth-tabs">
+        <span class="auth-tab active">Login</span>
+        <a href="student-register.html" class="auth-tab">Register</a>
+      </div>
+
+      <h2>Student Access Portal</h2>
+      <div id="loginError" class="error-box"></div>
+
+      <form id="loginForm">
+        <div class="form-group stagger-item">
+          <label for="email" class="form-label">Email Address</label>
+          <div class="form-input-wrapper">
+            <i class="fas fa-envelope"></i>
+            <input type="email" id="email" class="form-input" placeholder="you@example.com" required>
+          </div>
+        </div>
+
+        <div class="form-group stagger-item">
+          <label for="password" class="form-label">Password</label>
+          <div class="form-input-wrapper">
+            <i class="fas fa-lock"></i>
+            <input type="password" id="password" class="form-input" placeholder="Enter your password" required>
+            <button type="button" class="password-toggle" id="togglePassword">Show</button>
+          </div>
+        </div>
+
+        <button type="submit" id="submitBtn" class="btn btn-primary stagger-item">
+          <i class="fas fa-sign-in-alt"></i> Secure Login
+        </button>
+      </form>
+
+      <div class="auth-links stagger-item"><a href="#">Forgot Password?</a></div>
+      <div class="auth-switch stagger-item">Are you a Teacher? <a href="teacher-login.html">Click here</a></div>
+      <a href="index.html" class="back-link stagger-item"><i class="fas fa-arrow-left"></i> Back to Home</a>
+    </section>
+  </main>
+
+  <script>
+    // ============================================
+    // SUPABASE INITIALIZATION 
+    // ============================================
+    const SUPABASE_URL = 'https://lchcfsgexlkjxrhfjrna.supabase.co'; 
+    // IMPORTANT: Replace with your actual Anon Key (not Service Role Key)
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxjaGNmc2dleGxranhyaGZqcm5hIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjAyODQyMTcsImV4cCI6MjA3NTg2MDIxN30._euxT31TQqCbeA9g8bSpf15_N9UaMaZEhJevAxvTQuU';
+    
+    let supabaseClient;
+    try {
+        supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        console.log('Supabase client initialized successfully');
+    } catch(err) {
+        console.error("Supabase init failed", err);
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      // ============================================
+      // ENTRANCE ANIMATIONS
+      // ============================================
+      const container = document.querySelector('.auth-container');
+      requestAnimationFrame(() => {
+        container.style.transition = 'all 0.6s cubic-bezier(0.16, 1, 0.3, 1)';
+        container.style.opacity = '1';
+        container.style.transform = 'translateY(0)';
+      });
+
+      document.querySelectorAll('.stagger-item').forEach((el, index) => {
+        setTimeout(() => {
+          el.style.transition = 'all 0.5s cubic-bezier(0.16, 1, 0.3, 1)';
+          el.style.opacity = '1';
+          el.style.transform = 'translateY(0)';
+        }, 150 + (index * 70));
+      });
+
+      // ============================================
+      // PASSWORD TOGGLE FUNCTIONALITY
+      // ============================================
+      const togglePasswordBtn = document.getElementById('togglePassword');
+      const passwordInput = document.getElementById('password');
+      togglePasswordBtn.addEventListener('click', () => {
+        const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+        passwordInput.setAttribute('type', type);
+        togglePasswordBtn.textContent = type === 'password' ? 'Show' : 'Hide';
+      });
+
+      // ============================================
+      // LOGIN SUBMISSION WITH SUPABASE
+      // ============================================
+      document.getElementById('loginForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const loginError = document.getElementById('loginError');
+        const submitBtn = document.getElementById('submitBtn');
+        loginError.style.display = 'none';
+
+        const email = document.getElementById('email').value.trim();
+        const password = passwordInput.value;
+
+        const originalBtnText = submitBtn.innerHTML;
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Authenticating...';
+
+        try {
+          // STEP 1: Sign in with Supabase Auth
+          const { data: authData, error: authError } = await supabaseClient.auth.signInWithPassword({
+            email: email,
+            password: password
+          });
+
+          if (authError) throw authError;
+
+          const userId = authData.user.id;
+          console.log("Logged in successfully! User ID (student_id):", userId);
+
+          // STEP 2: Verify student exists in the student table 
+          // This ensures the user is registered as a student, not just a teacher
+          const { data: studentData, error: studentError } = await supabaseClient
+            .from('student')
+            .select('student_id, name, email')
+            .eq('student_id', userId)
+            .single();
+
+          if (studentError) {
+            console.warn('Student record not found, but auth successful:', studentError);
+            // Optional: You might want to create a student record here if missing
+            // Or redirect to complete profile page
+          } else {
+            console.log('Student record found:', studentData);
+            
+            // Store student info in localStorage for easy access
+            localStorage.setItem('currentStudentId', userId);
+            localStorage.setItem('currentStudentName', studentData.name);
+            localStorage.setItem('currentStudentEmail', studentData.email);
+          }
+
+          // STEP 3: Redirect to student dashboard
+          window.location.href = 'student-dashboard.html';
+
+        } catch (err) {
+          console.error("Login Error:", err.message);
+          loginError.textContent = err.message || "Invalid email or password.";
+          loginError.style.display = 'block';
+          submitBtn.disabled = false;
+          submitBtn.innerHTML = originalBtnText;
+        }
+      });
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Voice Enrollment | Cassandra</title>
+  <link rel="icon" type="image/png" href="Assets/favicon.png">
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,200..800&family=Inter:wght@300;400;500;600&family=Montserrat:wght@500;600;700;800&family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  
+  <!-- SUPABASE SCRIPT IMPORT -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <style>
+    :root {
+      --primary: #0060e7;
+      --primary-dark: #004ba8;
+      --primary-glow: rgba(0, 96, 231, 0.15);
+      --bg-main: #F8FAFC;
+      --white: #FFFFFF;
+      --text-primary: #0F172A;
+      --text-secondary: #475569;
+      --border-color: #E2E8F0;
+      --font-brand: 'Bricolage Grotesque', sans-serif;
+      --font-body: 'Inter', 'Roboto', sans-serif;
+      --shadow-lg: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+      --radius-lg: 24px;
+      --radius-md: 12px;
+      --transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    
+    body {
+      font-family: var(--font-body);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(135deg, rgba(248, 250, 252, 0.85) 0%, rgba(241, 245, 249, 0.95) 100%),
+                  url('Assets/Teacher Registration Back.png') center/cover no-repeat fixed;
+      padding: 2rem 1rem;
+      color: var(--text-primary);
+    }
+
+    .enrollment-container {
+      background: var(--white);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-lg), 0 0 0 1px var(--border-color);
+      max-width: 700px;
+      width: 100%;
+      padding: 3.5rem;
+      opacity: 0; 
+      transform: translateY(20px);
+      transition: var(--transition);
+      text-align: center;
+    }
+
+    h2 { font-family: var(--font-brand); font-size: 2rem; margin-bottom: 1rem; color: var(--text-primary); }
+    p.subtitle { color: var(--text-secondary); margin-bottom: 2rem; line-height: 1.6; font-size: 1.05rem; }
+
+    .reading-box {
+      background: var(--bg-main);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      padding: 1.5rem;
+      font-size: 1rem;
+      line-height: 1.8;
+      color: var(--text-primary);
+      text-align: left;
+      margin-bottom: 2rem;
+    }
+
+    .recording-status {
+      font-weight: 600;
+      margin-bottom: 0.5rem;
+      color: var(--primary);
+      height: 24px;
+      transition: var(--transition);
+    }
+    
+    .timer-display {
+      font-family: var(--font-brand);
+      font-size: 1.2rem;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin-bottom: 1.5rem;
+      display: none;
+    }
+
+    .audio-preview-container {
+      display: none;
+      margin-bottom: 1.5rem;
+      width: 100%;
+      background: var(--bg-main);
+      padding: 1rem;
+      border-radius: var(--radius-md);
+      border: 1px solid var(--border-color);
+      transition: var(--transition);
+    }
+
+    .audio-preview-container audio {
+      width: 100%;
+      outline: none;
+    }
+
+    .btn-group {
+      display: flex;
+      gap: 1rem;
+      justify-content: center;
+      flex-wrap: wrap;
+      transition: var(--transition);
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.6rem;
+      padding: 1rem 1.5rem;
+      font-family: var(--font-body);
+      font-weight: 600;
+      font-size: 1rem;
+      border-radius: var(--radius-md);
+      transition: var(--transition);
+      cursor: pointer;
+      border: none;
+    }
+
+    .btn-primary { background: linear-gradient(135deg, var(--primary), var(--primary-dark)); color: var(--white); box-shadow: 0 4px 12px var(--primary-glow); }
+    .btn-primary:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 8px 20px var(--primary-glow); }
+    
+    .btn-danger { background: #DC2626; color: var(--white); }
+    .btn-danger:hover:not(:disabled) { transform: translateY(-2px); background: #B91C1C; }
+
+    .btn-success { background: #059669; color: var(--white); }
+    .btn-success:hover:not(:disabled) { transform: translateY(-2px); background: #047857; }
+    
+    .btn-secondary { background: var(--text-secondary); color: var(--white); }
+    .btn-secondary:hover:not(:disabled) { transform: translateY(-2px); background: #334155; }
+    
+    .btn:disabled { opacity: 0.6; cursor: not-allowed; }
+  </style>
+</head>
+<body>
+
+  <main class="enrollment-container" id="enrollmentContainer">
+    <h2><i class="fas fa-microphone-alt" style="color: var(--primary); margin-right: 10px;"></i> Mandatory Voice Enrollment</h2>
+    <p class="subtitle">A voice sample is required to create your vocal signature for speaker isolation during your AI-powered lectures.</p>
+    
+    <div class="reading-box" id="readingText">
+      Hello, my name is <strong id="dynamicName">[Your Name]</strong>, and I am recording this sample to help the system recognize my voice accurately. 
+      <br><br>
+      Every morning, I like to start my day with a cup of tea or coffee. It helps me focus and prepare for the tasks ahead. Sometimes, I take a short walk outside to enjoy the fresh air and sunlight.
+      <br><br>
+      Technology has become a big part of our daily lives. From smartphones to artificial intelligence, innovation continues to shape the way we live, work, and communicate.
+    </div>
+
+    <!-- Status & Timer -->
+    <div class="recording-status" id="recordingStatus">Click 'Start Recording' when ready.</div>
+    <div class="timer-display" id="timerDisplay">00:00</div>
+
+    <!-- Audio Preview Player -->
+    <div class="audio-preview-container" id="audioPreviewContainer">
+      <p style="margin-bottom: 10px; font-weight: 500; font-size: 0.95rem; color: var(--text-secondary);">Review your recording:</p>
+      <audio id="audioPreview" controls></audio>
+    </div>
+    
+    <!-- Controls -->
+    <div class="btn-group" id="btnGroup">
+      <button id="startRecBtn" class="btn btn-primary">
+        <i class="fas fa-play"></i> Start Recording
+      </button>
+      
+      <button id="stopRecBtn" class="btn btn-danger" style="display: none;">
+        <i class="fas fa-stop"></i> Stop Recording
+      </button>
+
+      <button id="rerecordBtn" class="btn btn-secondary" style="display: none;">
+        <i class="fas fa-redo"></i> Re-record
+      </button>
+
+      <button id="uploadBtn" class="btn btn-success" style="display: none;">
+        <i class="fas fa-cloud-upload-alt"></i> Upload & Finish
+      </button>
+    </div>
+  </main>
+
+  <script>
+    // 1. SUPABASE INITIALIZATION
+    const SUPABASE_URL = 'https://lchcfsgexlkjxrhfjrna.supabase.co'; 
+    // IMPORTANT: Replace this with your actual Anon Key!
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxjaGNmc2dleGxranhyaGZqcm5hIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2MDI4NDIxNywiZXhwIjoyMDc1ODYwMjE3fQ.u8xbJWho6qFVW5f7tmhtK9hq5X5ApQVC4QK04jfjj0k'; 
+    
+    let supabaseClient;
+    try {
+        supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    } catch(err) {
+        console.error("Supabase init failed", err);
+    }
+
+    // UPDATED AZURE URL
+    const PYTHON_BACKEND_URL = 'https://cassandra-teacher-voice-enrollment-b7g2hzagd6fudrg7.canadacentral-01.azurewebsites.net/api/voice-enroll';
+
+    let mediaRecorder;
+    let audioChunks = [];
+    let finalAudioBlob = null;
+    let regData = null; // Will store the form data passed from the register page
+    
+    // Timer variables
+    let recordingTime = 0;
+    let timerInterval = null;
+
+    // DOM Elements
+    const startRecBtn = document.getElementById('startRecBtn');
+    const stopRecBtn = document.getElementById('stopRecBtn');
+    const rerecordBtn = document.getElementById('rerecordBtn');
+    const uploadBtn = document.getElementById('uploadBtn');
+    const btnGroup = document.getElementById('btnGroup');
+    
+    const recordingStatus = document.getElementById('recordingStatus');
+    const timerDisplay = document.getElementById('timerDisplay');
+    const audioPreviewContainer = document.getElementById('audioPreviewContainer');
+    const audioPreview = document.getElementById('audioPreview');
+
+    document.addEventListener('DOMContentLoaded', () => {
+      const container = document.getElementById('enrollmentContainer');
+      requestAnimationFrame(() => {
+        container.style.opacity = '1';
+        container.style.transform = 'translateY(0)';
+      });
+
+      // Retrieve teacher registration data from session
+      const regDataStr = sessionStorage.getItem('teacherRegData');
+
+      if (!regDataStr) {
+        document.getElementById('enrollmentContainer').innerHTML = `
+          <h2><i class="fas fa-exclamation-triangle" style="color: #DC2626; margin-right: 10px;"></i> Error</h2>
+          <p class="subtitle">Teacher registration data not found. Please start from the registration page.</p>
+          <a href="teacher-register.html" class="btn btn-primary" style="text-decoration: none;">Go to Registration</a>
+        `;
+        return;
+      }
+
+      regData = JSON.parse(regDataStr);
+      document.getElementById('dynamicName').textContent = `${regData.firstName} ${regData.lastName}`;
+    });
+
+    // Handle Timer UI
+    function updateTimerUI() {
+      const mins = Math.floor(recordingTime / 60).toString().padStart(2, '0');
+      const secs = (recordingTime % 60).toString().padStart(2, '0');
+      timerDisplay.textContent = `${mins}:${secs}`;
+      timerDisplay.style.color = "var(--text-primary)";
+    }
+
+    // 1. START RECORDING
+    startRecBtn.addEventListener('click', async () => {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        audioChunks = [];
+        mediaRecorder = new MediaRecorder(stream);
+
+        mediaRecorder.ondataavailable = e => { audioChunks.push(e.data); };
+
+        mediaRecorder.onstop = () => {
+          // Turn off microphone tracks immediately
+          stream.getTracks().forEach(track => track.stop());
+          clearInterval(timerInterval);
+          
+          // Create Blob for preview
+          finalAudioBlob = new Blob(audioChunks, { type: 'audio/wav' });
+          const audioUrl = URL.createObjectURL(finalAudioBlob);
+          
+          // Update UI for Preview State
+          recordingStatus.style.color = "var(--text-primary)";
+          recordingStatus.innerHTML = "<i class='fas fa-headphones'></i> Please review your recording. Is it clear?";
+          
+          timerDisplay.style.display = 'none';
+          stopRecBtn.style.display = 'none';
+          
+          audioPreview.src = audioUrl;
+          audioPreviewContainer.style.display = 'block';
+          
+          rerecordBtn.style.display = 'inline-flex';
+          uploadBtn.style.display = 'inline-flex';
+        };
+
+        // Start Recording & Timer
+        mediaRecorder.start();
+        recordingTime = 0;
+        updateTimerUI();
+        timerDisplay.style.display = 'block';
+        
+        timerInterval = setInterval(() => {
+          recordingTime++;
+          updateTimerUI();
+        }, 1000);
+
+        // Update UI for Recording State
+        recordingStatus.style.color = '#DC2626';
+        recordingStatus.innerHTML = "<i class='fas fa-circle blink' style='font-size: 0.8rem;'></i> Recording... Speak clearly.";
+        
+        startRecBtn.style.display = 'none';
+        stopRecBtn.style.display = 'inline-flex';
+        audioPreviewContainer.style.display = 'none';
+
+      } catch (err) {
+        recordingStatus.style.color = '#DC2626';
+        recordingStatus.textContent = "Error accessing microphone. Please allow permissions in your browser.";
+      }
+    });
+
+    // 2. STOP RECORDING
+    stopRecBtn.addEventListener('click', () => {
+      if (mediaRecorder && mediaRecorder.state === "recording") {
+        mediaRecorder.stop();
+      }
+    });
+
+    // 3. RE-RECORD (Discard and reset)
+    rerecordBtn.addEventListener('click', () => {
+      finalAudioBlob = null;
+      audioPreview.src = "";
+      
+      audioPreviewContainer.style.display = 'none';
+      rerecordBtn.style.display = 'none';
+      uploadBtn.style.display = 'none';
+      
+      startRecBtn.style.display = 'inline-flex';
+      
+      recordingStatus.style.color = "var(--primary)";
+      recordingStatus.innerHTML = "Click 'Start Recording' when ready.";
+    });
+
+    // 4. UPLOAD & FINISH (Account Creation Hub)
+    uploadBtn.addEventListener('click', async () => {
+      if (!finalAudioBlob || !regData) return;
+
+      // Update UI for Server Processing State
+      rerecordBtn.disabled = true;
+      uploadBtn.disabled = true;
+      uploadBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Finalizing Registration...';
+      recordingStatus.style.color = "var(--text-secondary)";
+      recordingStatus.textContent = "Creating account and securely saving your voice profile...";
+
+      try {
+        // STEP 1: Sign up user in Supabase Auth FIRST 
+        const { data: authData, error: authError } = await supabaseClient.auth.signUp({
+          email: regData.email,
+          password: regData.password,
+          options: {
+            data: { full_name: `${regData.firstName} ${regData.lastName}` }
+          }
+        });
+
+        if (authError) {
+          // Check specifically for the Rate Limit error
+          if (authError.status === 429) {
+             throw new Error("Supabase Rate Limit (429): You've created too many test accounts recently. Please wait an hour, change your IP (use mobile hotspot), or increase the limit in the Supabase Dashboard.");
+          }
+          throw authError;
+        }
+
+        const userId = authData.user.id;
+
+        // STEP 2: Upload Voice Signature to Python Backend
+        const formData = new FormData();
+        formData.append('file', finalAudioBlob, 'teacher_voice_sample.wav');
+        formData.append('teacher_id', userId);
+
+        let response;
+        try {
+          response = await fetch(PYTHON_BACKEND_URL, {
+            method: 'POST',
+            body: formData
+          });
+        } catch (networkError) {
+           throw new Error('Network/CORS Error: Could not reach the backend. Azure might be waking up or blocking the connection.');
+        }
+
+        if (!response.ok) {
+           // EXTRACTION LOGIC: Grabbing the exact error message from the Python Backend JSON
+           let backendErrorMessage = response.statusText;
+           try {
+               const errorJson = await response.json();
+               if (errorJson.error) {
+                   backendErrorMessage = errorJson.error;
+               }
+           } catch (e) {
+               // Ignore if JSON parsing fails
+           }
+
+           throw new Error(`Python Backend Error: ${backendErrorMessage}`);
+        }
+
+        // STEP 3: Insert into the public TEACHER table 
+        const { error: dbError } = await supabaseClient
+          .from('teacher')
+          .insert({
+            id: userId,
+            name: `${regData.firstName} ${regData.lastName}`,
+            email: regData.email,
+            institute_name: regData.institute_name
+          });
+
+        if (dbError) throw dbError;
+
+        // --- SUCCESS RESOLUTION ---
+        audioPreviewContainer.style.display = 'none';
+        btnGroup.style.display = 'none';
+        
+        recordingStatus.style.fontSize = "1.2rem";
+        recordingStatus.style.color = '#059669'; // Green
+        recordingStatus.innerHTML = "<i class='fas fa-check-circle'></i> Registration Successful!<br><span style='font-size: 0.9rem; color: var(--text-secondary);'>Redirecting to login page in a few seconds...</span>";
+        
+        sessionStorage.removeItem('teacherRegData');
+
+        setTimeout(() => {
+          window.location.href = 'teacher-login.html'; 
+        }, 4000);
+
+      } catch (processError) {
+         recordingStatus.style.color = '#DC2626'; // Red
+         recordingStatus.textContent = processError.message || "An error occurred during account finalization.";
+         
+         // Re-enable the buttons to allow retry on error
+         rerecordBtn.disabled = false;
+         uploadBtn.disabled = false;
+         uploadBtn.innerHTML = '<i class="fas fa-cloud-upload-alt"></i> Retry Upload & Finish';
+      }
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,1361 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Notes Library - Cassandra AI Class Companion">
+  <title>Student Notes Library | Cassandra</title>
+  <link rel="icon" type="image/png" href="Assets/favicon.png">
+  
+  <!-- Google Fonts: Bricolage Grotesque exclusively -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,300;12..96,400;12..96,500;12..96,600;12..96,700&display=swap" rel="stylesheet">
+  
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
+  <!-- Supabase SDK -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <style>
+    :root {
+      --primary: #0060e7;
+      --primary-dark: #004ba8;
+      --primary-light: #3082ff;
+      --primary-alpha: rgba(0, 96, 231, 0.1);
+      --bg-body: #f4f7f9;
+      --bg-surface: #ffffff;
+      --bg-main: #F8FAFC;
+      --text-main: #0f172a;
+      --text-muted: #64748b;
+      --text-secondary: #475569;
+      --border-color: #e2e8f0;
+      --spacing-xs: 0.25rem;
+      --spacing-sm: 0.5rem;
+      --spacing-md: 1rem;
+      --spacing-lg: 1.5rem;
+      --spacing-xl: 2rem;
+      --radius-sm: 8px;
+      --radius-md: 12px;
+      --radius-lg: 16px;
+      --shadow-sm: 0 1px 3px rgba(0,0,0,0.05), 0 1px 2px rgba(0,0,0,0.03);
+      --shadow-hover: 0 10px 15px -3px rgba(0, 96, 231, 0.1), 0 4px 6px -2px rgba(0, 96, 231, 0.05);
+      --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.05), 0 4px 6px -2px rgba(0,0,0,0.03);
+      --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Bricolage Grotesque', sans-serif;
+      background-color: var(--bg-body);
+      color: var(--text-main);
+      line-height: 1.5;
+      display: flex;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    a { text-decoration: none; color: inherit; }
+    button { font-family: inherit; border: none; background: none; cursor: pointer; }
+    
+    .app-container {
+      display: flex;
+      width: 100%;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    .sidebar { 
+      width: 280px; 
+      background-color: var(--bg-surface); 
+      border-right: 1px solid var(--border-color); 
+      display: flex; 
+      flex-direction: column; 
+      transition: var(--transition); 
+      z-index: 40; 
+    }
+    .sidebar-header { 
+      padding: var(--spacing-lg); 
+      display: flex; 
+      align-items: center; 
+      border-bottom: 1px solid var(--border-color); 
+      height: 80px; 
+    }
+    .sidebar-header img { 
+      height: 40px; 
+      width: auto; 
+      object-fit: contain; 
+      transition: var(--transition); 
+    }
+    .sidebar-header img:hover { 
+      transform: scale(1.05); 
+    }
+    .sidebar-nav { 
+      padding: var(--spacing-md); 
+      flex: 1; 
+      overflow-y: auto; 
+    }
+    .sidebar-nav-title { 
+      font-size: 0.75rem; 
+      text-transform: uppercase; 
+      letter-spacing: 0.05em; 
+      color: var(--text-muted); 
+      font-weight: 600; 
+      margin: var(--spacing-md) 0 var(--spacing-sm) var(--spacing-sm); 
+    }
+    .sidebar-nav-item { 
+      display: flex; 
+      align-items: center; 
+      gap: var(--spacing-md); 
+      padding: 10px 16px; 
+      color: var(--text-main); 
+      text-decoration: none; 
+      border-radius: var(--radius-sm); 
+      font-weight: 500; 
+      transition: var(--transition); 
+      margin-bottom: 4px; 
+      cursor: pointer; 
+    }
+    .sidebar-nav-item:hover { 
+      background-color: var(--bg-body); 
+      transform: translateX(4px); 
+    }
+    .sidebar-nav-item.active { 
+      background-color: var(--primary-alpha); 
+      color: var(--primary); 
+      font-weight: 600; 
+    }
+    .sidebar-nav-item.active i { 
+      color: var(--primary); 
+    }
+    .sidebar-nav-item i { 
+      font-size: 1.1rem; 
+      color: var(--text-muted); 
+      width: 24px; 
+      text-align: center; 
+      transition: var(--transition); 
+    }
+    .class-color-dot { 
+      width: 12px; 
+      height: 12px; 
+      border-radius: 50%; 
+      margin-left: 6px; 
+      margin-right: 6px; 
+    }
+
+    .main-wrapper {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .header {
+      height: 80px;
+      background: rgba(255, 255, 255, 0.85);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border-color);
+      padding: 0 var(--spacing-xl);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      z-index: 30;
+      position: sticky;
+      top: 0;
+    }
+
+    .sidebar-toggle {
+      display: none;
+      font-size: 1.5rem;
+      color: var(--text-secondary);
+      transition: var(--transition);
+    }
+    .sidebar-toggle:hover { 
+      color: var(--primary); 
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: var(--spacing-md);
+      margin-left: auto;
+    }
+
+    .header-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--text-muted);
+      font-size: 1.25rem;
+      transition: var(--transition);
+      background: transparent;
+    }
+
+    .header-icon:hover {
+      background-color: var(--bg-body);
+      color: var(--primary);
+      transform: scale(1.05);
+    }
+
+    .main-content {
+      flex: 1;
+      padding: var(--spacing-xl);
+      overflow-y: auto;
+      scroll-behavior: smooth;
+    }
+
+    .page-header {
+      margin-bottom: var(--spacing-xl);
+      animation: fadeInDown 0.5s ease-out;
+    }
+
+    .page-title {
+      font-size: 2.25rem;
+      font-weight: 700;
+      color: var(--text-main);
+      letter-spacing: -0.02em;
+      line-height: 1.2;
+    }
+
+    .page-subtitle {
+      color: var(--text-muted);
+      font-size: 1.05rem;
+      margin-top: 6px;
+    }
+
+    .form-input {
+      width: 100%;
+      padding: 12px 16px;
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-sm);
+      font-family: inherit;
+      font-size: 0.95rem;
+      color: var(--text-main);
+      background-color: var(--bg-surface);
+      transition: var(--transition);
+      box-shadow: var(--shadow-sm);
+    }
+
+    .form-input:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px var(--primary-alpha);
+    }
+
+    .notes-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+      gap: var(--spacing-lg);
+    }
+
+    .note-card {
+      background: var(--bg-surface);
+      border-radius: var(--radius-lg);
+      border: 1px solid var(--border-color);
+      padding: var(--spacing-lg);
+      display: flex;
+      flex-direction: column;
+      transition: var(--transition);
+      box-shadow: var(--shadow-sm);
+      opacity: 0;
+      animation: fadeInUp 0.6s ease-out forwards;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .note-card:hover {
+      transform: translateY(-6px);
+      box-shadow: var(--shadow-hover);
+      border-color: var(--primary-light);
+    }
+
+    .note-card::before {
+      content: '';
+      position: absolute;
+      top: 0; 
+      left: 0; 
+      right: 0;
+      height: 4px;
+      background: linear-gradient(90deg, var(--primary-light), var(--primary-dark));
+      opacity: 0;
+      transition: var(--transition);
+    }
+    .note-card:hover::before { 
+      opacity: 1; 
+    }
+
+    .note-preview {
+      width: 52px;
+      height: 52px;
+      background: var(--primary-alpha);
+      color: var(--primary);
+      border-radius: var(--radius-md);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5rem;
+      margin-bottom: var(--spacing-md);
+      transition: var(--transition);
+    }
+    
+    .note-card:hover .note-preview {
+      background: var(--primary);
+      color: white;
+      transform: scale(1.05) rotate(-5deg);
+    }
+
+    .note-title {
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: var(--text-main);
+      margin-bottom: var(--spacing-sm);
+      line-height: 1.3;
+    }
+
+    .note-meta {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      margin-bottom: var(--spacing-md);
+    }
+
+    .note-meta-item {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-weight: 500;
+    }
+
+    .note-meta-item i {
+      color: var(--text-secondary);
+      width: 14px;
+      text-align: center;
+    }
+
+    .note-actions {
+      display: flex;
+      gap: var(--spacing-sm);
+      margin-top: auto;
+      padding-top: var(--spacing-md);
+      border-top: 1px dashed var(--border-color);
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 10px 20px;
+      border-radius: var(--radius-sm);
+      font-weight: 600;
+      font-size: 0.9rem;
+      cursor: pointer;
+      transition: var(--transition);
+      border: 1px solid transparent;
+    }
+
+    .btn:active:not(:disabled) { 
+      transform: scale(0.97); 
+    }
+    .btn:disabled { 
+      opacity: 0.5; 
+      cursor: not-allowed; 
+    }
+
+    .btn-sm { 
+      padding: 8px 16px; 
+      font-size: 0.85rem; 
+      flex: 1; 
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+      color: white;
+      box-shadow: 0 4px 12px rgba(0, 96, 231, 0.2);
+    }
+    
+    .btn-primary:hover:not(:disabled) {
+      background: linear-gradient(135deg, var(--primary-light) 0%, var(--primary) 100%);
+      box-shadow: 0 6px 16px rgba(0, 96, 231, 0.3);
+      transform: translateY(-1px);
+    }
+
+    .btn-outline {
+      background-color: transparent;
+      color: var(--text-secondary);
+      border-color: var(--border-color);
+    }
+    
+    .btn-outline:hover:not(:disabled) {
+      border-color: var(--text-main);
+      color: var(--text-main);
+      background-color: var(--bg-body);
+    }
+    
+    .btn-secondary {
+      background-color: var(--bg-surface);
+      color: var(--text-secondary);
+      border-color: var(--border-color);
+    }
+
+    .footer {
+      padding: var(--spacing-lg) var(--spacing-xl);
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 0.85rem;
+      font-weight: 500;
+      border-top: 1px solid var(--border-color);
+      background: transparent;
+      margin-top: auto;
+    }
+
+    .status-container {
+      grid-column: 1 / -1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 4rem;
+      text-align: center;
+      color: var(--text-muted);
+      background: var(--bg-surface);
+      border-radius: var(--radius-lg);
+      border: 1px dashed var(--border-color);
+    }
+    .status-container i { 
+      font-size: 2.5rem; 
+      color: var(--primary); 
+      margin-bottom: 1rem; 
+    }
+    .status-container h3 { 
+      color: var(--text-main); 
+      margin-bottom: 0.5rem; 
+    }
+
+    @keyframes fadeInUp {
+      from { 
+        opacity: 0; 
+        transform: translateY(20px); 
+      }
+      to { 
+        opacity: 1; 
+        transform: translateY(0); 
+      }
+    }
+    
+    @keyframes fadeInDown {
+      from { 
+        opacity: 0; 
+        transform: translateY(-10px); 
+      }
+      to { 
+        opacity: 1; 
+        transform: translateY(0); 
+      }
+    }
+
+    @media (max-width: 1024px) {
+      .sidebar {
+        position: fixed;
+        left: -280px;
+        height: 100vh;
+        box-shadow: var(--shadow-lg);
+      }
+      .sidebar.open { 
+        left: 0; 
+      }
+      .sidebar-toggle { 
+        display: block; 
+      }
+      .header { 
+        padding: 0 var(--spacing-md); 
+      }
+      .header-container { 
+        width: 100%; 
+        display: flex; 
+        align-items: center; 
+        justify-content: space-between;
+      }
+    }
+
+    @media (max-width: 640px) {
+      .page-header { 
+        flex-direction: column; 
+        align-items: flex-start; 
+      }
+      .form-input { 
+        width: 100% !important; 
+      }
+      .notes-grid { 
+        grid-template-columns: 1fr; 
+      }
+    }
+
+    .pdf-loading-overlay {
+      position: fixed;
+      top: 0; 
+      left: 0; 
+      right: 0; 
+      bottom: 0;
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(4px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      gap: 1rem;
+      z-index: 9999;
+    }
+
+    .pdf-loading-overlay.active {
+      display: flex;
+    }
+
+    .pdf-spinner {
+      width: 50px;
+      height: 50px;
+      border: 4px solid var(--border-color);
+      border-top-color: var(--primary);
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+
+    .pdf-loading-text {
+      color: var(--text-main);
+      font-weight: 600;
+      font-size: 1.1rem;
+    }
+
+    .pdf-loading-subtext {
+      color: var(--text-muted);
+      font-size: 0.9rem;
+      max-width: 400px;
+      text-align: center;
+    }
+
+    @keyframes spin {
+      to { 
+        transform: rotate(360deg); 
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="pdf-loading-overlay" id="pdfLoadingOverlay">
+    <div class="pdf-spinner"></div>
+    <div class="pdf-loading-text">Preparing PDF...</div>
+    <div class="pdf-loading-subtext">Rendering math equations and formatting content</div>
+  </div>
+
+  <div class="app-container">
+    
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-header">
+        <a href="student-dashboard.html" class="logo" style="text-decoration: none;">
+          <img src="Assets/Cassandra-Logo.png" alt="Cassandra" onerror="this.outerHTML='<h2 style=\'color: var(--primary); font-weight: 800; font-size: 1.5rem; margin: 0; text-decoration: none;\'>Cassandra.</h2>'">
+        </a>
+      </div>
+      
+      <nav class="sidebar-nav">
+        <p class="sidebar-nav-title">Main Menu</p>
+        <a href="student-dashboard.html" class="sidebar-nav-item">
+          <i class="fas fa-home"></i> <span>Dashboard</span>
+        </a>
+        
+        <p class="sidebar-nav-title" style="margin-top: var(--spacing-lg);">Your Classes</p>
+        <div id="sidebarClassesList">
+            <span style="font-size: 0.8rem; color: var(--text-muted); padding-left: 1rem;">Loading...</span>
+        </div>
+        
+        <p class="sidebar-nav-title" style="margin-top: var(--spacing-lg);">Account</p>
+        <a href="student-profile.html" class="sidebar-nav-item">
+          <i class="fas fa-user"></i> <span>Profile</span>
+        </a>
+        <a onclick="logoutUser()" class="sidebar-nav-item" style="cursor: pointer;">
+          <i class="fas fa-sign-out-alt"></i> <span>Logout</span>
+        </a>
+      </nav>
+    </aside>
+
+    <div class="main-wrapper">
+      
+      <header class="header">
+        <button class="sidebar-toggle" id="sidebarToggle" aria-label="Toggle sidebar">
+          <i class="fas fa-bars"></i>
+        </button>
+        
+        <div class="header-actions">
+          <a href="student-profile.html" class="header-icon" title="Profile">
+            <i class="fas fa-user-circle"></i>
+          </a>
+          <a onclick="logoutUser()" class="header-icon" title="Logout" style="cursor: pointer;">
+            <i class="fas fa-sign-out-alt"></i>
+          </a>
+        </div>
+      </header>
+
+      <main class="main-content">
+        
+        <header class="page-header" style="display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: var(--spacing-md);">
+          <div>
+            <h1 class="page-title">Notes Library</h1>
+            <p class="page-subtitle">Access all your AI-generated lecture notes in one place.</p>
+          </div>
+          <div style="display: flex; gap: var(--spacing-md); width: auto;">
+            <div style="position: relative;">
+              <i class="fas fa-search" style="position: absolute; left: 1rem; top: 50%; transform: translateY(-50%); color: var(--text-muted);"></i>
+              <input 
+                type="text" 
+                id="searchInput"
+                placeholder="Search notes..."
+                class="form-input"
+                style="padding-left: 2.75rem; width: 300px;"
+              >
+            </div>
+          </div>
+        </header>
+
+        <section class="notes-grid" id="notesGrid">
+          
+          <div class="status-container" style="grid-column: 1 / -1;">
+            <i class="fas fa-book-open" style="color: var(--text-muted);"></i>
+            <h3>No Course Selected</h3>
+            <p>Please select a course from the sidebar to view its generated lecture notes.</p>
+          </div>
+
+        </section>
+
+        <nav style="display: flex; justify-content: center; margin-top: var(--spacing-xl); padding-bottom: var(--spacing-md);">
+          <div style="display: flex; gap: var(--spacing-sm);">
+            <button class="btn btn-sm btn-secondary" style="opacity: 0.5; pointer-events: none;">
+              <i class="fas fa-chevron-left"></i> Previous
+            </button>
+            <button class="btn btn-sm btn-primary">1</button>
+            <button class="btn btn-sm btn-outline">2</button>
+            <button class="btn btn-sm btn-outline">3</button>
+            <button class="btn btn-sm btn-outline">
+              Next <i class="fas fa-chevron-right"></i>
+            </button>
+          </div>
+        </nav>
+        
+        <footer class="footer">
+          <p>2025 Cassandra | AI Class Companion</p>
+        </footer>
+
+      </main>
+    </div>
+  </div>
+
+  <script>
+    const sidebar = document.getElementById('sidebar');
+    document.getElementById('sidebarToggle').addEventListener('click', function() {
+      sidebar.classList.toggle('open');
+    });
+
+    document.getElementById('searchInput').addEventListener('input', function(e) {
+      const term = e.target.value.toLowerCase();
+      const cards = document.querySelectorAll('.note-card');
+      cards.forEach(function(card) {
+        const title = card.querySelector('.note-title').textContent.toLowerCase();
+        if (title.includes(term)) {
+          card.style.display = 'flex';
+        } else {
+          card.style.display = 'none';
+        }
+      });
+    });
+
+    const SUPABASE_URL = 'https://lchcfsgexlkjxrhfjrna.supabase.co'; 
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxjaGNmc2dleGxranhyaGZqcm5hIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2MDI4NDIxNywiZXhwIjoyMDc1ODYwMjE3fQ.u8xbJWho6qFVW5f7tmhtK9hq5X5ApQVC4QK04jfjj0k'; 
+    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    
+    let currentStudentId = null;
+    const colorsList = ['blue', 'green', 'purple', 'amber', 'rose'];
+    const colorHexMap = { 
+      blue: '#3b82f6', 
+      green: '#10b981', 
+      purple: '#8b5cf6', 
+      amber: '#f59e0b', 
+      rose: '#f43f5e' 
+    };
+    const urlParams = new URLSearchParams(window.location.search);
+    const activeCourseId = urlParams.get('id');
+
+    document.addEventListener('DOMContentLoaded', async function() {
+      const { data: { session } } = await supabaseClient.auth.getSession();
+      if (session && session.user) {
+          currentStudentId = session.user.id;
+          await loadSidebarClasses();
+      } else {
+          document.getElementById('sidebarClassesList').innerHTML = '<span style="font-size: 0.8rem; color: #ef4444; padding-left: 1rem;">Please login to see classes.</span>';
+      }
+
+      if (activeCourseId) {
+        await loadNotesFromSupabase(activeCourseId);
+      }
+    });
+
+    async function loadSidebarClasses() {
+        const sidebarList = document.getElementById('sidebarClassesList');
+        
+        try {
+            const { data: enrollments, error: enrollError } = await supabaseClient
+                .from('enrollment')
+                .select('class_id')
+                .eq('student_id', currentStudentId);
+
+            if (enrollError || !enrollments || enrollments.length === 0) {
+                sidebarList.innerHTML = '<span style="font-size: 0.85rem; padding: 10px 16px; color: var(--text-muted);">No enrolled classes</span>';
+                return;
+            }
+
+            const classIds = enrollments.map(function(e) { return e.class_id; });
+
+            const { data: classes, error: classError } = await supabaseClient
+                .from('class')
+                .select('*')
+                .in('class_id', classIds)
+                .order('course_name', { ascending: true });
+
+            if (classError) throw classError;
+
+            sidebarList.innerHTML = '';
+            if (classes.length === 0) {
+                sidebarList.innerHTML = '<span style="font-size: 0.8rem; color: var(--text-muted); padding-left: 1rem;">No classes found.</span>';
+                return;
+            }
+
+            classes.forEach(function(cls, index) {
+                const colorName = colorsList[index % colorsList.length];
+                const hexColor = colorHexMap[colorName] || 'var(--primary)';
+                
+                let displayName = cls.class_name;
+                if (displayName && displayName.includes(' - ')) {
+                    displayName = displayName.split(' - ')[0];
+                }
+
+                const sidebarItem = document.createElement('a');
+                sidebarItem.className = 'sidebar-nav-item';
+                if (cls.course_id === activeCourseId) {
+                    sidebarItem.classList.add('active');
+                }
+                
+                sidebarItem.onclick = function() { 
+                  window.location.href = 'student-notes-library.html?id=' + cls.course_id; 
+                };
+                
+                sidebarItem.innerHTML = 
+                    '<div class="class-color-dot" style="background-color: ' + hexColor + ';"></div>' +
+                    '<span style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">' + displayName + '</span>';
+                
+                sidebarList.appendChild(sidebarItem);
+            });
+        } catch (err) {
+            console.error("Error loading sidebar classes:", err);
+            sidebarList.innerHTML = '<span style="color:red; font-size: 0.8rem; padding-left: 1rem;">Error loading classes.</span>';
+        }
+    }
+
+    async function loadNotesFromSupabase(courseId) {
+      const grid = document.getElementById('notesGrid');
+      
+      grid.innerHTML = 
+        '<div class="status-container" style="grid-column: 1 / -1;">' +
+          '<i class="fas fa-circle-notch fa-spin"></i>' +
+          '<h3>Connecting to Knowledge Base...</h3>' +
+          '<p>Fetching your generated lecture notes securely.</p>' +
+        '</div>';
+
+      try {
+        const { data: lectureFolders, error: folderError } = await supabaseClient
+          .storage
+          .from('generated_notes')
+          .list(courseId, { limit: 100 });
+
+        if (folderError) throw folderError;
+
+        if (!lectureFolders || lectureFolders.length === 0) {
+          grid.innerHTML = 
+            '<div class="status-container" style="grid-column: 1 / -1;">' +
+              '<i class="fas fa-folder-open" style="color: var(--text-muted);"></i>' +
+              '<h3>No Lectures Found</h3>' +
+              '<p>No AI-generated notes available for this course yet.</p>' +
+            '</div>';
+          return;
+        }
+
+        let dynamicHtml = '';
+        let hasValidNotes = false;
+
+        for (const folder of lectureFolders) {
+          if (folder.name === '.emptyFolderPlaceholder') continue; 
+          
+          const lectureName = folder.name.replace(/_/g, ' '); 
+
+          const { data: files, error: fileError } = await supabaseClient
+            .storage
+            .from('generated_notes')
+            .list(courseId + '/' + folder.name, { limit: 100 });
+            
+          if (fileError) continue;
+
+          const expectedFileName = courseId + '_' + folder.name + '.html';
+          const htmlFile = files.find(function(f) { 
+            return f.name === expectedFileName || f.name.endsWith('.html'); 
+          });
+
+          if (htmlFile) {
+            hasValidNotes = true;
+            
+            let fileUrl = '#';
+            const { data: signedUrlData } = await supabaseClient
+              .storage
+              .from('generated_notes')
+              .createSignedUrl(courseId + '/' + folder.name + '/' + htmlFile.name, 60 * 60 * 24);
+            
+            if (signedUrlData && signedUrlData.signedUrl) {
+              fileUrl = signedUrlData.signedUrl;
+            } else {
+              const { data: publicUrlData } = supabaseClient
+                .storage
+                .from('generated_notes')
+                .getPublicUrl(courseId + '/' + folder.name + '/' + htmlFile.name);
+              fileUrl = publicUrlData.publicUrl;
+            }
+            
+            let dateStr = "Recently Generated";
+            if (htmlFile.created_at || folder.created_at) {
+               const dateObj = new Date(htmlFile.created_at || folder.created_at);
+               dateStr = dateObj.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+            }
+
+            dynamicHtml += 
+              '<article class="note-card">' +
+                '<div class="note-preview"><i class="fas fa-file-code"></i></div>' +
+                '<div class="note-content" style="display:flex; flex-direction:column; height: 100%;">' +
+                  '<h3 class="note-title">' + lectureName + '</h3>' +
+                  '<div class="note-meta">' +
+                    '<span class="note-meta-item"><i class="fas fa-calendar"></i> ' + dateStr + '</span>' +
+                  '</div>' +
+                  '<div class="note-actions">' +
+                    '<button onclick="viewLectureHTML(event, \'' + fileUrl + '\', \'' + courseId + '\', \'' + folder.name + '\')" class="btn btn-sm btn-primary">' +
+                      '<i class="fas fa-eye"></i> View' +
+                    '</button>' +
+                    '<button class="btn btn-sm btn-outline" onclick="downloadAsPDF(\'' + fileUrl + '\', \'' + lectureName + '\', \'' + courseId + '\', \'' + folder.name + '\')">' +
+                      '<i class="fas fa-download"></i> Download PDF' +
+                    '</button>' +
+                  '</div>' +
+                '</div>' +
+              '</article>';
+          }
+        }
+
+        if (hasValidNotes) {
+          grid.innerHTML = dynamicHtml;
+          const cards = grid.querySelectorAll('.note-card');
+          cards.forEach(function(c, idx) { 
+            c.style.animationDelay = ((idx % 10) * 0.08) + 's'; 
+          });
+        } else {
+          grid.innerHTML = 
+            '<div class="status-container" style="grid-column: 1 / -1;">' +
+              '<i class="fas fa-file-excel" style="color: var(--text-muted);"></i>' +
+              '<h3>No HTML Notes Found</h3>' +
+              '<p>The folders exist, but no .html lecture files were located inside them.</p>' +
+            '</div>';
+        }
+
+      } catch (err) {
+        console.error("Error fetching notes:", err);
+        grid.innerHTML = 
+          '<div class="status-container" style="grid-column: 1 / -1; color: #EF4444; border-color: #FECACA;">' +
+            '<i class="fas fa-exclamation-triangle" style="color: #EF4444;"></i>' +
+            '<h3>Connection Error</h3>' +
+            '<p>Unable to retrieve notes from the bucket. Ensure you have access privileges.</p>' +
+          '</div>';
+      }
+    }
+
+    // FUNCTION TO INJECT CHATBOT INTO NOTES
+    function getChatbotInjectionCode(courseId, studentId) {
+        return `
+        <!-- AI CHATBOT INJECTION -->
+        <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,300;12..96,400;12..96,500;12..96,600;12..96,700&display=swap" rel="stylesheet">
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+        <style>
+          #aiFloatBtn {
+            position: fixed; 
+            bottom: 30px; 
+            right: 30px; 
+            width: 60px; 
+            height: 60px;
+            border-radius: 50%; 
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            border: none; 
+            cursor: pointer; 
+            box-shadow: 0 4px 20px rgba(16, 185, 129, 0.4);
+            z-index: 999999; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center;
+            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+          }
+          
+          #aiFloatBtn:hover { 
+            transform: scale(1.1); 
+            box-shadow: 0 6px 25px rgba(16, 185, 129, 0.5); 
+          }
+
+          #aiChatWidget {
+            opacity: 0; 
+            transform: translateY(20px); 
+            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+            display: none; 
+            position: fixed; 
+            bottom: 100px; 
+            right: 30px; 
+            width: 380px; 
+            height: 550px;
+            background: white; 
+            border-radius: 16px; 
+            box-shadow: 0 10px 25px -5px rgba(0,0,0,0.1), 0 8px 10px -6px rgba(0,0,0,0.1);
+            z-index: 1000000; 
+            overflow: hidden; 
+            flex-direction: column; 
+            border: 1px solid #e2e8f0;
+            font-family: 'Bricolage Grotesque', sans-serif;
+          }
+          
+          #aiChatWidget.active { 
+            opacity: 1; 
+            transform: translateY(0); 
+            display: flex; 
+          }
+          
+          #aiChatWidget.fullscreen { 
+            width: 90vw; 
+            height: 90vh; 
+            bottom: 5vh; 
+            right: 5vw; 
+          }
+
+          .ai-bubble-content {
+            max-width: 85%; 
+            background: white; 
+            color: #0f172a; 
+            padding: 12px 16px; 
+            border-radius: 16px 16px 16px 4px; 
+            font-size: 0.9rem; 
+            line-height: 1.5; 
+            border: 1px solid #e2e8f0;
+          }
+          
+          .ai-bubble-content p { margin-bottom: 0.5rem; }
+          .ai-bubble-content p:last-child { margin-bottom: 0; }
+          .ai-bubble-content ul, .ai-bubble-content ol { padding-left: 1.25rem; margin-bottom: 0.5rem; }
+          .ai-bubble-content li { margin-bottom: 0.25rem; }
+          .ai-bubble-content strong { font-weight: 700; color: #0f172a; }
+          .ai-bubble-content blockquote { border-left: 3px solid rgba(0, 96, 231, 0.1); padding-left: 10px; color: #475569; font-style: italic; }
+        </style>
+
+        <button onclick="toggleAIChat()" id="aiFloatBtn">
+          <i class="fas fa-robot" style="color: white; font-size: 1.5rem;"></i>
+        </button>
+
+        <div id="aiChatWidget">
+          <div style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); padding: 16px 20px; display: flex; align-items: center; justify-content: space-between;">
+            <div style="display: flex; align-items: center; gap: 12px;">
+              <div style="width: 36px; height: 36px; background: rgba(255,255,255,0.2); border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                <i class="fas fa-brain" style="color: white; font-size: 1.1rem;"></i>
+              </div>
+              <div style="font-family: 'Bricolage Grotesque', sans-serif;">
+                <h3 style="color: white; margin: 0; font-size: 1rem; font-weight: 600;">Cassandra AI</h3>
+                <span style="color: rgba(255,255,255,0.9); font-size: 0.75rem; display: flex; align-items: center; gap: 6px;">
+                  <span style="width: 8px; height: 8px; background: #a7f3d0; border-radius: 50%; display: inline-block; box-shadow: 0 0 5px #a7f3d0;"></span>
+                  Reading Assistant
+                </span>
+              </div>
+            </div>
+            <div style="display: flex; gap: 8px;">
+              <button onclick="toggleFullscreen()" style="width: 32px; height: 32px; background: rgba(255,255,255,0.2); border: none; border-radius: 8px; cursor: pointer; color: white; display: flex; align-items: center; justify-content: center; transition: background 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.3)'" onmouseout="this.style.background='rgba(255,255,255,0.2)'">
+                <i class="fas fa-expand" style="font-size: 0.875rem;"></i>
+              </button>
+              <button onclick="toggleAIChat()" style="width: 32px; height: 32px; background: rgba(255,255,255,0.2); border: none; border-radius: 8px; cursor: pointer; color: white; display: flex; align-items: center; justify-content: center; transition: background 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.3)'" onmouseout="this.style.background='rgba(255,255,255,0.2)'">
+                <i class="fas fa-times" style="font-size: 0.875rem;"></i>
+              </button>
+            </div>
+          </div>
+
+          <div id="chatMessages" style="flex: 1; padding: 20px; overflow-y: auto; background: #f4f7f9; font-family: 'Bricolage Grotesque', sans-serif;">
+            <div id="welcomeMessage" style="text-align: center; margin-top: 40px; margin-bottom: 20px;">
+              <div style="width: 70px; height: 70px; background: rgba(16, 185, 129, 0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px;">
+                <i class="fas fa-robot" style="color: #10b981; font-size: 2rem;"></i>
+              </div>
+              <h2 style="color: #0f172a; margin-bottom: 8px; font-size: 1.1rem; font-weight: 600;">How can I assist your reading?</h2>
+              <p style="color: #64748b; font-size: 0.85rem; line-height: 1.5; max-width: 250px; margin: 0 auto;">
+                I can help explain concepts or answer questions about these notes.
+              </p>
+            </div>
+          </div>
+
+          <div style="padding: 16px; background: white; border-top: 1px solid #e2e8f0; font-family: 'Bricolage Grotesque', sans-serif;">
+            <div style="display: flex; gap: 12px; align-items: center; background: #F8FAFC; border: 1px solid #e2e8f0; border-radius: 24px; padding: 6px 6px 6px 16px; transition: border-color 0.2s;" id="chatInputWrapper">
+              <input type="text" id="chatInput" placeholder="Ask Cassandra..." onkeypress="if(event.key === 'Enter') sendChatMessage()" onfocus="document.getElementById('chatInputWrapper').style.borderColor='#10b981'" onblur="document.getElementById('chatInputWrapper').style.borderColor='#e2e8f0'" style="flex: 1; border: none; background: transparent; font-size: 0.9rem; outline: none; color: #0f172a; font-family: inherit;">
+              <button onclick="sendChatMessage()" id="chatSendBtn" style="width: 36px; height: 36px; background: #10b981; border: none; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; color: white; transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
+                <i class="fas fa-paper-plane" style="font-size: 0.85rem; margin-right: 2px; margin-top: 2px;"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"><\/script>
+        <script>
+          const INJECTED_API_URL = 'https://cassandra-student-chatbot-fpfyfedfc6ezh2fz.canadacentral-01.azurewebsites.net/api'; 
+          const injectedStudentId = '${studentId}';
+          const injectedCourseId = '${courseId}';
+
+          let isChatOpen = false;
+          let isFullscreen = false;
+
+          function toggleAIChat() {
+              const widget = document.getElementById('aiChatWidget');
+              const floatBtn = document.getElementById('aiFloatBtn');
+              isChatOpen = !isChatOpen;
+              
+              if (isChatOpen) {
+                  widget.classList.add('active');
+                  floatBtn.innerHTML = '<i class="fas fa-times" style="color: white; font-size: 1.5rem;"></i>';
+                  if (document.querySelectorAll('#chatMessages > div').length <= 1) {
+                      loadChatHistory();
+                  }
+              } else {
+                  widget.classList.remove('active');
+                  widget.classList.remove('fullscreen');
+                  isFullscreen = false;
+                  floatBtn.innerHTML = '<i class="fas fa-robot" style="color: white; font-size: 1.5rem;"></i>';
+              }
+          }
+
+          function toggleFullscreen() {
+              const widget = document.getElementById('aiChatWidget');
+              isFullscreen = !isFullscreen;
+              if (isFullscreen) {
+                  widget.classList.add('fullscreen');
+              } else {
+                  widget.classList.remove('fullscreen');
+              }
+          }
+
+          async function loadChatHistory() {
+              if (!injectedCourseId || !injectedStudentId) return;
+              
+              try {
+                  const response = await fetch(INJECTED_API_URL + '/history?student_id=' + injectedStudentId + '&course_id=' + injectedCourseId);
+                  const data = await response.json();
+                  
+                  if (data.history && data.history.length > 0) {
+                      const messagesContainer = document.getElementById('chatMessages');
+                      messagesContainer.innerHTML = ''; 
+                      
+                      data.history.forEach(msg => {
+                          appendUserMessage(msg.message);
+                          appendAIMessage(msg.response);
+                      });
+                      
+                      messagesContainer.scrollTop = messagesContainer.scrollHeight;
+                  }
+              } catch (error) {
+                  console.error("Error loading chat history:", error);
+              }
+          }
+
+          function appendUserMessage(text) {
+              const messages = document.getElementById('chatMessages');
+              const div = document.createElement('div');
+              div.style.cssText = 'display: flex; justify-content: flex-end; margin-bottom: 12px; font-family: "Bricolage Grotesque", sans-serif;';
+              div.innerHTML = '<div style="max-width: 80%; background: #10b981; color: white; padding: 10px 14px; border-radius: 16px 16px 4px 16px; font-size: 0.9rem; line-height: 1.4;">' + text + '</div>';
+              messages.appendChild(div);
+          }
+
+          function appendAIMessage(markdownText) {
+              const messages = document.getElementById('chatMessages');
+              const div = document.createElement('div');
+              div.style.cssText = 'display: flex; justify-content: flex-start; margin-bottom: 12px; font-family: "Bricolage Grotesque", sans-serif;';
+              
+              let htmlContent = markdownText;
+              if (typeof marked !== 'undefined') {
+                  htmlContent = marked.parse(markdownText);
+              }
+              
+              div.innerHTML = '<div class="ai-bubble-content"><div style="display: flex; align-items: center; gap: 6px; margin-bottom: 6px; color: #10b981; font-weight: 600; font-size: 0.8rem;"><i class="fas fa-robot"></i> Cassandra AI</div><div>' + htmlContent + '</div></div>';
+              messages.appendChild(div);
+          }
+
+          async function sendChatMessage() {
+              const input = document.getElementById('chatInput');
+              const btn = document.getElementById('chatSendBtn');
+              const messages = document.getElementById('chatMessages');
+              const message = input.value.trim();
+              
+              if (!message) return;
+              
+              const welcomeMsg = document.getElementById('welcomeMessage');
+              if (welcomeMsg) welcomeMsg.remove();
+              
+              appendUserMessage(message);
+              input.value = '';
+              messages.scrollTop = messages.scrollHeight;
+              
+              input.disabled = true;
+              btn.disabled = true;
+
+              const loadingId = 'loading-' + Date.now();
+              const loadingDiv = document.createElement('div');
+              loadingDiv.id = loadingId;
+              loadingDiv.style.cssText = 'display: flex; justify-content: flex-start; margin-bottom: 12px; font-family: "Bricolage Grotesque", sans-serif;';
+              loadingDiv.innerHTML = '<div style="max-width: 85%; background: white; color: #64748b; padding: 12px 16px; border-radius: 16px 16px 16px 4px; font-size: 0.9rem; border: 1px solid #e2e8f0; font-style: italic;">Cassandra is thinking... <i class="fas fa-circle-notch fa-spin" style="margin-left: 5px;"></i></div>';
+              messages.appendChild(loadingDiv);
+              messages.scrollTop = messages.scrollHeight;
+
+              try {
+                  const response = await fetch(INJECTED_API_URL + '/chat', {
+                      method: 'POST', 
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ 
+                          message: message, 
+                          student_id: injectedStudentId,
+                          course_id: injectedCourseId
+                      })
+                  });
+
+                  const data = await response.json();
+                  const loader = document.getElementById(loadingId);
+                  if (loader) loader.remove();
+
+                  const aiResponse = data.response || "I'm sorry, I couldn't process your request. Please try again.";
+                  appendAIMessage(aiResponse);
+
+              } catch (error) {
+                  const loader = document.getElementById(loadingId);
+                  if (loader) loader.remove();
+                  appendAIMessage("❌ **Connection Error**: Could not connect to the backend server. Make sure your Python API is running!");
+                  console.error("Chat Error:", error);
+              } finally {
+                  input.disabled = false;
+                  btn.disabled = false;
+                  input.focus();
+                  messages.scrollTop = messages.scrollHeight;
+              }
+          }
+        <\/script>
+        <!-- END AI CHATBOT INJECTION -->
+        `;
+    }
+
+    async function viewLectureHTML(event, fileUrl, courseId, folderName) {
+      const btn = event.currentTarget;
+      const originalHTML = btn.innerHTML;
+      btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Loading...';
+      btn.disabled = true;
+
+      try {
+        const response = await fetch(fileUrl);
+        if (!response.ok) throw new Error('Failed to fetch file content');
+        let htmlText = await response.text();
+
+        const mediaRegex = /(?:src|href)=["'](?:\.\/)?(media\/[^"']+)["']/gi;
+        const mediaPaths = new Set();
+        let match;
+        
+        while ((match = mediaRegex.exec(htmlText)) !== null) {
+          mediaPaths.add(match[1]);
+        }
+
+        for (const path of mediaPaths) {
+          const { data: signedData } = await supabaseClient
+            .storage
+            .from('generated_notes')
+            .createSignedUrl(courseId + '/' + folderName + '/' + path, 60 * 60 * 24);
+
+          if (signedData && signedData.signedUrl) {
+            htmlText = htmlText.split('"' + path + '"').join('"' + signedData.signedUrl + '"');
+            htmlText = htmlText.split('"./' + path + '"').join('"' + signedData.signedUrl + '"');
+            htmlText = htmlText.split("'" + path + "'").join("'" + signedData.signedUrl + "'");
+            htmlText = htmlText.split("'./" + path + "'").join("'" + signedData.signedUrl + "'");
+          }
+        }
+
+        // --- DYNAMICALLY INJECT CHATBOT INTO NOTES ---
+        const chatbotCode = getChatbotInjectionCode(courseId, currentStudentId);
+        if (htmlText.indexOf('</body>') !== -1) {
+            htmlText = htmlText.replace('</body>', chatbotCode + '</body>');
+        } else {
+            htmlText += chatbotCode;
+        }
+
+        const newWindow = window.open('', '_blank');
+        if (newWindow) {
+          newWindow.document.open();
+          newWindow.document.write(htmlText);
+          newWindow.document.close();
+        } else {
+          alert('Please allow pop-ups to view the notes.');
+        }
+
+      } catch (err) {
+        console.error("View Error:", err);
+        alert("Failed to open lecture notes. Please ensure you have network access.");
+      } finally {
+        btn.innerHTML = originalHTML;
+        btn.disabled = false;
+      }
+    }
+
+    async function downloadAsPDF(fileUrl, lectureName, courseId, folderName) {
+      const overlay = document.getElementById('pdfLoadingOverlay');
+      overlay.classList.add('active');
+      
+      try {
+        const response = await fetch(fileUrl);
+        if (!response.ok) throw new Error('Failed to fetch file content');
+        let htmlText = await response.text();
+
+        const mediaRegex = /(?:src|href)=["'](?:\.\/)?(media\/[^"']+)["']/gi;
+        const mediaPaths = new Set();
+        let match;
+        
+        while ((match = mediaRegex.exec(htmlText)) !== null) {
+          mediaPaths.add(match[1]);
+        }
+
+        for (const path of mediaPaths) {
+          const { data: signedData } = await supabaseClient
+            .storage
+            .from('generated_notes')
+            .createSignedUrl(courseId + '/' + folderName + '/' + path, 60 * 60 * 24);
+
+          if (signedData && signedData.signedUrl) {
+            htmlText = htmlText.split('"' + path + '"').join('"' + signedData.signedUrl + '"');
+            htmlText = htmlText.split('"./' + path + '"').join('"' + signedData.signedUrl + '"');
+            htmlText = htmlText.split("'" + path + "'").join("'" + signedData.signedUrl + "'");
+            htmlText = htmlText.split("'./" + path + "'").join("'" + signedData.signedUrl + "'");
+          }
+        }
+
+        const printWindow = window.open('', '_blank');
+        if (!printWindow) {
+          alert('Please allow pop-ups to download PDF.');
+          return;
+        }
+
+        const printHTML = 
+          '<!DOCTYPE html>' +
+          '<html>' +
+          '<head>' +
+            '<meta charset="UTF-8">' +
+            '<title>' + lectureName + '</title>' +
+            '<style>' +
+              '@page { size: A4; margin: 15mm; }' +
+              '* { box-sizing: border-box; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }' +
+              'body { font-family: "Bricolage Grotesque", -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif; font-size: 11pt; line-height: 1.6; color: #37352f; margin: 0; padding: 0; }' +
+              'h1 { font-size: 24pt; font-weight: 700; margin-top: 0; margin-bottom: 0.5em; color: #0060e7; page-break-after: avoid; }' +
+              'h2 { font-size: 18pt; font-weight: 600; margin-top: 1.2em; margin-bottom: 0.5em; color: #0060e7; page-break-after: avoid; border-bottom: 1px solid #e0e0e0; padding-bottom: 8px; }' +
+              'h3 { font-size: 14pt; font-weight: 600; margin-top: 1em; margin-bottom: 0.5em; color: #0060e7; page-break-after: avoid; }' +
+              'p { margin-bottom: 0.8em; orphans: 3; widows: 3; }' +
+              'ul, ol { margin-bottom: 0.8em; padding-left: 1.5em; }' +
+              'li { margin-bottom: 0.3em; }' +
+              'img { max-width: 100%; height: auto; display: block; margin: 15px auto; page-break-inside: avoid; }' +
+              'table { width: 100%; border-collapse: collapse; margin: 15px 0; font-size: 10pt; page-break-inside: avoid; }' +
+              'th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }' +
+              'th { background-color: #f7f7f5 !important; font-weight: 600; }' +
+              'tr { page-break-inside: avoid; }' +
+              'pre { background-color: #f7f7f5 !important; padding: 12px; border-radius: 4px; overflow-x: auto; font-size: 9pt; page-break-inside: avoid; border: 1px solid #e0e0e0; }' +
+              'code { font-family: Consolas, Monaco, monospace; background-color: rgba(135,131,120,0.15); padding: 2px 4px; border-radius: 3px; font-size: 9pt; }' +
+              'blockquote { border-left: 4px solid #0060e7; margin: 15px 0; padding: 10px 15px; background-color: #f8f9fa; page-break-inside: avoid; }' +
+              'mjx-container { page-break-inside: avoid; margin: 10px 0; }' +
+              '.page-break { page-break-before: always; }' +
+            '</style>' +
+            '<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"><\/script>' +
+            '<script>' +
+              'window.onload = function() {' +
+                'if (window.MathJax) {' +
+                  'MathJax.typesetPromise().then(function() {' +
+                    'setTimeout(function() { window.print(); }, 500);' +
+                  '});' +
+                '} else {' +
+                  'setTimeout(function() { window.print(); }, 1000);' +
+                '}' +
+              '};' +
+            '<\/script>' +
+          '</head>' +
+          '<body>' +
+            htmlText +
+          '</body>' +
+          '</html>';
+
+        printWindow.document.write(printHTML);
+        printWindow.document.close();
+
+        showToast('PDF opened in new tab. Use Ctrl+S to save.');
+
+      } catch (err) {
+        console.error("PDF Generation Error:", err);
+        alert("Failed to generate PDF. Please try the View option and use Ctrl+P to save as PDF manually.");
+      } finally {
+        overlay.classList.remove('active');
+      }
+    }
+    
+    function showToast(message) {
+      const toast = document.createElement('div');
+      toast.style.cssText = 
+        'position: fixed;' +
+        'bottom: 32px;' +
+        'left: 50%;' +
+        'transform: translateX(-50%);' +
+        'background: var(--text-main);' +
+        'color: white;' +
+        'padding: 16px 24px;' +
+        'border-radius: 50px;' +
+        'display: flex;' +
+        'align-items: center;' +
+        'gap: 12px;' +
+        'box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1);' +
+        'z-index: 10000;' +
+        'font-weight: 500;' +
+        'font-size: 0.95rem;' +
+        'animation: fadeInUp 0.4s ease;';
+      
+      toast.innerHTML = '<i class="fas fa-check-circle"></i> ' + message;
+      document.body.appendChild(toast);
+      
+      setTimeout(function() {
+        toast.style.animation = 'fadeInDown 0.4s ease';
+        setTimeout(function() { 
+          toast.remove(); 
+        }, 400);
+      }, 3000);
+    }
+    
+    async function logoutUser() { 
+      await supabaseClient.auth.signOut(); 
+      window.location.href = 'student-login.html';
+    }
+  </script>
+</body>
+</html>

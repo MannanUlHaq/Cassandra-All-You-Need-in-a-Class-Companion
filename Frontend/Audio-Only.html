@@ -1,0 +1,537 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Audio Only Recorder | Cassandra</title>
+    <link rel="icon" type="image/png" href="Assets/favicon.png">
+    
+    <!-- Supabase -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    
+    <!-- Tailwind & Fonts -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,500;12..96,600;12..96,700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        :root {
+            --primary: #0060e7; --primary-dark: #004ba8; --primary-alpha: rgba(0, 96, 231, 0.1);
+            --danger: #ef4444; --danger-dark: #dc2626; --danger-alpha: rgba(239, 68, 68, 0.1);
+            --warning: #f59e0b;
+            --bg-body: #f4f7f9; --bg-surface: #ffffff; --bg-dark: #0f172a;
+            --text-main: #0f172a; --text-muted: #64748b;
+            --border-color: #e2e8f0;
+            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        body { font-family: 'Bricolage Grotesque', sans-serif; background-color: var(--bg-body); }
+        .font-inter { font-family: 'Inter', sans-serif; }
+        
+        .hidden { display: none !important; }
+
+        /* Unified Header Styles */
+        .app-header { height: 72px; background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(12px); border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; padding: 0 2rem; z-index: 50; flex-shrink: 0; }
+        .brand-logo { display: flex; align-items: center; text-decoration: none; }
+        .brand-logo img { height: 40px; }
+        .top-nav { display: flex; align-items: center; gap: 1.5rem; border-left: 1px solid var(--border-color); padding-left: 1.5rem; margin-left: 2rem;}
+        .nav-link { text-decoration: none; color: var(--text-muted); font-weight: 600; font-size: 0.95rem; display: flex; align-items: center; gap: 0.5rem; padding: 0.5rem; border-radius: 8px; transition: var(--transition); }
+        .nav-link:hover { color: var(--primary); background: var(--primary-alpha); }
+        
+        .recording-indicator { display: flex; align-items: center; gap: 0.5rem; background: white; padding: 0.4rem 1rem; border-radius: 50px; border: 1px solid var(--border-color); }
+        .connection-status { background: var(--warning); color: white; padding: 0.4rem 1rem; border-radius: 50px; font-weight: 600; font-size: 0.85rem; }
+
+        /* Animations */
+        @keyframes pulse-ring { 0% { transform: scale(0.95); opacity: 1; } 100% { transform: scale(1.3); opacity: 0; } }
+        @keyframes pulse-dot { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.5; transform: scale(1.1); } }
+        .animate-pulse-ring { animation: pulse-ring 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
+        .pulse-dot { width: 12px; height: 12px; background: var(--danger); border-radius: 50%; animation: pulse-dot 2s infinite; }
+        
+        /* Waveform Animation */
+        .waveform { display: flex; align-items: center; justify-content: center; gap: 4px; height: 60px; }
+        .bar { width: 4px; background: linear-gradient(180deg, #0ea5e9 0%, #38bdf8 100%); border-radius: 4px; animation: wave 1.2s ease-in-out infinite; }
+        .bar:nth-child(1) { animation-delay: 0s; } .bar:nth-child(2) { animation-delay: 0.1s; }
+        .bar:nth-child(3) { animation-delay: 0.2s; } .bar:nth-child(4) { animation-delay: 0.3s; }
+        .bar:nth-child(5) { animation-delay: 0.4s; } .bar:nth-child(6) { animation-delay: 0.3s; }
+        .bar:nth-child(7) { animation-delay: 0.2s; } .bar:nth-child(8) { animation-delay: 0.1s; }
+        @keyframes wave { 0%, 100% { height: 10px; } 50% { height: 50px; } }
+
+        /* Scrollbar styles for Agenda Textarea */
+        #agenda-content::-webkit-scrollbar { width: 8px; }
+        #agenda-content::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 8px; }
+        #agenda-content::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 8px; }
+        #agenda-content::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
+        /* Custom Alert Toast */
+        .custom-alert { position: fixed; top: 6rem; right: 2rem; background: var(--text-main); color: white; padding: 1rem 1.5rem; border-radius: 12px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1); z-index: 1000; display: flex; align-items: center; gap: 1rem; border-left: 4px solid var(--primary); transform: translateX(150%); transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1); font-weight: 500; }
+        .custom-alert.show { transform: translateX(0); }
+        .custom-alert.warning { border-left-color: var(--warning); }
+    </style>
+</head>
+<body class="flex flex-col h-screen antialiased overflow-hidden">
+
+    <!-- Unified Header -->
+    <header class="app-header">
+        <div style="display: flex; align-items: center;">
+            <a href="teacher-dashboard.html" class="brand-logo" id="logo-link">
+                <img src="Assets/Cassandra-Logo.png" alt="Cassandra" onerror="this.outerHTML='<h2 style=\'color: var(--primary); font-weight: 800; font-size: 1.5rem; margin: 0;\'>Cassandra.</h2>'">
+            </a>
+            <nav class="top-nav">
+                <a href="teacher-dashboard.html" class="nav-link" id="dashboard-link"><i class="fas fa-home"></i> Dashboard</a>
+            </nav>
+        </div>
+
+        <div style="display: flex; align-items: center; gap: 1.5rem;">
+            <div id="offline-indicator" class="connection-status hidden">
+                <i class="fas fa-wifi-slash"></i> Offline - Saving Locally
+            </div>
+            
+            <div style="display: flex; align-items: center; gap: 1rem;">
+                <div id="recording-status" class="recording-indicator hidden">
+                    <span class="pulse-dot"></span> <span class="text-sm font-bold text-red-600 uppercase tracking-wide ml-1">Recording</span>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Workspace (Split Grid) -->
+    <main class="flex-1 p-4 md:p-8 overflow-y-auto flex items-center justify-center">
+        <div class="max-w-6xl w-full grid grid-cols-1 lg:grid-cols-12 gap-8 min-h-[500px]">
+            
+            <!-- Left: Recording Card (takes up 7 columns) -->
+            <div class="lg:col-span-7 flex flex-col justify-center">
+                <div class="bg-white rounded-3xl shadow-xl p-10 md:p-12 text-center border border-slate-100">
+                    
+                    <!-- Timer Display -->
+                    <div class="mb-8 font-inter">
+                        <div class="text-6xl md:text-7xl font-bold text-slate-800 tabular-nums tracking-tight" id="timer">00:00:00</div>
+                        <p class="text-slate-500 mt-3 text-sm font-medium" id="status-text">Ready to record your audio lecture</p>
+                    </div>
+
+                    <!-- Waveform Animation -->
+                    <div id="waveform" class="waveform mb-8 hidden">
+                        <div class="bar"></div><div class="bar"></div><div class="bar"></div><div class="bar"></div>
+                        <div class="bar"></div><div class="bar"></div><div class="bar"></div><div class="bar"></div>
+                    </div>
+
+                    <!-- Control Buttons -->
+                    <div class="flex justify-center gap-6 items-center">
+                        <!-- Start Button -->
+                        <button id="start-btn" class="group relative">
+                            <div class="absolute inset-0 bg-red-500 rounded-full opacity-25 animate-pulse-ring"></div>
+                            <div class="relative flex items-center justify-center w-20 h-20 bg-red-600 hover:bg-red-700 rounded-full shadow-2xl transition-all transform hover:scale-110 active:scale-95">
+                                <i id="start-icon" class="fas fa-play text-white text-2xl ml-1"></i>
+                            </div>
+                        </button>
+
+                        <!-- Stop Button -->
+                        <button id="stop-btn" class="hidden group relative">
+                            <div class="relative flex items-center justify-center w-20 h-20 bg-slate-700 hover:bg-slate-800 rounded-full shadow-2xl transition-all transform hover:scale-110 active:scale-95">
+                                <i class="fas fa-stop text-white text-2xl"></i>
+                            </div>
+                        </button>
+
+                        <!-- Pause Button -->
+                        <button id="pause-btn" class="hidden group relative">
+                            <div class="relative flex items-center justify-center w-16 h-16 bg-amber-500 hover:bg-amber-600 rounded-full shadow-xl transition-all transform hover:scale-110 active:scale-95">
+                                <i class="fas fa-pause text-white text-xl"></i>
+                            </div>
+                        </button>
+
+                        <!-- Resume Button -->
+                        <button id="resume-btn" class="hidden group relative">
+                            <div class="relative flex items-center justify-center w-16 h-16 bg-emerald-500 hover:bg-emerald-600 rounded-full shadow-xl transition-all transform hover:scale-110 active:scale-95">
+                                <i class="fas fa-play text-white text-xl ml-0.5"></i>
+                            </div>
+                        </button>
+                    </div>
+
+                    <div class="mt-8 text-sm text-slate-500 font-inter">
+                        <p id="hint-text">Click the red button to start capturing audio.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right: Agenda Card (takes up 5 columns) -->
+            <div class="lg:col-span-5 flex flex-col h-full max-h-[600px] bg-white rounded-3xl shadow-xl border border-slate-100 overflow-hidden">
+                <div class="bg-slate-800 text-white p-5 flex items-center justify-between shrink-0">
+                    <div class="flex items-center gap-3">
+                        <i class="fas fa-list-ul text-sky-400 text-xl"></i>
+                        <h2 class="font-bold text-lg tracking-wide font-inter">Lecture Agenda</h2>
+                    </div>
+                    <button id="save-agenda-btn" class="hidden text-sm bg-sky-600 hover:bg-sky-500 px-3 py-1.5 rounded-md transition-colors flex items-center gap-2 font-medium disabled:opacity-50">
+                        <i class="fas fa-save"></i> Save
+                    </button>
+                </div>
+                <div class="p-6 flex flex-col flex-1 bg-slate-50">
+                    <div id="agenda-loading" class="flex flex-col items-center justify-center h-full text-slate-400 space-y-3">
+                        <i class="fas fa-circle-notch fa-spin text-2xl text-sky-500"></i>
+                        <p class="text-sm font-medium font-inter">Fetching agenda...</p>
+                    </div>
+                    <textarea id="agenda-content" class="hidden flex-1 w-full h-full bg-transparent resize-none outline-none font-inter text-slate-700 text-base leading-relaxed" placeholder="Type or edit your lecture outline here..."></textarea>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <!-- Processing Overlay -->
+    <div id="processing-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 hidden font-inter">
+        <div class="bg-white rounded-2xl shadow-2xl p-8 text-center max-w-sm w-full">
+            <i class="fas fa-circle-notch fa-spin text-4xl text-sky-600 mb-4"></i>
+            <h3 class="text-xl font-bold text-slate-800 mb-2">Finalizing Audio...</h3>
+            <p class="text-slate-500 text-sm">Please wait while your lecture is being sent to the processing pipeline.</p>
+        </div>
+    </div>
+
+    <script>
+        // --- 1. CONFIGURATION & STATE ---
+        const API_URL = 'https://cassandra-audio-only-mode-recording-btf4dactcegvdsg3.canadacentral-01.azurewebsites.net/api'; // Optional legacy backend
+        const SUPABASE_URL = 'https://lchcfsgexlkjxrhfjrna.supabase.co'; 
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxjaGNmc2dleGxranhyaGZqcm5hIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2MDI4NDIxNywiZXhwIjoyMDc1ODYwMjE3fQ.u8xbJWho6qFVW5f7tmhtK9hq5X5ApQVC4QK04jfjj0k'; 
+        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        
+        const urlParams = new URLSearchParams(window.location.search);
+        
+        let state = {
+            courseId: urlParams.get('id') || urlParams.get('course_id') || 'demo_course',
+            sessionId: urlParams.get('session_id') || `session_${Date.now()}`,
+            isRecording: false,
+            isPaused: false,
+            startTime: 0,
+            pausedTime: 0,
+            elapsedBeforePause: 0,
+            isOnline: navigator.onLine
+        };
+
+        // Audio System & Queue
+        let mediaRecorder;
+        let audioChunks = [];
+        let audioStream;
+        let offlineAudioQueue = [];
+        let timerInterval;
+
+        // Elements
+        const ui = {
+            timer: document.getElementById('timer'),
+            statusText: document.getElementById('status-text'),
+            hintText: document.getElementById('hint-text'),
+            startBtn: document.getElementById('start-btn'),
+            startIcon: document.getElementById('start-icon'),
+            stopBtn: document.getElementById('stop-btn'),
+            pauseBtn: document.getElementById('pause-btn'),
+            resumeBtn: document.getElementById('resume-btn'),
+            recordingStatus: document.getElementById('recording-status'),
+            waveform: document.getElementById('waveform'),
+            offlineInd: document.getElementById('offline-indicator'),
+            agendaLoading: document.getElementById('agenda-loading'),
+            agendaContent: document.getElementById('agenda-content'),
+            saveAgendaBtn: document.getElementById('save-agenda-btn'),
+            processingModal: document.getElementById('processing-modal')
+        };
+
+        // --- 2. INITIALIZATION & AGENDA LOGIC ---
+        document.addEventListener('DOMContentLoaded', async () => {
+            try {
+                const filePath = `${state.courseId}/${state.sessionId}/agenda.txt`;
+                const { data, error } = await supabaseClient.storage.from('lecture_agenda').download(filePath);
+                
+                if (error) throw error;
+                
+                const text = await data.text();
+                ui.agendaContent.value = text;
+                ui.agendaLoading.classList.add('hidden');
+                ui.agendaContent.classList.remove('hidden');
+            } catch (err) {
+                console.error("Error fetching agenda:", err);
+                ui.agendaLoading.classList.add('hidden');
+                ui.agendaContent.classList.remove('hidden');
+                ui.agendaContent.value = "";
+                ui.agendaContent.placeholder = "No agenda found. Type your outline here...";
+            }
+        });
+
+        ui.agendaContent.addEventListener('input', () => {
+            ui.saveAgendaBtn.classList.remove('hidden');
+        });
+
+        ui.saveAgendaBtn.addEventListener('click', async () => {
+            const newText = ui.agendaContent.value;
+            const originalHTML = '<i class="fas fa-save"></i> Save';
+            
+            ui.saveAgendaBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+            ui.saveAgendaBtn.disabled = true;
+
+            try {
+                const filePath = `${state.courseId}/${state.sessionId}/agenda.txt`;
+                const blob = new Blob([newText], { type: 'text/plain;charset=utf-8' });
+                
+                const { error } = await supabaseClient.storage.from('lecture_agenda').upload(filePath, blob, { upsert: true });
+                if (error) throw error;
+                
+                ui.saveAgendaBtn.innerHTML = '<i class="fas fa-check"></i> Saved';
+                ui.saveAgendaBtn.classList.replace('bg-sky-600', 'bg-emerald-600');
+                ui.saveAgendaBtn.classList.replace('hover:bg-sky-500', 'hover:bg-emerald-500');
+                
+                setTimeout(() => {
+                    ui.saveAgendaBtn.classList.add('hidden');
+                    ui.saveAgendaBtn.innerHTML = originalHTML;
+                    ui.saveAgendaBtn.classList.replace('bg-emerald-600', 'bg-sky-600');
+                    ui.saveAgendaBtn.classList.replace('hover:bg-emerald-500', 'hover:bg-sky-500');
+                    ui.saveAgendaBtn.disabled = false;
+                }, 2000);
+            } catch (err) {
+                console.error('Error saving agenda:', err);
+                alert('Failed to save agenda to cloud.');
+                ui.saveAgendaBtn.innerHTML = originalHTML;
+                ui.saveAgendaBtn.disabled = false;
+            }
+        });
+
+        // --- 3. ALERTS AND BUCKET CLEANING ---
+        function showCustomAlert(message, type = 'info') {
+            const alertBox = document.createElement('div');
+            alertBox.className = `custom-alert ${type === 'warning' ? 'warning' : ''}`;
+            const iconColor = type === 'warning' ? '#f59e0b' : '#60a5fa';
+            alertBox.innerHTML = `<i class="fas ${type === 'warning' ? 'fa-exclamation-triangle' : 'fa-sparkles'}" style="color: ${iconColor};"></i> <span class="font-inter text-sm">${message}</span>`;
+            document.body.appendChild(alertBox);
+            requestAnimationFrame(() => alertBox.classList.add('show'));
+            setTimeout(() => {
+                alertBox.classList.remove('show');
+                setTimeout(() => alertBox.remove(), 400);
+            }, 4000);
+        }
+
+        async function clearOldClassData(courseId, bucketName) {
+            try {
+                const { data: items, error: listError } = await supabaseClient.storage.from(bucketName).list(courseId);
+                if (listError) throw listError;
+                if (!items || items.length === 0) return;
+
+                let filesToRemove = [];
+                for (const item of items) {
+                    const subPath = `${courseId}/${item.name}`;
+                    const { data: subItems, error: subError } = await supabaseClient.storage.from(bucketName).list(subPath);
+                    if (!subError && subItems && subItems.length > 0) {
+                        subItems.forEach(file => {
+                            if(file.name !== '.emptyFolderPlaceholder') filesToRemove.push(`${subPath}/${file.name}`);
+                        });
+                    } else {
+                        filesToRemove.push(subPath);
+                    }
+                }
+                if (filesToRemove.length > 0) {
+                    await supabaseClient.storage.from(bucketName).remove(filesToRemove);
+                }
+            } catch (err) {
+                console.error(`Failed to clear old data from ${bucketName}:`, err);
+            }
+        }
+
+        // --- 4. MEDIA RECORDER LOGIC ---
+        async function initMicrophone() {
+            try { 
+                audioStream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true } }); 
+                return true; 
+            } catch (e) { 
+                showCustomAlert('Microphone access is required to record audio.', 'warning'); 
+                return false; 
+            }
+        }
+
+        function startAudioChunk() {
+            audioChunks = [];
+            mediaRecorder = new MediaRecorder(audioStream, { mimeType: 'audio/webm' });
+            
+            mediaRecorder.ondataavailable = e => { if (e.data.size > 0) audioChunks.push(e.data); };
+            
+            mediaRecorder.onstop = () => {
+                const blob = new Blob(audioChunks, { type: 'audio/webm' });
+                handleAudioUpload(blob);
+            };
+            
+            mediaRecorder.start();
+        }
+
+        async function handleAudioUpload(audioBlob) {
+            const timestamp = Date.now();
+            const fileName = `${state.courseId}/${state.sessionId}/audio_part_${timestamp}.webm`;
+
+            if (!state.isOnline) {
+                offlineAudioQueue.push({ fileName, blob: audioBlob });
+                return;
+            }
+
+            try {
+                await supabaseClient.storage.from('lecture_audio').upload(fileName, audioBlob, { upsert: true });
+            } catch (error) {
+                offlineAudioQueue.push({ fileName, blob: audioBlob });
+            }
+        }
+
+        async function processOfflineQueue() {
+            while (offlineAudioQueue.length > 0 && state.isOnline) {
+                const item = offlineAudioQueue.shift();
+                try {
+                    await supabaseClient.storage.from('lecture_audio').upload(item.fileName, item.blob, { upsert: true });
+                } catch(e) {
+                    offlineAudioQueue.unshift(item); 
+                    break;
+                }
+            }
+        }
+
+        // --- 5. CONTROL BUTTON HANDLERS ---
+        ui.startBtn.addEventListener('click', async () => {
+            const hasMic = await initMicrophone();
+            if (!hasMic) return;
+
+            // Clear old audio before starting
+            ui.startBtn.disabled = true;
+            ui.startIcon.className = "fas fa-spinner fa-spin text-white text-2xl ml-1";
+            
+            await clearOldClassData(state.courseId, 'lecture_audio');
+
+            fetch(`${API_URL}/start_session`, { method: 'POST' }).catch(e => {});
+
+            state.isRecording = true;
+            state.isPaused = false;
+            state.startTime = Date.now();
+            state.elapsedBeforePause = 0;
+            
+            ui.startBtn.disabled = false;
+            ui.startIcon.className = "fas fa-play text-white text-2xl ml-1";
+            
+            startAudioChunk();
+            startTimer();
+            updateUI();
+            
+            showCustomAlert("Recording started. Audio is auto-saving.");
+        });
+
+        ui.pauseBtn.addEventListener('click', () => {
+            state.isPaused = true;
+            state.pausedTime = Date.now();
+            state.elapsedBeforePause += (state.pausedTime - state.startTime);
+            
+            if(mediaRecorder && mediaRecorder.state !== 'inactive') mediaRecorder.stop();
+            
+            stopTimer();
+            updateUI();
+        });
+
+        ui.resumeBtn.addEventListener('click', () => {
+            state.isPaused = false;
+            state.startTime = Date.now();
+            
+            startAudioChunk();
+            startTimer();
+            updateUI();
+        });
+
+        ui.stopBtn.addEventListener('click', async () => {
+            state.isRecording = false;
+            stopTimer();
+            updateUI();
+
+            ui.processingModal.classList.remove('hidden');
+
+            // Wait for final chunk to be created and uploaded
+            await new Promise((resolve) => {
+                if(mediaRecorder && mediaRecorder.state !== 'inactive') {
+                    mediaRecorder.onstop = async () => {
+                        const blob = new Blob(audioChunks, { type: 'audio/webm' });
+                        await handleAudioUpload(blob);
+                        resolve();
+                    };
+                    mediaRecorder.stop();
+                } else {
+                    resolve();
+                }
+            });
+
+            if(audioStream) audioStream.getTracks().forEach(t => t.stop());
+
+            // 1. End Legacy backend session (if any)
+            try {
+                await fetch(`${API_URL}/end_session`, {
+                    method: 'POST', 
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ session_id: state.sessionId, course_id: state.courseId })
+                });
+            } catch(e) {}
+
+            // 2. Trigger Azure Pipeline for Notes Generation
+            const AZURE_PIPELINE_URL = 'https://cassandra-audio-only-pipeline-api-cnefa7dbbebfauak.canadacentral-01.azurewebsites.net/api'; 
+            try {
+                const response = await fetch(`${AZURE_PIPELINE_URL}/end_session`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        session_id: state.sessionId, 
+                        course_id: state.courseId,
+                        mode: 'audio_only'
+                    })
+                });
+            } catch (err) { 
+                console.error("Failed to notify Azure pipeline backend:", err); 
+            }
+
+            // Redirect to Notes Library
+            setTimeout(() => {
+                window.location.href = `teacher-notes-library.html?id=${state.courseId}`;
+            }, 1000);
+        });
+
+        // --- 6. TIMER & UI UTILS ---
+        function startTimer() {
+            timerInterval = setInterval(updateTimer, 100);
+        }
+
+        function stopTimer() {
+            clearInterval(timerInterval);
+        }
+
+        function updateTimer() {
+            const elapsed = state.elapsedBeforePause + (Date.now() - state.startTime);
+            const hours = Math.floor(elapsed / 3600000);
+            const minutes = Math.floor((elapsed % 3600000) / 60000);
+            const seconds = Math.floor((elapsed % 60000) / 1000);
+            
+            ui.timer.textContent = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+        }
+
+        function updateUI() {
+            if (state.isRecording && !state.isPaused) {
+                ui.startBtn.classList.add('hidden');
+                ui.stopBtn.classList.remove('hidden');
+                ui.pauseBtn.classList.remove('hidden');
+                ui.resumeBtn.classList.add('hidden');
+                ui.recordingStatus.classList.remove('hidden');
+                ui.waveform.classList.remove('hidden');
+                ui.statusText.textContent = 'Recording in progress...';
+                ui.hintText.textContent = 'Speak clearly into your microphone.';
+            } else if (state.isRecording && state.isPaused) {
+                ui.startBtn.classList.add('hidden');
+                ui.stopBtn.classList.remove('hidden');
+                ui.pauseBtn.classList.add('hidden');
+                ui.resumeBtn.classList.remove('hidden');
+                ui.recordingStatus.classList.add('hidden');
+                ui.waveform.classList.add('hidden');
+                ui.statusText.textContent = 'Recording paused';
+                ui.hintText.textContent = 'Audio segment saved. Click resume to continue.';
+            } else {
+                ui.startBtn.classList.remove('hidden');
+                ui.stopBtn.classList.add('hidden');
+                ui.pauseBtn.classList.add('hidden');
+                ui.resumeBtn.classList.add('hidden');
+                ui.recordingStatus.classList.add('hidden');
+                ui.waveform.classList.add('hidden');
+                ui.statusText.textContent = 'Ready to record your audio lecture';
+                ui.hintText.textContent = 'Click the red button to start capturing audio.';
+            }
+        }
+    </script>
+</body>
+</html>

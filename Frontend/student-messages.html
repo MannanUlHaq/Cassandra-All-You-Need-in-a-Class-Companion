@@ -1,0 +1,1208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Student Messages - Cassandra AI Class Companion">
+  <title>Student Messages | Cassandra</title>
+  <link rel="icon" type="image/png" href="Assets/favicon.png">
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,300;12..96,400;12..96,500;12..96,600;12..96,700&display=swap" rel="stylesheet">
+  
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
+  <!-- SUPABASE SCRIPT IMPORT -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <style>
+    :root {
+      --primary: #0060e7;
+      --primary-dark: #004ba8;
+      --primary-light: #3082ff;
+      --primary-alpha: rgba(0, 96, 231, 0.1);
+      --bg-body: #f4f7f9;
+      --bg-surface: #ffffff;
+      --bg-main: #F8FAFC;
+      --text-main: #0f172a;
+      --text-muted: #64748b;
+      --text-secondary: #475569;
+      --border-color: #e2e8f0;
+      
+      --spacing-xs: 0.25rem;
+      --spacing-sm: 0.5rem;
+      --spacing-md: 1rem;
+      --spacing-lg: 1.5rem;
+      --spacing-xl: 2rem;
+      
+      --radius-sm: 8px;
+      --radius-md: 12px;
+      --radius-lg: 16px;
+      
+      --shadow-sm: 0 1px 3px rgba(0,0,0,0.05), 0 1px 2px rgba(0,0,0,0.03);
+      --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.05), 0 2px 4px -1px rgba(0,0,0,0.03);
+      --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+
+      --chat-bg: #f0f2f5;
+      --bubble-student: #0060e7;
+      --bubble-teacher: #ffffff;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Bricolage Grotesque', sans-serif;
+      background-color: var(--bg-body);
+      color: var(--text-main);
+      min-height: 100vh;
+      line-height: 1.5;
+      overflow-x: hidden;
+    }
+
+    .app-container { display: flex; height: 100vh; overflow: hidden; }
+
+    .sidebar { 
+      width: 280px; 
+      background-color: var(--bg-surface); 
+      border-right: 1px solid var(--border-color); 
+      display: flex; 
+      flex-direction: column; 
+      transition: var(--transition); 
+      z-index: 40; 
+    }
+    
+    .sidebar-header { 
+      padding: var(--spacing-lg); 
+      display: flex; 
+      align-items: center; 
+      border-bottom: 1px solid var(--border-color); 
+      height: 80px; 
+    }
+    
+    .sidebar-header img { 
+      height: 40px; 
+      width: auto; 
+      object-fit: contain; 
+    }
+    
+    .sidebar-nav { 
+      padding: var(--spacing-md); 
+      flex: 1; 
+      overflow-y: auto; 
+    }
+    
+    .sidebar-nav-title { 
+      font-size: 0.75rem; 
+      text-transform: uppercase; 
+      letter-spacing: 0.05em; 
+      color: var(--text-muted); 
+      font-weight: 600; 
+      margin: var(--spacing-md) 0 var(--spacing-sm) var(--spacing-sm); 
+    }
+    
+    .sidebar-nav-item { 
+      display: flex; 
+      align-items: center; 
+      gap: var(--spacing-md); 
+      padding: 10px 16px; 
+      color: var(--text-main); 
+      text-decoration: none; 
+      border-radius: var(--radius-sm); 
+      font-weight: 500; 
+      transition: var(--transition); 
+      margin-bottom: 4px; 
+      cursor: pointer; 
+    }
+    
+    .sidebar-nav-item:hover { 
+      background-color: var(--bg-body); 
+      transform: translateX(4px); 
+    }
+    
+    .sidebar-nav-item.active { 
+      background-color: var(--primary-alpha); 
+      color: var(--primary); 
+      font-weight: 600; 
+    }
+    
+    .sidebar-nav-item.active i { 
+      color: var(--primary); 
+    }
+    
+    .sidebar-nav-item i { 
+      font-size: 1.1rem; 
+      color: var(--text-muted); 
+      width: 24px; 
+      text-align: center; 
+      transition: var(--transition); 
+    }
+    
+    .class-color-dot { 
+      width: 12px; 
+      height: 12px; 
+      border-radius: 50%; 
+      margin-left: 6px; 
+      margin-right: 6px; 
+    }
+
+    .main-wrapper { 
+      flex: 1; 
+      display: flex; 
+      flex-direction: column; 
+      overflow: hidden; 
+    }
+
+    .header { 
+      height: 80px; 
+      background: rgba(255, 255, 255, 0.85); 
+      backdrop-filter: blur(12px); 
+      border-bottom: 1px solid var(--border-color); 
+      display: flex; 
+      align-items: center; 
+      justify-content: space-between; 
+      padding: 0 var(--spacing-xl); 
+      z-index: 30; 
+      position: sticky; 
+      top: 0; 
+    }
+    
+    .sidebar-toggle { 
+      display: none; 
+      background: none; 
+      border: none; 
+      font-size: 1.5rem; 
+      color: var(--text-main); 
+      cursor: pointer; 
+    }
+    
+    .header-actions { 
+      display: flex; 
+      align-items: center; 
+      gap: var(--spacing-md); 
+      margin-left: auto; 
+    }
+    
+    .header-icon { 
+      display: flex; 
+      align-items: center; 
+      justify-content: center; 
+      width: 40px; 
+      height: 40px; 
+      border-radius: 50%; 
+      color: var(--text-muted); 
+      text-decoration: none; 
+      transition: var(--transition); 
+      font-size: 1.25rem; 
+      background-color: transparent; 
+      cursor: pointer; 
+      overflow: hidden; 
+    }
+    
+    .header-icon img { 
+      width: 100%; 
+      height: 100%; 
+      object-fit: cover; 
+    }
+    
+    .header-icon:hover { 
+      background-color: var(--bg-body); 
+      color: var(--primary); 
+    }
+
+    .main-content { 
+      flex: 1; 
+      padding: var(--spacing-lg) var(--spacing-xl); 
+      overflow: hidden; 
+      display: flex; 
+      flex-direction: column; 
+    }
+    
+    .chat-app-container {
+      display: flex;
+      flex: 1;
+      background: var(--bg-surface);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-md);
+      border: 1px solid var(--border-color);
+      overflow: hidden;
+      animation: fadeInUp 0.5s ease-out forwards;
+    }
+
+    .chat-sidebar {
+      width: 340px;
+      border-right: 1px solid var(--border-color);
+      display: flex;
+      flex-direction: column;
+      background: #ffffff;
+      z-index: 10;
+    }
+
+    .chat-sidebar-header {
+      padding: var(--spacing-md) var(--spacing-lg);
+      border-bottom: 1px solid var(--border-color);
+      background: var(--bg-main);
+    }
+
+    .chat-sidebar-header h2 {
+      font-size: 1.1rem;
+      font-weight: 700;
+      margin-bottom: var(--spacing-sm);
+      color: var(--text-main);
+    }
+
+    .search-box {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+
+    .search-box i {
+      position: absolute;
+      left: 12px;
+      color: var(--text-muted);
+      font-size: 0.9rem;
+    }
+
+    .search-input {
+      width: 100%;
+      padding: 10px 12px 10px 36px;
+      border: 1px solid var(--border-color);
+      border-radius: 20px;
+      background: var(--bg-surface);
+      font-family: inherit;
+      font-size: 0.9rem;
+      transition: var(--transition);
+      outline: none;
+    }
+
+    .search-input:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px var(--primary-alpha);
+    }
+
+    .class-list {
+      flex: 1;
+      overflow-y: auto;
+      padding: var(--spacing-sm) 0;
+    }
+
+    .class-list::-webkit-scrollbar { width: 6px; }
+    .class-list::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+
+    .class-item {
+      display: flex;
+      align-items: center;
+      padding: 12px var(--spacing-lg);
+      gap: 12px;
+      cursor: pointer;
+      transition: background 0.2s ease;
+      border-bottom: 1px solid #f1f5f9;
+      border-left: 3px solid transparent;
+    }
+
+    .class-item:hover { background: var(--bg-main); }
+    .class-item.active { background: var(--primary-alpha); }
+
+    /* UNREAD HIGHLIGHTS (WhatsApp Green Dot style) */
+    .class-item.unread {
+      background-color: rgba(37, 211, 102, 0.05);
+      border-left: 3px solid #25D366;
+    }
+    .class-item.unread .class-name {
+      font-weight: 700;
+      color: var(--text-main);
+    }
+    .class-item.unread .teacher-preview {
+      color: #111827;
+      font-weight: 600;
+    }
+
+    .item-info-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 2px;
+      width: 100%;
+    }
+
+    .unread-badge {
+      background-color: #25D366; /* WhatsApp Green */
+      color: white;
+      font-size: 0.75rem;
+      font-weight: 700;
+      min-width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0 6px;
+      box-shadow: 0 2px 4px rgba(37, 211, 102, 0.3);
+    }
+
+    .class-avatar, .active-teacher-avatar {
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 600;
+      color: white;
+      flex-shrink: 0;
+    }
+
+    .class-avatar { width: 48px; height: 48px; font-size: 1.1rem; }
+    .active-teacher-avatar { width: 44px; height: 44px; }
+
+    .class-avatar img,
+    .active-teacher-avatar img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      border-radius: 50%;
+    }
+
+    .class-info { flex: 1; min-width: 0; }
+    .class-name { font-weight: 600; font-size: 0.95rem; color: var(--text-main); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .teacher-preview { font-size: 0.8rem; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+    .chat-area {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      background: var(--chat-bg);
+      position: relative;
+    }
+
+    .chat-area::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background-image: url('data:image/svg+xml,%3Csvg width="60" height="60" viewBox="0 0 60 60" xmlns="http://www.w3.org/2000/svg"%3E%3Cg fill="none" fill-rule="evenodd"%3E%3Cg fill="%230060e7" fill-opacity="0.03"%3E%3Cpath d="M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z"/%3E%3C/g%3E%3C/g%3E%3C/svg%3E');
+      opacity: 0.8;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .chat-area-header {
+      padding: 16px var(--spacing-xl);
+      background: var(--bg-surface);
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      z-index: 10;
+    }
+
+    .active-teacher-details h3 { font-size: 1.1rem; font-weight: 700; color: var(--text-main); }
+    .active-teacher-details p { font-size: 0.8rem; color: var(--text-muted); display: flex; align-items: center; gap: 6px;}
+    .status-dot { width: 8px; height: 8px; border-radius: 50%; background: #10b981; display: inline-block; }
+
+    .chat-history-pane {
+      flex: 1;
+      padding: var(--spacing-xl);
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      z-index: 10;
+    }
+
+    .chat-history-pane::-webkit-scrollbar { width: 6px; }
+    .chat-history-pane::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.15); border-radius: 3px; }
+
+    .message-wrapper {
+      display: flex;
+      flex-direction: column;
+      max-width: 75%;
+      animation: fadeIn 0.3s ease forwards;
+    }
+
+    .message-wrapper.student { align-self: flex-end; }
+    .message-wrapper.teacher { align-self: flex-start; }
+
+    .message-bubble {
+      padding: 12px 16px;
+      border-radius: 16px;
+      font-size: 0.95rem;
+      line-height: 1.5;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+      position: relative;
+      word-wrap: break-word;
+    }
+
+    .message-wrapper.student .message-bubble {
+      background: var(--bubble-student);
+      color: white;
+      border-bottom-right-radius: 4px;
+    }
+
+    .message-wrapper.teacher .message-bubble {
+      background: var(--bubble-teacher);
+      color: var(--text-main);
+      border-bottom-left-radius: 4px;
+      border: 1px solid var(--border-color);
+    }
+
+    .message-time {
+      font-size: 0.7rem;
+      color: var(--text-muted);
+      margin-top: 4px;
+      padding: 0 4px;
+    }
+
+    .message-wrapper.student .message-time { text-align: right; }
+
+    .date-separator {
+      text-align: center;
+      margin: 1.5rem 0;
+    }
+    
+    .date-separator span {
+      background: rgba(255,255,255,0.8);
+      padding: 4px 12px;
+      border-radius: 12px;
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      font-weight: 600;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+    }
+
+    .chat-input-container {
+      padding: 16px var(--spacing-xl);
+      background: var(--bg-surface);
+      border-top: 1px solid var(--border-color);
+      display: flex;
+      align-items: flex-end;
+      gap: 12px;
+      z-index: 10;
+    }
+
+    .chat-input-wrapper {
+      flex: 1;
+      background: var(--bg-main);
+      border: 1px solid var(--border-color);
+      border-radius: 24px;
+      padding: 8px 16px;
+      display: flex;
+      align-items: center;
+      transition: var(--transition);
+    }
+
+    .chat-input-wrapper:focus-within {
+      border-color: var(--primary);
+      background: var(--bg-surface);
+      box-shadow: 0 0 0 3px var(--primary-alpha);
+    }
+
+    .chat-input {
+      width: 100%;
+      border: none;
+      background: transparent;
+      outline: none;
+      font-family: inherit;
+      font-size: 0.95rem;
+      color: var(--text-main);
+      resize: none;
+      max-height: 120px;
+      padding: 4px 0;
+      line-height: 1.4;
+    }
+
+    .send-btn {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      background: var(--primary);
+      color: white;
+      border: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 1.1rem;
+      transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+      box-shadow: 0 4px 10px rgba(0, 96, 231, 0.2);
+      flex-shrink: 0;
+    }
+
+    .send-btn:hover:not(:disabled) {
+      transform: scale(1.05) rotate(-10deg);
+      background: var(--primary-dark);
+    }
+    
+    .send-btn:disabled {
+      background: #cbd5e1;
+      cursor: not-allowed;
+      box-shadow: none;
+    }
+
+    .empty-state {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100%;
+      color: var(--text-muted);
+      text-align: center;
+      padding: 2rem;
+      z-index: 10;
+    }
+
+    .empty-state i {
+      font-size: 4rem;
+      color: var(--border-color);
+      margin-bottom: 1rem;
+    }
+
+    .empty-state h3 {
+      font-size: 1.25rem;
+      color: var(--text-main);
+      margin-bottom: 0.5rem;
+    }
+
+    #pageLoader {
+      position: fixed; inset: 0; background: var(--bg-body); z-index: 9999;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+    }
+
+    @keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+
+    @media (max-width: 1024px) {
+      .sidebar { position: fixed; left: -280px; height: 100vh; }
+      .sidebar.open { left: 0; box-shadow: var(--shadow-lg); }
+      .sidebar-toggle { display: block; }
+      .header { padding: 0 var(--spacing-md); }
+      .chat-app-container { flex-direction: column; }
+      .chat-sidebar { width: 100%; border-right: none; border-bottom: 1px solid var(--border-color); height: 40%; }
+      .chat-area { height: 60%; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Loading State -->
+  <div id="pageLoader">
+    <i class="fas fa-spinner fa-spin" style="font-size: 3rem; color: var(--primary); margin-bottom: 1rem;"></i>
+    <h3 style="color: var(--text-main);">Loading Messages...</h3>
+  </div>
+
+  <div class="app-container">
+    
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-header">
+        <a href="student-dashboard.html" class="logo" style="text-decoration: none;">
+          <img src="Assets/Cassandra-Logo.png" alt="Cassandra" onerror="this.outerHTML='<h2 style=\'color: var(--primary); font-weight: 800; font-size: 1.5rem; margin: 0; text-decoration: none;\'>Cassandra.</h2>'" style="height: 40px; width: auto; object-fit: contain;">
+        </a>
+      </div>
+      
+      <nav class="sidebar-nav">
+        <p class="sidebar-nav-title">Main Menu</p>
+        <a href="student-dashboard.html" class="sidebar-nav-item">
+          <i class="fas fa-home"></i> <span>Dashboard</span>
+        </a>
+        
+        <p class="sidebar-nav-title" style="margin-top: var(--spacing-lg);">Your Classes</p>
+        <div id="sidebarClassesList">
+            <span style="font-size: 0.8rem; color: var(--text-muted); padding-left: 1rem;">Loading...</span>
+        </div>
+        
+        <p class="sidebar-nav-title" style="margin-top: var(--spacing-lg);">Account</p>
+        <a href="student-profile.html" class="sidebar-nav-item">
+          <i class="fas fa-user"></i> <span>Profile</span>
+        </a>
+        <a onclick="logoutUser()" class="sidebar-nav-item" style="cursor: pointer;">
+          <i class="fas fa-sign-out-alt"></i> <span>Logout</span>
+        </a>
+      </nav>
+    </aside>
+
+    <div class="main-wrapper">
+      
+      <header class="header">
+        <button class="sidebar-toggle" id="sidebarToggle" aria-label="Toggle sidebar">
+          <i class="fas fa-bars"></i>
+        </button>
+        
+        <div class="header-actions">
+          <a href="student-profile.html" class="header-icon" id="headerProfileCircle" title="Profile">
+            <i class="fas fa-user-circle"></i>
+          </a>
+          <a onclick="logoutUser()" class="header-icon" title="Logout" style="cursor: pointer;">
+            <i class="fas fa-sign-out-alt"></i>
+          </a>
+        </div>
+      </header>
+
+      <main class="main-content">
+        <div class="chat-app-container">
+          
+          <!-- Left Pane: Enrolled Classes List -->
+          <div class="chat-sidebar">
+            <div class="chat-sidebar-header">
+              <h2>Your Classes</h2>
+              <div class="search-box">
+                <i class="fas fa-search"></i>
+                <input type="text" id="classSearchInput" class="search-input" placeholder="Search classes..." onkeyup="filterClasses()">
+              </div>
+            </div>
+            
+            <div class="class-list" id="classListContainer">
+              <div style="padding: 2rem; text-align: center; color: var(--text-muted);">
+                 <i class="fas fa-spinner fa-spin"></i> Loading classes...
+              </div>
+            </div>
+          </div>
+
+          <!-- Right Pane: Active Chat -->
+          <div class="chat-area" id="chatArea">
+            
+            <!-- Default Empty State -->
+            <div class="empty-state" id="chatEmptyState">
+              <i class="far fa-comments"></i>
+              <h3>Your Messages</h3>
+              <p>Select a class from the sidebar to chat with your teacher.</p>
+            </div>
+
+            <!-- Active Chat Header (Hidden by default) -->
+            <div class="chat-area-header" id="activeChatHeader" style="display: none;">
+              <div class="active-teacher-avatar" id="activeTeacherAvatar">T</div>
+              <div class="active-teacher-details">
+                <h3 id="activeTeacherName">Teacher Name</h3>
+                <p><span class="status-dot"></span> <span id="activeClassNameHeader">Class</span></p>
+              </div>
+            </div>
+
+            <!-- Chat History (Hidden by default) -->
+            <div class="chat-history-pane" id="chatHistoryPane" style="display: none;">
+            </div>
+
+            <!-- Chat Input (Hidden by default) -->
+            <div class="chat-input-container" id="chatInputContainer" style="display: none;">
+              <div class="chat-input-wrapper">
+                <textarea 
+                  id="messageInput"
+                  class="chat-input" 
+                  placeholder="Type a message..."
+                  rows="1"
+                  oninput="autoResizeInput(this)"
+                  onkeypress="handleKeyPress(event)"
+                ></textarea>
+              </div>
+              <button class="send-btn" id="sendBtn" onclick="sendMessage()" disabled>
+                <i class="fas fa-paper-plane" style="margin-right: 2px; margin-top: 2px;"></i>
+              </button>
+            </div>
+
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <script>
+    // --- SUPABASE CONFIG ---
+    const SUPABASE_URL = 'https://lchcfsgexlkjxrhfjrna.supabase.co'; 
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxjaGNmc2dleGxranhyaGZqcm5hIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2MDI4NDIxNywiZXhwIjoyMDc1ODYwMjE3fQ.u8xbJWho6qFVW5f7tmhtK9hq5X5ApQVC4QK04jfjj0k'; 
+    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    
+    // --- GLOBAL STATE ---
+    let currentStudentId = null;
+    let enrolledClasses = [];
+    let currentActiveClass = null;
+    let currentActiveTeacher = null;
+    
+    // Unread Counts State
+    let unreadCounts = {};
+
+    document.addEventListener('DOMContentLoaded', async () => {
+        const { data: { session } } = await supabaseClient.auth.getSession();
+        
+        if (session && session.user) {
+            currentStudentId = session.user.id;
+            
+            await loadEnrolledClassesWithTeachers();
+
+            document.getElementById('pageLoader').style.display = 'none';
+            
+            if(enrolledClasses.length > 0) {
+                renderClassList(enrolledClasses);
+                setupGlobalMessageSubscription(); // Init Realtime Unread listener
+            } else {
+                document.getElementById('classListContainer').innerHTML = `
+                  <div style="padding: 2rem; text-align: center; color: var(--text-muted);">
+                     <i class="fas fa-book-open" style="font-size: 2rem; margin-bottom: 10px; display: block;"></i>
+                     <p>You are not enrolled in any classes.</p>
+                  </div>`;
+            }
+        } else {
+            window.location.href = 'student-dashboard.html';
+        }
+
+        document.getElementById('messageInput').addEventListener('input', function() {
+            document.getElementById('sendBtn').disabled = this.value.trim() === '';
+        });
+    });
+
+    async function loadEnrolledClassesWithTeachers() {
+        // Reset unread state
+        unreadCounts = {};
+        
+        try {
+            const { data: enrollments, error: enrollError } = await supabaseClient
+                .from('enrollment')
+                .select('class_id')
+                .eq('student_id', currentStudentId);
+
+            if (enrollError || !enrollments || enrollments.length === 0) {
+                document.getElementById('sidebarClassesList').innerHTML = 
+                    '<span style="font-size: 0.85rem; padding: 10px 16px; color: var(--text-muted);">No enrolled classes</span>';
+                enrolledClasses = [];
+                return;
+            }
+
+            const classIds = enrollments.map(e => e.class_id);
+
+            const { data: classes, error: classError } = await supabaseClient
+                .from('class')
+                .select(`
+                    *,
+                    teacher:teacher_id (
+                        id,
+                        name,
+                        email
+                    )
+                `)
+                .in('class_id', classIds)
+                .order('course_name', { ascending: true });
+
+            if (classError) throw classError;
+
+            // Fetch Teacher profile images concurrently
+            const classesWithImages = await Promise.all((classes || []).map(async (cls) => {
+                let innerAvatarHtml = cls.teacher && cls.teacher.name ? cls.teacher.name.split(' ').map(n=>n[0]).join('').toUpperCase().substring(0,2) : 'T';
+
+                if (cls.teacher && cls.teacher.id) {
+                    try {
+                        const { data: files, error: fileError } = await supabaseClient
+                            .storage.from('teacher_profile')
+                            .list(cls.teacher.id, { sortBy: { column: 'updated_at', order: 'desc' } });
+
+                        if (!fileError && files && files.length > 0) {
+                            const { data } = supabaseClient.storage.from('teacher_profile').getPublicUrl(`${cls.teacher.id}/${files[0].name}`);
+                            const ts = new Date().getTime();
+                            innerAvatarHtml = `<img src="${data.publicUrl}?t=${ts}" alt="${cls.teacher.name}">`;
+                        }
+                    } catch (e) {
+                        console.warn("Could not load teacher profile image for", cls.teacher.id);
+                    }
+                }
+                return { ...cls, teacherAvatarInnerHtml: innerAvatarHtml };
+            }));
+
+            // Fetch latest messages for previews, sort, and EXACTLY calculate unreads
+            try {
+                const { data: allMessages } = await supabaseClient
+                    .from('private_message')
+                    .select('class_id, teacher_message_content, student_message_content, sent_at')
+                    .eq('student_id', currentStudentId)
+                    .order('sent_at', { ascending: false });
+
+                if (allMessages && allMessages.length > 0) {
+                    classesWithImages.forEach(cls => {
+                        const classMessages = allMessages.filter(m => m.class_id === cls.class_id);
+                        const latestMsg = classMessages[0];
+                        
+                        if (latestMsg) {
+                            cls.latestMessageTime = new Date(latestMsg.sent_at).getTime();
+                            const lastReadTime = parseInt(localStorage.getItem(`last_read_time_${currentStudentId}_${cls.class_id}`) || '0', 10);
+                            
+                            // Calculate exact unread count from history based on timestamp
+                            let exactUnreadCount = 0;
+                            classMessages.forEach(m => {
+                                if (m.teacher_message_content && new Date(m.sent_at).getTime() > lastReadTime) {
+                                    exactUnreadCount++;
+                                }
+                            });
+                            
+                            if (exactUnreadCount > 0) {
+                                unreadCounts[cls.class_id] = exactUnreadCount;
+                            }
+
+                            if (latestMsg.student_message_content) {
+                                cls.latestMessage = "You: " + latestMsg.student_message_content;
+                            } else {
+                                cls.latestMessage = latestMsg.teacher_message_content;
+                            }
+                        } else {
+                            cls.latestMessageTime = 0;
+                        }
+                    });
+                    
+                    // Sort classes by latest message time (most recent first)
+                    classesWithImages.sort((a, b) => (b.latestMessageTime || 0) - (a.latestMessageTime || 0));
+                }
+            } catch (msgErr) {
+                console.warn("Could not fetch latest messages for previews", msgErr);
+            }
+
+            enrolledClasses = classesWithImages;
+            renderSidebarClasses(enrolledClasses);
+
+        } catch (err) {
+            console.error("Error loading classes:", err);
+            document.getElementById('sidebarClassesList').innerHTML = 
+                '<span style="font-size: 0.85rem; padding: 10px 16px; color: var(--text-muted);">Error loading classes</span>';
+            enrolledClasses = [];
+        }
+    }
+
+    function renderSidebarClasses(classes) {
+        const sidebarList = document.getElementById('sidebarClassesList');
+        sidebarList.innerHTML = '';
+        
+        const colorMap = { blue: '#3b82f6', green: '#10b981', purple: '#8b5cf6', amber: '#f59e0b', rose: '#f43f5e' };
+        const keys = Object.keys(colorMap);
+
+        classes.forEach((cls, index) => {
+            const color = colorMap[keys[index % keys.length]];
+            let displayName = cls.class_name ? cls.class_name.split(' - ')[0] : cls.course_name;
+
+            const sidebarItem = document.createElement('a');
+            sidebarItem.className = 'sidebar-nav-item';
+            sidebarItem.href = `student-course-view.html?id=${cls.course_id}`;
+            
+            sidebarItem.innerHTML = `
+                <div class="class-color-dot" style="background-color: ${color};"></div>
+                <span style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${displayName}</span>
+            `;
+            sidebarList.appendChild(sidebarItem);
+        });
+    }
+
+    // --- CLASSES LIST LOGIC ---
+    function renderClassList(classes) {
+        const container = document.getElementById('classListContainer');
+        container.innerHTML = '';
+
+        if (classes.length === 0) {
+            container.innerHTML = `
+              <div class="empty-state" style="padding: 2rem;">
+                <i class="fas fa-book-open" style="font-size: 2rem; margin-bottom: 10px;"></i>
+                <p>No classes available.</p>
+              </div>`;
+            return;
+        }
+
+        classes.forEach(cls => {
+            const className = cls.class_name ? cls.class_name.split(' - ')[0] : cls.course_name;
+            const teacherName = cls.teacher && cls.teacher.name ? cls.teacher.name : 'Teacher';
+            
+            // Check unread state
+            const count = unreadCounts[cls.class_id] || 0;
+            const badgeHtml = count > 0 ? `<div class="unread-badge">${count}</div>` : '';
+            const unreadClass = count > 0 ? 'unread' : '';
+            const previewText = cls.latestMessage || teacherName;
+            
+            const item = document.createElement('div');
+            item.className = `class-item ${unreadClass}`;
+            if (currentActiveClass && currentActiveClass.class_id === cls.class_id) item.classList.add('active');
+            item.id = `class-item-${cls.class_id}`;
+            item.onclick = () => selectClass(cls);
+
+            item.innerHTML = `
+                <div class="class-avatar">${cls.teacherAvatarInnerHtml}</div>
+                <div class="class-info">
+                    <div class="item-info-header">
+                        <h4 class="class-name">${className}</h4>
+                        ${badgeHtml}
+                    </div>
+                    <p class="teacher-preview">${previewText}</p>
+                </div>
+            `;
+            container.appendChild(item);
+        });
+    }
+
+    function filterClasses() {
+        const searchTerm = document.getElementById('classSearchInput').value.toLowerCase();
+        const filtered = enrolledClasses.filter(c => {
+            const className = c.class_name ? c.class_name.toLowerCase() : '';
+            const courseName = c.course_name ? c.course_name.toLowerCase() : '';
+            const teacherName = c.teacher && c.teacher.name ? c.teacher.name.toLowerCase() : '';
+            
+            return className.includes(searchTerm) || 
+                   courseName.includes(searchTerm) || 
+                   teacherName.includes(searchTerm);
+        });
+        renderClassList(filtered);
+    }
+    
+    // Updates order to bring latest chat to the top
+    function updateClassListOrder(classId, latestMsg) {
+        const index = enrolledClasses.findIndex(c => c.class_id === classId);
+        if (index > -1) {
+            const cls = enrolledClasses.splice(index, 1)[0];
+            if (latestMsg) cls.latestMessage = latestMsg;
+            enrolledClasses.unshift(cls); // Move to top
+            filterClasses(); // Render based on current search filter
+        }
+    }
+
+    // --- CHAT LOGIC ---
+    function selectClass(cls) {
+        currentActiveClass = cls;
+        currentActiveTeacher = cls.teacher;
+        
+        // Clear unread count for this class and save read timestamp
+        unreadCounts[cls.class_id] = 0;
+        localStorage.setItem(`last_read_time_${currentStudentId}_${cls.class_id}`, Date.now());
+        filterClasses(); // Refresh UI to remove badge
+        
+        // Toggle Right Pane Views
+        document.getElementById('chatEmptyState').style.display = 'none';
+        document.getElementById('activeChatHeader').style.display = 'flex';
+        document.getElementById('chatHistoryPane').style.display = 'flex';
+        document.getElementById('chatInputContainer').style.display = 'flex';
+
+        // Update Header Info
+        const teacherName = currentActiveTeacher && currentActiveTeacher.name ? currentActiveTeacher.name : 'Teacher';
+        document.getElementById('activeTeacherAvatar').innerHTML = cls.teacherAvatarInnerHtml;
+        document.getElementById('activeTeacherName').textContent = teacherName;
+        
+        const classDisplay = cls.class_name ? cls.class_name.split(' - ')[0] : cls.course_name;
+        document.getElementById('activeClassNameHeader').textContent = classDisplay;
+
+        // Load Messages
+        fetchMessagesForClass();
+    }
+
+    async function fetchMessagesForClass() {
+        const pane = document.getElementById('chatHistoryPane');
+        pane.innerHTML = `<div style="text-align: center; padding: 2rem; color: var(--text-muted);"><i class="fas fa-spinner fa-spin"></i> Loading...</div>`;
+
+        if (!currentActiveClass || !currentActiveTeacher) {
+            pane.innerHTML = `
+              <div style="text-align: center; margin-top: auto; margin-bottom: auto; color: var(--text-muted);">
+                <p>Unable to load chat. Missing class or teacher information.</p>
+              </div>`;
+            return;
+        }
+
+        try {
+            const { data: messages, error } = await supabaseClient
+                .from('private_message')
+                .select('*')
+                .eq('class_id', currentActiveClass.class_id)
+                .eq('teacher_id', currentActiveTeacher.id)
+                .eq('student_id', currentStudentId)
+                .order('sent_at', { ascending: true });
+
+            if (error) throw error;
+
+            pane.innerHTML = '';
+            
+            if (!messages || messages.length === 0) {
+                const teacherFirstName = currentActiveTeacher.name ? currentActiveTeacher.name.split(' ')[0] : 'Teacher';
+                pane.innerHTML = `
+                  <div style="text-align: center; margin-top: auto; margin-bottom: auto; color: var(--text-muted);">
+                    <div style="background: white; padding: 12px 20px; border-radius: 20px; display: inline-block; box-shadow: var(--shadow-sm);">
+                      <i class="fas fa-hand-wave" style="color: var(--primary);"></i> This is the start of your conversation with ${teacherFirstName}
+                    </div>
+                  </div>
+                `;
+                return;
+            }
+
+            // Render Messages
+            let lastDateStr = '';
+            messages.forEach(msg => {
+                const msgDate = new Date(msg.sent_at);
+                const dateStr = msgDate.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+                
+                if(dateStr !== lastDateStr) {
+                    const sep = document.createElement('div');
+                    sep.className = 'date-separator';
+                    sep.innerHTML = `<span>${dateStr}</span>`;
+                    pane.appendChild(sep);
+                    lastDateStr = dateStr;
+                }
+
+                appendMessageToUI(msg);
+            });
+
+            scrollToBottom();
+
+        } catch(err) {
+            console.error("Error fetching messages:", err);
+            pane.innerHTML = `<p style="text-align:center; color: #ef4444; padding: 1rem;">Failed to load messages.</p>`;
+        }
+    }
+
+    function appendMessageToUI(msg, isOptimisticStudent = false) {
+        const pane = document.getElementById('chatHistoryPane');
+        
+        let isStudent = false;
+        let contentToDisplay = "";
+
+        if (isOptimisticStudent) {
+            isStudent = true;
+            contentToDisplay = msg.student_message_content;
+        } else if (msg.student_message_content && msg.student_message_content.trim() !== '') {
+            isStudent = true;
+            contentToDisplay = msg.student_message_content;
+        } else if (msg.teacher_message_content && msg.teacher_message_content.trim() !== '') {
+            isStudent = false;
+            contentToDisplay = msg.teacher_message_content;
+        } else {
+            return;
+        }
+        
+        const timeStr = new Date(msg.sent_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+
+        const wrapper = document.createElement('div');
+        wrapper.className = `message-wrapper ${isStudent ? 'student' : 'teacher'}`;
+        wrapper.innerHTML = `
+            <div class="message-bubble">
+                ${escapeHTML(contentToDisplay)}
+            </div>
+            <div class="message-time">${timeStr}</div>
+        `;
+        pane.appendChild(wrapper);
+    }
+
+    async function sendMessage() {
+        const input = document.getElementById('messageInput');
+        const text = input.value.trim();
+        const btn = document.getElementById('sendBtn');
+        
+        if (!text || !currentActiveClass || !currentActiveTeacher) return;
+
+        input.disabled = true;
+        btn.disabled = true;
+
+        const payload = {
+            message_id: crypto.randomUUID(),
+            student_message_content: text,
+            teacher_message_content: null,
+            sent_at: new Date().toISOString(),
+            student_id: currentStudentId,
+            class_id: currentActiveClass.class_id,
+            teacher_id: currentActiveTeacher.id
+        };
+
+        try {
+            const pane = document.getElementById('chatHistoryPane');
+            if (pane.querySelector('.fa-hand-wave')) pane.innerHTML = '';
+            
+            appendMessageToUI(payload, true);
+            scrollToBottom();
+            
+            // Bring class to top, update preview, and update last read time since we're active
+            localStorage.setItem(`last_read_time_${currentStudentId}_${currentActiveClass.class_id}`, Date.now());
+            updateClassListOrder(currentActiveClass.class_id, "You: " + text);
+
+            input.value = '';
+            input.style.height = 'auto';
+
+            const { error } = await supabaseClient
+                .from('private_message')
+                .insert([payload]);
+
+            if (error) throw error;
+
+        } catch (err) {
+            console.error("Error sending message:", err);
+            alert("Message failed to send. Please try again.");
+        } finally {
+            input.disabled = false;
+            btn.disabled = false;
+            input.focus();
+        }
+    }
+
+    function setupGlobalMessageSubscription() {
+        supabaseClient.channel('global_student_messages')
+            .on('postgres_changes', { 
+                event: 'INSERT', 
+                schema: 'public', 
+                table: 'private_message',
+                filter: `student_id=eq.${currentStudentId}`
+            }, payload => {
+                const newMsg = payload.new;
+                
+                // Only process messages sent by teacher
+                if (newMsg.teacher_message_content && newMsg.teacher_message_content.trim() !== '') {
+                    
+                    if (currentActiveClass && currentActiveClass.class_id === newMsg.class_id) {
+                        // Current chat is active, update read timestamp and don't increment unread
+                        localStorage.setItem(`last_read_time_${currentStudentId}_${newMsg.class_id}`, Date.now());
+                        
+                        const pane = document.getElementById('chatHistoryPane');
+                        if (pane.querySelector('.fa-hand-wave')) pane.innerHTML = '';
+                        
+                        appendMessageToUI(newMsg, false);
+                        scrollToBottom();
+                        
+                        // Still update preview and bump to top
+                        updateClassListOrder(newMsg.class_id, newMsg.teacher_message_content);
+                    } else {
+                        // Incoming message for background chat
+                        unreadCounts[newMsg.class_id] = (unreadCounts[newMsg.class_id] || 0) + 1;
+                        
+                        // Update preview and bump to top
+                        updateClassListOrder(newMsg.class_id, newMsg.teacher_message_content);
+                    }
+                }
+            })
+            .subscribe();
+    }
+
+    // --- UTILITIES ---
+    function scrollToBottom() {
+        const pane = document.getElementById('chatHistoryPane');
+        pane.scrollTop = pane.scrollHeight;
+    }
+
+    function autoResizeInput(element) {
+        element.style.height = 'auto';
+        element.style.height = (element.scrollHeight) + 'px';
+        if (element.scrollHeight > 120) {
+            element.style.overflowY = 'auto';
+        } else {
+            element.style.overflowY = 'hidden';
+        }
+    }
+
+    function handleKeyPress(e) {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            sendMessage();
+        }
+    }
+
+    function escapeHTML(str) {
+        return str.replace(/[&<>'"]/g, 
+            tag => ({
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                "'": '&#39;',
+                '"': '&quot;'
+            }[tag] || tag)
+        ).replace(/\n/g, '<br>');
+    }
+
+    // --- SIDEBAR UI ---
+    const sidebar = document.getElementById('sidebar');
+    document.getElementById('sidebarToggle').addEventListener('click', () => sidebar.classList.toggle('open'));
+
+    async function logoutUser() {
+        await supabaseClient.auth.signOut();
+        window.location.href = 'student-login.html';
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,1257 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Student Dashboard - Cassandra AI Class Companion">
+  <title>Student Dashboard | Cassandra</title>
+  <link rel="icon" type="image/png" href="Assets/favicon.png">
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,300;12..96,400;12..96,500;12..96,600;12..96,700&display=swap" rel="stylesheet">
+  
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+  <!-- SUPABASE SCRIPT IMPORT -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <style>
+    :root {
+      --primary: #0060e7;
+      --primary-dark: #004ba8;
+      --primary-light: #3082ff;
+      --primary-alpha: rgba(0, 96, 231, 0.1);
+      
+      --bg-body: #f4f7f9;
+      --bg-surface: #ffffff;
+      --bg-main: #F8FAFC;
+      
+      --text-main: #0f172a;
+      --text-muted: #64748b;
+      --text-secondary: #475569;
+      
+      --border-color: #e2e8f0;
+      
+      --spacing-xs: 0.25rem;
+      --spacing-sm: 0.5rem;
+      --spacing-md: 1rem;
+      --spacing-lg: 1.5rem;
+      --spacing-xl: 2rem;
+      
+      --radius-sm: 8px;
+      --radius-md: 12px;
+      --radius-lg: 16px;
+      --radius-xl: 24px;
+      
+      --shadow-sm: 0 1px 3px rgba(0,0,0,0.05), 0 1px 2px rgba(0,0,0,0.03);
+      --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.05), 0 2px 4px -1px rgba(0,0,0,0.03);
+      --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.05), 0 4px 6px -2px rgba(0,0,0,0.03);
+      --shadow-xl: 0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04);
+      --shadow-hover: 0 20px 25px -5px rgba(0,0,0,0.08), 0 10px 10px -5px rgba(0,0,0,0.04);
+      
+      --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Bricolage Grotesque', sans-serif; 
+      background-color: var(--bg-body);
+      color: var(--text-main); 
+      line-height: 1.5; 
+      overflow-x: hidden;
+    }
+
+    /* LOADING VIEW */
+    #loadingView { 
+      height: 100vh; 
+      display: flex; 
+      align-items: center; 
+      justify-content: center; 
+      background: var(--bg-body); 
+    }
+    .spinner-container { 
+      text-align: center; 
+      color: var(--primary); 
+    }
+    .spinner-container i { 
+      font-size: 3rem; 
+    }
+    .spinner-container p { 
+      margin-top: 1rem; 
+      font-weight: 600; 
+      color: var(--text-main); 
+    }
+
+    /* DASHBOARD VIEW */
+    .app-container { 
+      display: flex; 
+      height: 100vh; 
+      overflow: hidden; 
+      width: 100%; 
+      background-color: var(--bg-body); 
+    }
+    
+    .sidebar { 
+      width: 280px; 
+      background-color: var(--bg-surface); 
+      border-right: 1px solid var(--border-color); 
+      display: flex; 
+      flex-direction: column; 
+      transition: var(--transition); 
+      z-index: 40; 
+    }
+    
+    .sidebar-header { 
+      padding: var(--spacing-lg); 
+      display: flex; 
+      align-items: center; 
+      border-bottom: 1px solid var(--border-color); 
+      height: 80px; 
+    }
+    
+    .sidebar-header img { 
+      height: 40px; 
+      width: auto; 
+      object-fit: contain; 
+    }
+    
+    .sidebar-nav { 
+      padding: var(--spacing-md); 
+      flex: 1; 
+      overflow-y: auto; 
+    }
+    
+    .sidebar-nav-title { 
+      font-size: 0.75rem; 
+      text-transform: uppercase; 
+      letter-spacing: 0.05em; 
+      color: var(--text-muted); 
+      font-weight: 600; 
+      margin: var(--spacing-md) 0 var(--spacing-sm) var(--spacing-sm); 
+    }
+    
+    .sidebar-nav-item { 
+      display: flex; 
+      align-items: center; 
+      gap: var(--spacing-md); 
+      padding: 10px 16px; 
+      color: var(--text-main); 
+      text-decoration: none; 
+      border-radius: var(--radius-sm); 
+      font-weight: 500; 
+      transition: var(--transition); 
+      margin-bottom: 4px; 
+      cursor: pointer; 
+    }
+    
+    .sidebar-nav-item:hover { 
+      background-color: var(--bg-body); 
+      transform: translateX(4px); 
+    }
+    
+    .sidebar-nav-item.active { 
+      background-color: var(--primary-alpha); 
+      color: var(--primary); 
+      font-weight: 600; 
+    }
+    
+    .sidebar-nav-item.active i { 
+      color: var(--primary); 
+    }
+    
+    .sidebar-nav-item i { 
+      font-size: 1.1rem; 
+      color: var(--text-muted); 
+      width: 24px; 
+      text-align: center; 
+      transition: var(--transition); 
+    }
+
+    .class-color-dot { 
+      width: 12px; 
+      height: 12px; 
+      border-radius: 50%; 
+      margin-left: 6px; 
+      margin-right: 6px; 
+    }
+
+    .main-wrapper { 
+      flex: 1; 
+      display: flex; 
+      flex-direction: column; 
+      overflow: hidden; 
+    }
+    
+    .header { 
+      height: 80px; 
+      background: rgba(255, 255, 255, 0.85); 
+      backdrop-filter: blur(12px); 
+      border-bottom: 1px solid var(--border-color); 
+      display: flex; 
+      align-items: center; 
+      justify-content: space-between; 
+      padding: 0 var(--spacing-xl); 
+      z-index: 30; 
+      position: sticky; 
+      top: 0; 
+    }
+    
+    .sidebar-toggle { 
+      display: none; 
+      background: none; 
+      border: none; 
+      font-size: 1.5rem; 
+      color: var(--text-main); 
+      cursor: pointer; 
+    }
+    
+    .header-actions { 
+      display: flex; 
+      align-items: center; 
+      gap: var(--spacing-md); 
+      margin-left: auto; 
+    }
+    
+    .header-icon { 
+      display: flex; 
+      align-items: center; 
+      justify-content: center; 
+      width: 40px; 
+      height: 40px; 
+      border-radius: 50%; 
+      color: var(--text-muted); 
+      text-decoration: none; 
+      transition: var(--transition); 
+      font-size: 1.25rem; 
+      background-color: transparent; 
+      cursor: pointer; 
+      overflow: hidden; 
+    }
+    
+    .header-icon img { 
+      width: 100%; 
+      height: 100%; 
+      object-fit: cover; 
+    }
+    
+    .header-icon:hover { 
+      background-color: var(--bg-body); 
+      color: var(--primary); 
+    }
+
+    .main-content { 
+      flex: 1; 
+      padding: var(--spacing-xl); 
+      overflow-y: auto; 
+    }
+    
+    .page-header { 
+      display: flex; 
+      justify-content: space-between; 
+      align-items: flex-end; 
+      flex-wrap: wrap; 
+      gap: var(--spacing-md); 
+      margin-bottom: var(--spacing-xl); 
+      animation: fadeInDown 0.5s ease-out; 
+    }
+    
+    .page-title { 
+      font-size: 2rem; 
+      font-weight: 700; 
+      color: var(--text-main); 
+      letter-spacing: -0.02em; 
+    }
+    
+    .page-subtitle { 
+      color: var(--text-muted); 
+      font-size: 1rem; 
+      margin-top: 4px; 
+    }
+
+    .btn { 
+      display: inline-flex; 
+      align-items: center; 
+      justify-content: center; 
+      gap: 8px; 
+      padding: 10px 20px; 
+      border-radius: var(--radius-sm); 
+      font-family: inherit; 
+      font-weight: 600; 
+      font-size: 0.95rem; 
+      cursor: pointer; 
+      border: 1px solid transparent; 
+      transition: var(--transition); 
+      text-decoration: none; 
+    }
+    
+    .btn:active { 
+      transform: scale(0.97); 
+    }
+    
+    .btn:disabled { 
+      opacity: 0.7; 
+      cursor: not-allowed; 
+    }
+    
+    .btn-primary { 
+      background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%); 
+      color: white; 
+      box-shadow: 0 4px 12px rgba(0, 96, 231, 0.25); 
+    }
+    
+    .btn-primary:hover:not(:disabled) { 
+      background: linear-gradient(135deg, var(--primary-light) 0%, var(--primary) 100%); 
+      box-shadow: 0 6px 16px rgba(0, 96, 231, 0.35); 
+      transform: translateY(-1px); 
+    }
+    
+    .btn-secondary { 
+      background-color: var(--bg-body); 
+      color: var(--text-main); 
+      border-color: var(--border-color); 
+    }
+    
+    .btn-secondary:hover { 
+      background-color: var(--border-color); 
+    }
+    
+    .btn-outline { 
+      background-color: transparent; 
+      color: var(--text-main); 
+      border-color: var(--border-color); 
+    }
+    
+    .btn-outline:hover { 
+      border-color: var(--primary); 
+      color: var(--primary); 
+      background-color: var(--primary-alpha); 
+    }
+    
+    .btn-danger { 
+      color: #ef4444; 
+      border-color: #ef4444; 
+    }
+    
+    .btn-danger:hover { 
+      background-color: rgba(239, 68, 68, 0.1); 
+      border-color: #dc2626; 
+      color: #dc2626; 
+    }
+    
+    .btn-sm { 
+      padding: 6px 12px; 
+      font-size: 0.85rem; 
+    }
+
+    .classes-grid { 
+      display: grid; 
+      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); 
+      gap: var(--spacing-lg); 
+    }
+
+    .class-card { 
+      background: var(--bg-surface); 
+      border-radius: var(--radius-md); 
+      box-shadow: var(--shadow-sm); 
+      border: 1px solid var(--border-color); 
+      overflow: hidden; 
+      transition: var(--transition); 
+      opacity: 0; 
+      animation: fadeInUp 0.6s ease-out forwards; 
+      display: flex; 
+      flex-direction: column; 
+      position: relative; 
+      cursor: pointer; 
+    }
+    
+    .class-card:hover { 
+      transform: translateY(-6px); 
+      box-shadow: var(--shadow-hover); 
+      border-color: rgba(0, 96, 231, 0.2); 
+    }
+    
+    .card-top-accent { 
+      height: 6px; 
+      width: 100%; 
+    }
+    
+    .card-top-accent.blue { 
+      background: linear-gradient(90deg, #3b82f6, #2563eb); 
+    }
+    
+    .card-top-accent.green { 
+      background: linear-gradient(90deg, #10b981, #059669); 
+    }
+    
+    .card-top-accent.purple { 
+      background: linear-gradient(90deg, #8b5cf6, #6d28d9); 
+    }
+    
+    .card-top-accent.amber { 
+      background: linear-gradient(90deg, #f59e0b, #d97706); 
+    }
+    
+    .card-top-accent.rose { 
+      background: linear-gradient(90deg, #f43f5e, #e11d48); 
+    }
+
+    .class-card-body { 
+      padding: var(--spacing-lg); 
+      flex: 1; 
+    }
+    
+    .class-header { 
+      display: flex; 
+      justify-content: space-between; 
+      align-items: flex-start; 
+      margin-bottom: var(--spacing-sm); 
+    }
+    
+    .class-name-wrap { 
+      display: flex; 
+      flex-direction: column; 
+      gap: 4px; 
+    }
+    
+    .class-name { 
+      font-size: 1.25rem; 
+      font-weight: 700; 
+      color: var(--text-main); 
+      line-height: 1.2; 
+    }
+    
+    .section-badge { 
+      display: inline-block; 
+      font-size: 0.75rem; 
+      font-weight: 600; 
+      background-color: var(--bg-body); 
+      color: var(--text-muted); 
+      padding: 2px 8px; 
+      border-radius: 12px; 
+      border: 1px solid var(--border-color); 
+      width: fit-content; 
+    }
+    
+    .course-code-badge { 
+      font-size: 0.75rem; 
+      font-weight: 700; 
+      color: var(--primary-dark); 
+      background-color: var(--primary-alpha); 
+      padding: 4px 8px; 
+      border-radius: var(--radius-sm); 
+      letter-spacing: 0.5px; 
+    }
+    
+    .course-name { 
+      font-size: 1rem; 
+      color: var(--text-muted); 
+      font-weight: 500; 
+      margin-bottom: var(--spacing-md); 
+    }
+    
+    .class-meta { 
+      display: flex; 
+      align-items: center; 
+      gap: 8px; 
+      color: var(--text-muted); 
+      font-size: 0.9rem; 
+      font-weight: 500; 
+      padding-top: var(--spacing-md); 
+      border-top: 1px dashed var(--border-color); 
+      justify-content: space-between;
+    }
+    
+    .class-meta span strong { 
+      color: var(--primary-dark); 
+    }
+    
+    .class-meta i { 
+      color: var(--primary); 
+    }
+    
+    .class-card-footer { 
+      padding: var(--spacing-md) var(--spacing-lg); 
+      background-color: #fafbfc; 
+      border-top: 1px solid var(--border-color); 
+      display: flex; 
+      justify-content: flex-end; 
+      gap: var(--spacing-sm); 
+    }
+
+    /* Three dots menu styles */
+    .card-menu-container {
+      position: absolute;
+      bottom: var(--spacing-md);
+      right: var(--spacing-lg);
+      z-index: 10;
+    }
+
+    .card-menu-btn {
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      cursor: pointer;
+      font-size: 1.25rem;
+      padding: 4px 8px;
+      border-radius: var(--radius-sm);
+      transition: var(--transition);
+    }
+
+    .card-menu-btn:hover {
+      background-color: var(--bg-body);
+      color: var(--text-main);
+    }
+
+    .card-menu-dropdown {
+      position: absolute;
+      bottom: 100%;
+      right: 0;
+      background: var(--bg-surface);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-sm);
+      box-shadow: var(--shadow-lg);
+      min-width: 150px;
+      display: none;
+      overflow: hidden;
+      margin-bottom: 4px;
+    }
+
+    .card-menu-dropdown.show {
+      display: block;
+    }
+
+    .card-menu-item {
+      padding: 10px 16px;
+      color: var(--text-main);
+      cursor: pointer;
+      transition: var(--transition);
+      font-size: 0.9rem;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .card-menu-item:hover {
+      background-color: var(--bg-body);
+    }
+
+    .card-menu-item.danger {
+      color: #ef4444;
+    }
+
+    .card-menu-item.danger:hover {
+      background-color: rgba(239, 68, 68, 0.1);
+    }
+
+    .modal-overlay { 
+      position: fixed; 
+      top: 0; 
+      left: 0; 
+      width: 100%; 
+      height: 100%; 
+      background: rgba(15, 23, 42, 0.4); 
+      backdrop-filter: blur(4px); 
+      display: flex; 
+      align-items: center; 
+      justify-content: center; 
+      z-index: 100; 
+      opacity: 0; 
+      visibility: hidden; 
+      transition: all 0.3s ease; 
+    }
+    
+    .modal-overlay.active { 
+      opacity: 1; 
+      visibility: visible; 
+    }
+    
+    .modal { 
+      background: var(--bg-surface); 
+      width: 100%; 
+      max-width: 500px; 
+      border-radius: var(--radius-lg); 
+      box-shadow: var(--shadow-lg); 
+      transform: translateY(20px) scale(0.95); 
+      transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); 
+      overflow: hidden; 
+    }
+    
+    .modal-overlay.active .modal { 
+      transform: translateY(0) scale(1); 
+    }
+    
+    .modal-header { 
+      padding: var(--spacing-lg) var(--spacing-xl); 
+      border-bottom: 1px solid var(--border-color); 
+      display: flex; 
+      justify-content: space-between; 
+      align-items: center; 
+      background-color: #fcfcfd; 
+    }
+    
+    .modal-title { 
+      font-size: 1.25rem; 
+      font-weight: 700; 
+      color: var(--text-main); 
+    }
+    
+    .modal-close { 
+      background: none; 
+      border: none; 
+      font-size: 1.25rem; 
+      color: var(--text-muted); 
+      cursor: pointer; 
+      transition: var(--transition); 
+      width: 32px; 
+      height: 32px; 
+      display: flex; 
+      align-items: center; 
+      justify-content: center; 
+      border-radius: 50%; 
+    }
+    
+    .modal-close:hover { 
+      background-color: var(--border-color); 
+      color: var(--text-main); 
+    }
+    
+    .modal-body { 
+      padding: var(--spacing-xl); 
+    }
+    
+    .form-input { 
+      width: 100%; 
+      padding: 10px 14px; 
+      border: 1px solid var(--border-color); 
+      border-radius: var(--radius-sm); 
+      font-family: inherit; 
+      font-size: 0.95rem; 
+      color: var(--text-main); 
+      transition: var(--transition); 
+      background-color: #fff; 
+    }
+    
+    .form-input:focus { 
+      outline: none; 
+      border-color: var(--primary); 
+      box-shadow: 0 0 0 3px var(--primary-alpha); 
+    }
+    
+    .modal-footer { 
+      padding: var(--spacing-md) var(--spacing-xl); 
+      border-top: 1px solid var(--border-color); 
+      display: flex; 
+      justify-content: flex-end; 
+      gap: var(--spacing-md); 
+      background-color: #fcfcfd; 
+    }
+
+    @keyframes fadeInUp { 
+      from { opacity: 0; transform: translateY(20px); } 
+      to { opacity: 1; transform: translateY(0); } 
+    }
+    
+    @keyframes fadeInDown { 
+      from { opacity: 0; transform: translateY(-10px); } 
+      to { opacity: 1; transform: translateY(0); } 
+    }
+    
+    #loadingSpinner { 
+      text-align: center; 
+      width: 100%; 
+      padding: 3rem; 
+      color: var(--primary); 
+      font-size: 1.5rem; 
+    }
+
+    /* Form utility */
+    .form-input-wrapper { 
+      position: relative; 
+      display: flex; 
+      align-items: center; 
+    }
+    
+    .error-box { 
+      background: #FEE2E2; 
+      color: #DC2626; 
+      padding: 1rem; 
+      border-radius: var(--radius-sm); 
+      margin-bottom: 1.5rem; 
+      font-size: 0.9rem; 
+      font-weight: 500; 
+      display: none; 
+    }
+    
+    .error-box.success {
+      background: #D1FAE5;
+      color: #059669;
+    }
+
+    @media (max-width: 1024px) {
+      .sidebar { 
+        position: fixed; 
+        left: -280px; 
+        height: 100vh; 
+      }
+      
+      .sidebar.open { 
+        left: 0; 
+        box-shadow: var(--shadow-lg); 
+      }
+      
+      .sidebar-toggle { 
+        display: block; 
+      }
+      
+      .header { 
+        padding: 0 var(--spacing-md); 
+      }
+      
+      .dashboard-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    /* Student Dashboard Specific Styles */
+    .dashboard-grid {
+      display: grid;
+      grid-template-columns: 2fr 1fr;
+      gap: var(--spacing-xl);
+    }
+
+    .card {
+      background: var(--bg-surface);
+      border-radius: var(--radius-md);
+      box-shadow: var(--shadow-sm);
+      border: 1px solid var(--border-color);
+      overflow: hidden;
+    }
+
+    .card-header {
+      padding: var(--spacing-lg);
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .card-title {
+      font-size: 1.125rem;
+      font-weight: 700;
+      color: var(--text-main);
+      display: flex;
+      align-items: center;
+      gap: var(--spacing-sm);
+    }
+
+    .card-body {
+      padding: var(--spacing-lg);
+    }
+
+    .w-100 {
+      width: 100%;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Loading View -->
+  <div id="loadingView">
+    <div class="spinner-container">
+      <i class="fas fa-spinner fa-spin"></i>
+      <p>Loading Cassandra...</p>
+    </div>
+  </div>
+
+  <!-- Dashboard View -->
+  <div class="app-container" id="dashboardView" style="display: none;">
+    
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-header">
+        <a href="student-dashboard.html" class="logo" style="text-decoration: none;">
+          <img src="Assets/Cassandra-Logo.png" alt="Cassandra" onerror="this.outerHTML='<h2 style=\'color: var(--primary); font-weight: 800; font-size: 1.5rem; margin: 0; text-decoration: none;\'>Cassandra.</h2>'" style="height: 40px; width: auto; object-fit: contain;">
+        </a>
+      </div>
+      
+      <nav class="sidebar-nav">
+        <p class="sidebar-nav-title">Main Menu</p>
+        <a href="student-dashboard.html" class="sidebar-nav-item active">
+          <i class="fas fa-home"></i> <span>Dashboard</span>
+        </a>
+        
+        <!-- Dynamic list -->
+        <p class="sidebar-nav-title" style="margin-top: var(--spacing-lg);">Your Classes</p>
+        <div id="sidebarClassesList">
+            <span style="font-size: 0.8rem; color: var(--text-muted); padding-left: 1rem;">Loading...</span>
+        </div>
+        
+        <p class="sidebar-nav-title" style="margin-top: var(--spacing-lg);">Account</p>
+        <a href="student-profile.html" class="sidebar-nav-item">
+          <i class="fas fa-user"></i> <span>Profile</span>
+        </a>
+        <a onclick="logoutUser()" class="sidebar-nav-item" style="cursor: pointer;">
+          <i class="fas fa-sign-out-alt"></i> <span>Logout</span>
+        </a>
+      </nav>
+    </aside>
+
+    <div class="main-wrapper">
+      
+      <header class="header">
+        <button class="sidebar-toggle" id="sidebarToggle" aria-label="Toggle sidebar">
+          <i class="fas fa-bars"></i>
+        </button>
+        
+        <div class="header-actions">
+          <a href="student-profile.html" class="header-icon" id="headerProfileCircle" title="Profile">
+            <i class="fas fa-user-circle"></i>
+          </a>
+          <a onclick="logoutUser()" class="header-icon" title="Logout" style="cursor: pointer;">
+            <i class="fas fa-sign-out-alt"></i>
+          </a>
+        </div>
+      </header>
+
+      <main class="main-content">
+        <header class="page-header">
+          <div>
+            <h1 class="page-title">Welcome Back!</h1>
+            <p class="page-subtitle">Manage your courses and assignments effortlessly.</p>
+          </div>
+        </header>
+
+        <!-- Dashboard Grid -->
+        <div class="dashboard-grid">
+          <!-- Your Classes -->
+          <section class="card">
+            <div class="card-header">
+              <h2 class="card-title">
+                <i class="fas fa-book" style="color: var(--primary);"></i>
+                Your Classes
+              </h2>
+            </div>
+            <div class="card-body">
+              <div id="classesContainer" class="classes-grid" style="grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));">
+                <div id="loadingSpinner"><i class="fas fa-spinner fa-spin"></i> Loading Classes...</div>
+              </div>
+            </div>
+          </section>
+
+          <!-- Right Column -->
+          <section>
+            <!-- Enroll in New Course -->
+            <div class="card">
+              <div class="card-header">
+                <h2 class="card-title">
+                  <i class="fas fa-plus-circle" style="color: var(--primary);"></i>
+                  Enroll in New Course
+                </h2>
+              </div>
+              <div class="card-body">
+                <p style="font-size: 0.875rem; color: var(--text-secondary); margin-bottom: var(--spacing-md);">
+                  Enter your class code to join a new course
+                </p>
+                <div id="enrollError" class="error-box" style="display: none; margin-bottom: var(--spacing-md);"></div>
+                <div class="form-group" style="margin-bottom: 1rem;">
+                  <div class="form-input-wrapper">
+                    <i class="fas fa-key" style="position: absolute; left: 1rem; top: 50%; transform: translateY(-50%); color: var(--text-muted);"></i>
+                    <input 
+                      type="text" 
+                      id="classCode" 
+                      name="classCode" 
+                      class="form-input" 
+                      placeholder="Enter class code (e.g., ABC-123)"
+                      style="padding-left: 2.5rem;"
+                    >
+                  </div>
+                </div>
+                <button type="button" id="joinCourseBtn" class="btn btn-primary w-100">
+                  <i class="fas fa-sign-in-alt"></i>
+                  Join Course
+                </button>
+              </div>
+            </div>
+          </section>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <!-- Unenroll Confirmation Modal -->
+  <div id="unenrollModal" class="modal-overlay">
+    <div class="modal" style="max-width: 400px;">
+      <div class="modal-header">
+        <h3 class="modal-title">Leave Class</h3>
+        <button class="modal-close" onclick="closeModal('unenrollModal')"><i class="fas fa-times"></i></button>
+      </div>
+      <div class="modal-body">
+        <p>Are you sure you want to leave this class? You will lose access to all course materials.</p>
+        <input type="hidden" id="unenrollEnrollmentId">
+        <input type="hidden" id="unenrollClassName">
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="closeModal('unenrollModal')">Cancel</button>
+        <button class="btn btn-danger" onclick="executeUnenroll()" id="btnConfirmUnenroll">
+          <i class="fas fa-sign-out-alt"></i> Leave Class
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ============================================
+    // SUPABASE INITIALIZATION
+    // ============================================
+    const SUPABASE_URL = 'https://lchcfsgexlkjxrhfjrna.supabase.co'; 
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxjaGNmc2dleGxranhyaGZqcm5hIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjAyODQyMTcsImV4cCI6MjA3NTg2MDIxN30._euxT31TQqCbeA9g8bSpf15_N9UaMaZEhJevAxvTQuU';
+    
+    let supabaseClient;
+    try {
+        supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        console.log('Supabase client initialized successfully');
+    } catch(err) {
+        console.error("Supabase init failed", err);
+    }
+
+    let currentStudentId = null;
+    let enrolledClasses = [];
+    const colorsList = ['blue', 'green', 'purple', 'amber', 'rose'];
+    const colorHexMap = { 
+        blue: '#3b82f6', 
+        green: '#10b981', 
+        purple: '#8b5cf6', 
+        amber: '#f59e0b', 
+        rose: '#f43f5e' 
+    };
+
+    document.addEventListener('DOMContentLoaded', async () => {
+        // Check session initially
+        const { data: { session } } = await supabaseClient.auth.getSession();
+        
+        if (session && session.user) {
+            currentStudentId = session.user.id;
+            // Show Dashboard
+            document.getElementById('loadingView').style.display = 'none';
+            document.getElementById('dashboardView').style.display = 'flex';
+            loadEnrolledClasses();
+        } else {
+            // Not Logged In, replace history and redirect to login
+            window.location.replace('student-login.html');
+        }
+
+        // Listen for auth changes
+        supabaseClient.auth.onAuthStateChange((event, session) => {
+            if (event === 'SIGNED_OUT') {
+                currentStudentId = null;
+                // Safely redirect to login via replace to prevent "back" button abuse
+                window.location.replace('student-login.html');
+            }
+        });
+
+        // Setup join course button
+        document.getElementById('joinCourseBtn').addEventListener('click', handleEnroll);
+        
+        // Close dropdowns when clicking outside
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('.card-menu-container')) {
+                document.querySelectorAll('.card-menu-dropdown').forEach(d => d.classList.remove('show'));
+            }
+        });
+    });
+
+    // Load enrolled classes for current student
+    async function loadEnrolledClasses() {
+        const container = document.getElementById('classesContainer');
+        const sidebarList = document.getElementById('sidebarClassesList');
+        
+        container.innerHTML = '<div id="loadingSpinner"><i class="fas fa-spinner fa-spin"></i> Loading Classes...</div>';
+        sidebarList.innerHTML = '<span style="font-size: 0.8rem; color: var(--text-muted); padding-left: 1rem;">Loading...</span>';
+
+        try {
+            // Get enrollments for this student with class details
+            const { data: enrollments, error: enrollError } = await supabaseClient
+                .from('enrollment')
+                .select(`
+                    enrollment_id,
+                    class_id,
+                    class:class_id (
+                        course_id,
+                        course_name,
+                        course_code,
+                        class_name,
+                        class_code,
+                        teacher_id
+                    )
+                `)
+                .eq('student_id', currentStudentId);
+
+            if (enrollError) throw enrollError;
+
+            // Get teacher names for each class
+            const teacherIds = [...new Set(enrollments.map(e => e.class.teacher_id).filter(id => id))];
+            let teacherMap = {};
+            
+            if (teacherIds.length > 0) {
+                const { data: teachers, error: teacherError } = await supabaseClient
+                    .from('teacher')
+                    .select('id, name')
+                    .in('id', teacherIds);
+
+                if (!teacherError && teachers) {
+                    teachers.forEach(t => teacherMap[t.id] = t.name);
+                }
+            }
+
+            // Process enrolled classes
+            enrolledClasses = enrollments.map(e => ({
+                ...e.class,
+                enrollment_id: e.enrollment_id,
+                teacher_name: teacherMap[e.class.teacher_id] || ' '
+            }));
+
+            renderClasses(enrolledClasses);
+
+        } catch (err) {
+            console.error('Error loading classes:', err);
+            container.innerHTML = '<p style="color:red; text-align:center; width:100%; padding: 2rem;">Error loading classes.</p>';
+            sidebarList.innerHTML = '<span style="font-size: 0.8rem; color: var(--text-muted); padding-left: 1rem;">No classes</span>';
+        }
+    }
+
+    function renderClasses(classes) {
+        const container = document.getElementById('classesContainer');
+        const sidebarList = document.getElementById('sidebarClassesList');
+        
+        container.innerHTML = '';
+        sidebarList.innerHTML = '';
+
+        if (classes.length === 0) {
+            container.innerHTML = '<div style="grid-column: 1/-1; text-align: center; padding: 40px;"><h3>No classes enrolled</h3><p>Enter a class code on the right to join your first course!</p></div>';
+            sidebarList.innerHTML = '<span style="font-size: 0.8rem; color: var(--text-muted); padding-left: 1rem;">No classes yet</span>';
+            return;
+        }
+
+        classes.forEach((cls, index) => {
+            const colorName = colorsList[index % colorsList.length];
+            const hexColor = colorHexMap[colorName] || 'var(--primary)';
+            
+            // Parse class_name to get display name and section
+            let displayName = cls.class_name || cls.course_name;
+            let sectionName = "General";
+            if (displayName && displayName.includes(' - ')) {
+                const parts = displayName.split(' - ');
+                displayName = parts[0];
+                sectionName = parts[1];
+            }
+
+            // Main card
+            const card = document.createElement('article');
+            card.className = 'class-card';
+            card.style.animationDelay = `${(index % 5) * 0.1}s`;
+            card.onclick = (e) => {
+                if (!e.target.closest('.card-menu-container')) {
+                    window.location.href = `student-course-view.html?id=${cls.course_id}`;
+                }
+            };
+            
+            card.innerHTML = `
+                <div class="card-top-accent ${colorName}"></div>
+                <div class="class-card-body">
+                  <div class="class-header">
+                    <div class="class-name-wrap">
+                      <h3 class="class-name">${displayName}</h3>
+                      <span class="section-badge">${sectionName}</span>
+                    </div>
+                    <div class="course-code-badge">${cls.course_code}</div>
+                  </div>
+                  <div class="class-meta">
+                    <div><i class="fas fa-chalkboard-teacher"></i> <strong>${cls.teacher_name}</strong></div>
+                  </div>
+                </div>
+                <div class="card-menu-container">
+                    <button class="card-menu-btn" onclick="toggleMenu(this, event)">
+                        <i class="fas fa-ellipsis-v"></i>
+                    </button>
+                    <div class="card-menu-dropdown">
+                        <div class="card-menu-item danger" onclick="confirmUnenroll('${cls.enrollment_id}', '${displayName}', event)">
+                            <i class="fas fa-sign-out-alt"></i> Unenroll
+                        </div>
+                    </div>
+                </div>
+            `;
+            container.appendChild(card);
+
+            // Sidebar item
+            const sidebarItem = document.createElement('a');
+            sidebarItem.className = 'sidebar-nav-item';
+            sidebarItem.onclick = () => window.location.href = `student-course-view.html?id=${cls.course_id}`;
+            sidebarItem.innerHTML = `
+                <div class="class-color-dot" style="background-color: ${hexColor};"></div>
+                <span style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${displayName}</span>
+            `;
+            sidebarList.appendChild(sidebarItem);
+        });
+    }
+
+    // Toggle dropdown menu
+    window.toggleMenu = function(btn, event) {
+        event.stopPropagation();
+        const dropdown = btn.nextElementSibling;
+        const isOpen = dropdown.classList.contains('show');
+        
+        // Close all other dropdowns
+        document.querySelectorAll('.card-menu-dropdown').forEach(d => d.classList.remove('show'));
+        
+        // Toggle current
+        if (!isOpen) {
+            dropdown.classList.add('show');
+        }
+    };
+
+    // Confirm unenroll
+    window.confirmUnenroll = function(enrollmentId, className, event) {
+        event.stopPropagation();
+        document.getElementById('unenrollEnrollmentId').value = enrollmentId;
+        document.getElementById('unenrollClassName').value = className;
+        openModal('unenrollModal');
+    };
+
+    // Execute unenroll
+    window.executeUnenroll = async function() {
+        const enrollmentId = document.getElementById('unenrollEnrollmentId').value;
+        const btn = document.getElementById('btnConfirmUnenroll');
+        
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Leaving...';
+        
+        try {
+            const { error } = await supabaseClient
+                .from('enrollment')
+                .delete()
+                .eq('enrollment_id', enrollmentId)
+                .eq('student_id', currentStudentId); // Extra safety check
+            
+            if (error) throw error;
+            
+            closeModal('unenrollModal');
+            await loadEnrolledClasses(); // Refresh the list
+            
+        } catch (err) {
+            console.error('Unenroll error:', err);
+            alert('Failed to leave class: ' + err.message);
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-sign-out-alt"></i> Leave Class';
+        }
+    };
+
+    // Handle course enrollment
+    async function handleEnroll() {
+        const classCodeInput = document.getElementById('classCode');
+        const enrollErrorDiv = document.getElementById('enrollError');
+        const joinBtn = document.getElementById('joinCourseBtn');
+        
+        const classCode = classCodeInput.value.trim().toUpperCase();
+        
+        if (!classCode) {
+            enrollErrorDiv.textContent = 'Please enter a class code';
+            enrollErrorDiv.classList.remove('success');
+            enrollErrorDiv.style.display = 'block';
+            return;
+        }
+
+        enrollErrorDiv.style.display = 'none';
+        joinBtn.disabled = true;
+        joinBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Joining...';
+
+        try {
+            // Find class by code
+            const { data: classData, error: classError } = await supabaseClient
+                .from('class')
+                .select('class_id, course_id')
+                .eq('class_code', classCode)
+                .single();
+
+            if (classError || !classData) {
+                throw new Error('Invalid class code. Please check and try again.');
+            }
+
+            // Check if already enrolled
+            const { data: existingEnroll, error: checkError } = await supabaseClient
+                .from('enrollment')
+                .select('enrollment_id')
+                .eq('student_id', currentStudentId)
+                .eq('class_id', classData.class_id)
+                .maybeSingle();
+
+            if (existingEnroll) {
+                throw new Error('You are already enrolled in this class.');
+            }
+
+            // Create enrollment
+            const { error: insertError } = await supabaseClient
+                .from('enrollment')
+                .insert({
+                    student_id: currentStudentId,
+                    class_id: classData.class_id,
+                    enrolled_at: new Date().toISOString()
+                });
+
+            if (insertError) throw insertError;
+
+            // Success
+            const successDiv = document.getElementById('enrollError');
+            successDiv.textContent = 'Successfully enrolled! Loading...';
+            successDiv.classList.add('success');
+            successDiv.style.display = 'block';
+            classCodeInput.value = '';
+            
+            // Reload classes
+            await loadEnrolledClasses();
+
+            setTimeout(() => {
+                const hideDiv = document.getElementById('enrollError');
+                hideDiv.style.display = 'none';
+                hideDiv.classList.remove('success');
+            }, 2000);
+
+        } catch (err) {
+            console.error('Enrollment error:', err);
+            const errorDiv = document.getElementById('enrollError');
+            errorDiv.textContent = err.message;
+            errorDiv.classList.remove('success');
+            errorDiv.style.display = 'block';
+        } finally {
+            joinBtn.disabled = false;
+            joinBtn.innerHTML = '<i class="fas fa-sign-in-alt"></i> Join Course';
+        }
+    }
+
+    // Unified logout method
+    async function logoutUser() { 
+        await supabaseClient.auth.signOut(); 
+        // Force the browser to replace the current state so the back button is disabled
+        window.location.replace('student-login.html');
+    }
+
+    // Sidebar toggle
+    const sidebar = document.getElementById('sidebar');
+    document.getElementById('sidebarToggle').addEventListener('click', () => sidebar.classList.toggle('open'));
+
+    // Modal functions
+    window.openModal = function(id) { 
+        const m = document.getElementById(id); 
+        m.style.display = 'flex'; 
+        setTimeout(() => m.classList.add('active'), 10); 
+    };
+    
+    window.closeModal = function(id) { 
+        const m = document.getElementById(id); 
+        m.classList.remove('active'); 
+        setTimeout(() => m.style.display = 'none', 300); 
+    };
+  </script>
+</body>
+</html>

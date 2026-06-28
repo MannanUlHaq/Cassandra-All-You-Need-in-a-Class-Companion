@@ -1,0 +1,660 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Course Management | Cassandra</title>
+  <link rel="icon" type="image/png" href="Assets/favicon.png">
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,300;12..96,400;12..96,500;12..96,600;12..96,700&display=swap" rel="stylesheet">
+  
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <style>
+    :root {
+      /* Brand Colors */
+      --primary: #0060e7;
+      --primary-dark: #004ba8;
+      --primary-light: #3082ff;
+      --primary-alpha: rgba(0, 96, 231, 0.1);
+      
+      /* Status Colors */
+      --accent-green: #10b981;
+      --accent-red: #ef4444;
+      
+      /* UI Colors */
+      --bg-body: #f4f7f9;
+      --bg-surface: #ffffff;
+      --bg-main: #F8FAFC;
+      
+      --text-main: #0f172a;
+      --text-muted: #64748b;
+      --text-secondary: #475569;
+      
+      --border-color: #e2e8f0;
+      
+      /* Spacing & Radii */
+      --spacing-xs: 0.25rem;
+      --spacing-sm: 0.5rem;
+      --spacing-md: 1rem;
+      --spacing-lg: 1.5rem;
+      --spacing-xl: 2rem;
+      
+      --radius-sm: 8px;
+      --radius-md: 12px;
+      --radius-lg: 16px;
+      
+      /* Shadows */
+      --shadow-sm: 0 1px 3px rgba(0,0,0,0.05), 0 1px 2px rgba(0,0,0,0.03);
+      --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.05), 0 2px 4px -1px rgba(0,0,0,0.03);
+      --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.05), 0 4px 6px -2px rgba(0,0,0,0.03);
+      --shadow-hover: 0 20px 25px -5px rgba(0,0,0,0.08), 0 10px 10px -5px rgba(0,0,0,0.04);
+      
+      --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Bricolage Grotesque', sans-serif;
+      background-color: var(--bg-body);
+      color: var(--text-main);
+      min-height: 100vh;
+      line-height: 1.5;
+      overflow-x: hidden;
+    }
+
+    /* Layout Structure */
+    .app-container { display: flex; height: 100vh; overflow: hidden; }
+
+    /* Sidebar */
+    .sidebar { width: 280px; background-color: var(--bg-surface); border-right: 1px solid var(--border-color); display: flex; flex-direction: column; transition: var(--transition); z-index: 40; }
+    .sidebar-header { padding: var(--spacing-lg); display: flex; align-items: center; border-bottom: 1px solid var(--border-color); height: 80px; }
+    .sidebar-header img { height: 40px; width: auto; object-fit: contain; }
+    .sidebar-nav { padding: var(--spacing-md); flex: 1; overflow-y: auto; }
+    .sidebar-nav-title { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); font-weight: 600; margin: var(--spacing-md) 0 var(--spacing-sm) var(--spacing-sm); }
+    .sidebar-nav-item { display: flex; align-items: center; gap: var(--spacing-md); padding: 10px 16px; color: var(--text-main); text-decoration: none; border-radius: var(--radius-sm); font-weight: 500; transition: var(--transition); margin-bottom: 4px; cursor: pointer; }
+    .sidebar-nav-item:hover { background-color: var(--bg-body); transform: translateX(4px); }
+    .sidebar-nav-item.active { background-color: var(--primary-alpha); color: var(--primary); font-weight: 600; }
+    .sidebar-nav-item.active i { color: var(--primary); }
+    .sidebar-nav-item i { font-size: 1.1rem; color: var(--text-muted); width: 24px; text-align: center; transition: var(--transition); }
+    .class-color-dot { width: 12px; height: 12px; border-radius: 50%; margin-left: 6px; margin-right: 6px; }
+
+    /* Main Content Wrapper */
+    .main-wrapper { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+
+    /* Header */
+    .header { height: 80px; background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(12px); border-bottom: 1px solid var(--border-color); display: flex; align-items: center; justify-content: space-between; padding: 0 var(--spacing-xl); z-index: 30; position: sticky; top: 0; }
+    .sidebar-toggle { display: none; background: none; border: none; font-size: 1.5rem; color: var(--text-main); cursor: pointer; }
+    .header-actions { display: flex; align-items: center; gap: var(--spacing-md); margin-left: auto; }
+    .header-icon { display: flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: 50%; color: var(--text-muted); text-decoration: none; transition: var(--transition); font-size: 1.25rem; background-color: transparent; cursor: pointer; }
+    .header-icon:hover { background-color: var(--bg-body); color: var(--primary); }
+
+    /* Main Area */
+    .main-content { flex: 1; padding: var(--spacing-xl); overflow-y: auto; display: flex; flex-direction: column; align-items: center; }
+    .content-container { width: 100%; max-width: 800px; display: flex; flex-direction: column; gap: var(--spacing-xl); animation: fadeInUp 0.6s ease-out forwards; }
+
+    /* Page Header */
+    .page-header { display: flex; align-items: center; gap: 1rem; margin-bottom: 0; }
+    .page-title { font-size: 2.25rem; font-weight: 800; color: var(--text-main); letter-spacing: -0.02em; margin-bottom: 8px; }
+    .page-subtitle { color: var(--text-secondary); font-size: 1.05rem; }
+    .page-subtitle span { color: var(--primary); font-weight: 600; }
+
+    /* RAG Card */
+    .card {
+      background: var(--bg-surface);
+      border-radius: var(--radius-lg);
+      padding: var(--spacing-xl);
+      box-shadow: var(--shadow-sm);
+      border: 1px solid var(--border-color);
+      transition: var(--transition);
+    }
+    .card:hover { box-shadow: var(--shadow-hover); }
+
+    .rag-card { border: 2px solid var(--primary-alpha); position: relative; overflow: hidden; }
+    .rag-card::before {
+      content: '';
+      position: absolute; top: 0; left: 0; width: 100%; height: 4px;
+      background: linear-gradient(90deg, var(--primary), var(--primary-light));
+    }
+
+    .card-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: var(--spacing-md); }
+    .card-title { font-size: 1.35rem; font-weight: 700; color: var(--text-main); display: flex; align-items: center; gap: 12px; }
+    .card-title i { color: var(--primary); font-size: 1.4rem; }
+
+    .badge {
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .badge-critical { background: #fee2e2; color: var(--accent-red); border: 1px solid rgba(239, 68, 68, 0.2); }
+
+    /* Upload Area */
+    .upload-area {
+      border: 2px dashed var(--border-color);
+      border-radius: var(--radius-md);
+      padding: 3rem 2rem;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      background: var(--bg-main);
+      margin-bottom: var(--spacing-lg);
+    }
+    .upload-area:hover, .upload-area.dragover {
+      border-color: var(--primary);
+      background: var(--primary-alpha);
+      transform: scale(1.01);
+    }
+    .upload-area.disabled {
+      opacity: 0.6; pointer-events: none; border-color: var(--border-color); background: var(--bg-body);
+    }
+    
+    .upload-icon {
+      width: 64px; height: 64px;
+      background: var(--bg-surface);
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      margin: 0 auto 16px;
+      color: var(--primary);
+      font-size: 1.75rem;
+      box-shadow: var(--shadow-sm);
+      transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    .upload-area:hover .upload-icon { transform: translateY(-5px); box-shadow: var(--shadow-md); color: var(--primary-dark); }
+
+    .upload-text { color: var(--text-secondary); font-size: 1.05rem; margin-bottom: 8px; }
+    .upload-text span { color: var(--primary); font-weight: 700; }
+    .upload-hint { font-size: 0.85rem; color: var(--text-muted); font-weight: 500; }
+
+    .file-input { display: none; }
+
+    /* File List */
+    .file-list-header {
+      font-size: 1.1rem;
+      font-weight: 700;
+      margin-bottom: 16px;
+      color: var(--text-main);
+      border-bottom: 1px solid var(--border-color);
+      padding-bottom: 8px;
+    }
+
+    .file-item {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 16px 20px;
+      background: var(--bg-surface);
+      border-radius: var(--radius-md);
+      margin-bottom: 12px;
+      border: 1px solid var(--border-color);
+      transition: var(--transition);
+      animation: fadeIn 0.4s ease forwards;
+    }
+    .file-item:hover {
+      border-color: var(--primary-alpha);
+      box-shadow: var(--shadow-sm);
+      transform: translateX(4px);
+    }
+
+    .file-name {
+      font-weight: 600;
+      color: var(--text-main);
+      display: flex; align-items: center; gap: 12px;
+      font-size: 0.95rem;
+    }
+
+    .file-status {
+      display: flex; align-items: center; gap: 8px;
+      font-size: 0.85rem; font-weight: 600;
+      padding: 4px 10px; border-radius: 20px;
+    }
+    .status-indexed { background: rgba(16, 185, 129, 0.1); color: var(--accent-green); }
+
+    .empty-state {
+      color: var(--text-muted);
+      font-size: 0.95rem;
+      padding: 32px;
+      text-align: center;
+      background: var(--bg-main);
+      border-radius: var(--radius-md);
+      border: 1px dashed var(--border-color);
+      font-weight: 500;
+    }
+
+    .error-state {
+      color: var(--accent-red);
+      font-size: 0.95rem;
+      padding: 20px;
+      text-align: center;
+      background: #fee2e2;
+      border-radius: var(--radius-md);
+      font-weight: 600;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+    @keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+    /* Toast Notification */
+    .toast {
+      position: fixed; bottom: 32px; left: 50%; transform: translateX(-50%) translateY(100px);
+      background: var(--text-main); color: white; padding: 16px 24px; border-radius: 50px;
+      display: flex; align-items: center; gap: 12px; box-shadow: var(--shadow-lg);
+      opacity: 0; transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1); z-index: 2000; font-weight: 500; font-size: 0.95rem;
+    }
+    .toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+
+    /* Responsive */
+    @media (max-width: 1024px) {
+      .sidebar { position: fixed; left: -280px; height: 100vh; }
+      .sidebar.open { left: 0; box-shadow: var(--shadow-lg); }
+      .sidebar-toggle { display: block; }
+      .header { padding: 0 var(--spacing-md); }
+    }
+    @media (max-width: 640px) {
+      .main-content { padding: var(--spacing-md); }
+      .file-item { flex-direction: column; align-items: flex-start; gap: 12px; }
+      .file-status { align-self: flex-start; }
+    }
+    
+    #pageLoader {
+      position: fixed; inset: 0; background: var(--bg-body); z-index: 9999;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+    }
+  </style>
+</head>
+<body>
+
+  <div id="pageLoader">
+    <i class="fas fa-spinner fa-spin" style="font-size: 3rem; color: var(--primary); margin-bottom: 1rem;"></i>
+    <h3 style="color: var(--text-main);">Loading RAG Environment...</h3>
+  </div>
+
+  <div class="app-container">
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-header">
+        <a href="teacher-dashboard.html" class="logo">
+          <img src="Assets/Cassandra-Logo.png" alt="Cassandra" onerror="this.outerHTML='<h2 style=\'color: var(--primary); font-weight: 800; font-size: 1.5rem; text-decoration: none;\'>Cassandra.</h2>'">
+        </a>
+      </div>
+      
+      <nav class="sidebar-nav">
+        <p class="sidebar-nav-title">Main Menu</p>
+        <a href="teacher-dashboard.html" class="sidebar-nav-item">
+          <i class="fas fa-home"></i> <span>Dashboard</span>
+        </a>
+        
+        <p class="sidebar-nav-title" style="margin-top: var(--spacing-lg);">Your Classes</p>
+        <div id="sidebarClassesList">
+            <span style="font-size: 0.8rem; color: var(--text-muted); padding-left: 1rem;">Loading...</span>
+        </div>
+        
+        <p class="sidebar-nav-title" style="margin-top: var(--spacing-lg);">Account</p>
+        <a href="teacher-profile.html" class="sidebar-nav-item">
+          <i class="fas fa-user"></i> <span>Profile</span>
+        </a>
+        <a onclick="logoutUser()" class="sidebar-nav-item" style="cursor: pointer;">
+          <i class="fas fa-sign-out-alt"></i> <span>Logout</span>
+        </a>
+      </nav>
+    </aside>
+
+    <div class="main-wrapper">
+      
+      <header class="header">
+        <button class="sidebar-toggle" id="sidebarToggle" aria-label="Toggle sidebar">
+          <i class="fas fa-bars"></i>
+        </button>
+        
+        <div class="header-actions">
+          <a href="teacher-profile.html" class="header-icon" title="Profile">
+            <i class="fas fa-user-circle"></i>
+          </a>
+          <a onclick="logoutUser()" class="header-icon" title="Logout">
+            <i class="fas fa-sign-out-alt"></i>
+          </a>
+        </div>
+      </header>
+
+      <main class="main-content">
+      <div class="content-container">
+          
+        <div class="page-header">
+            <div>
+                <h1 class="page-title">Course Management</h1>
+                <p class="page-subtitle">
+                    Settings for: <span id="headerCourseName">...</span>
+                </p>
+            </div>
+        </div>
+
+        <div class="card rag-card">
+            <div class="card-header">
+                <h2 class="card-title">
+                    <i class="fas fa-database"></i>
+                    RAG Knowledge Base
+                </h2>
+                <span class="badge badge-critical">Critical System</span>
+            </div>
+
+            <p style="color: var(--text-secondary); margin-bottom: 24px; line-height: 1.6; font-size: 1.05rem;">
+                Upload reference materials (PDF, DOCX) to be indexed. Cassandra AI uses these files to strictly contextualize and enrich generated lecture notes and student responses.
+            </p>
+
+            <div class="upload-area" id="dropZone" onclick="document.getElementById('fileInput').click()">
+                <div class="upload-icon">
+                    <i class="fas fa-cloud-upload-alt"></i>
+                </div>
+                <p class="upload-text">
+                    Drag & drop PDF/DOCX files here or <span>Click to Browse</span>
+                </p>
+                <p class="upload-hint">Maximum file size: 50MB</p>
+            </div>
+            
+            <input type="file" id="fileInput" class="file-input" accept=".pdf,.docx" onchange="handleFileSelect(this.files)">
+
+            <div class="file-list">
+                <h3 class="file-list-header">Document Library</h3>
+                <div id="fileList">
+                    <div class="empty-state"><i class="fas fa-folder-open" style="font-size: 2rem; color: var(--border-color); display: block; margin-bottom: 12px;"></i> No materials uploaded yet.</div>
+                </div>
+            </div>
+        </div>
+
+      </div>
+    </main>
+  </div>
+</div>
+
+<div class="toast" id="toast">
+  <i class="fas fa-info-circle"></i>
+  <span id="toastMessage">Notification</span>
+</div>
+
+<script>
+  // --- SUPABASE & INIT SETUP ---
+  const SUPABASE_URL = 'https://lchcfsgexlkjxrhfjrna.supabase.co'; 
+  const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxjaGNmc2dleGxranhyaGZqcm5hIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2MDI4NDIxNywiZXhwIjoyMDc1ODYwMjE3fQ.u8xbJWho6qFVW5f7tmhtK9hq5X5ApQVC4QK04jfjj0k'; 
+  const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  
+  // Dynamic API Endpoint (Toggle this for local/production)
+  // const API_BASE = 'http://localhost:5000/api';
+  const API_BASE = 'https://cassandra-rag-knowledge-base-cebhfwhzhdgpgnek.canadacentral-01.azurewebsites.net/api';
+  
+  // Dynamic State
+  let currentTeacherId = null;
+  let activeClassId = null;
+
+  document.addEventListener('DOMContentLoaded', async () => {
+      // PROPER ERROR HANDLING: Extract securely from active session, not the URL
+      const { data: { session }, error } = await supabaseClient.auth.getSession();
+      
+      if (error || !session || !session.user) {
+          window.location.href = 'teacher-dashboard.html';
+          return;
+      }
+      
+      currentTeacherId = session.user.id;
+      
+      // Hide Loader immediately for perceived performance
+      document.getElementById('pageLoader').style.display = 'none';
+      
+      // Fetch non-blocking data (Sidebar)
+      await initializePageData();
+      
+      // Only start loading RAG files if we have an active class context
+      if (activeClassId) {
+          loadFiles();
+          setInterval(loadFiles, 10000); // Polling reduced for efficiency
+      } else {
+          document.getElementById('dropZone').classList.add('disabled');
+          document.getElementById('fileList').innerHTML = '<div class="error-state">Please select a valid course from the sidebar to view documents.</div>';
+      }
+  });
+
+  // --- FETCH DYNAMIC PAGE DATA ---
+  async function initializePageData() {
+      // EXPECTED WORKFLOW: Links to this page must contain ?id=UUID
+      const urlParams = new URLSearchParams(window.location.search);
+      let courseId = urlParams.get('id');
+
+      // 1. Fetch Classes for Sidebar & Content
+      const { data: classes, error } = await supabaseClient
+          .from('class')
+          .select('*')
+          .eq('teacher_id', currentTeacherId)
+          .order('course_name', { ascending: true });
+
+      if (error || !classes || classes.length === 0) {
+          document.getElementById('sidebarClassesList').innerHTML = '<span style="font-size: 0.85rem; padding: 10px 16px; color: var(--text-muted);">No active classes</span>';
+          document.getElementById('headerCourseName').textContent = "No Course Found";
+          return;
+      }
+
+      renderSidebar(classes, courseId);
+
+      // 2. Set Active Course Data
+      // If the ID in URL is invalid or missing, gracefully fall back to the first class instead of breaking
+      const activeClass = (courseId && classes.some(c => c.course_id === courseId)) 
+                            ? classes.find(c => c.course_id === courseId) 
+                            : classes[0];
+                            
+      if (activeClass) {
+          activeClassId = activeClass.course_id;
+          document.getElementById('headerCourseName').textContent = activeClass.course_name;
+          
+          // Force UI URL fix if fallback was triggered to avoid confusing reloads later
+          if(courseId !== activeClassId) {
+              window.history.replaceState({}, '', `?id=${activeClassId}`);
+          }
+      }
+  }
+
+  function renderSidebar(classes, activeId) {
+      const sidebarList = document.getElementById('sidebarClassesList');
+      sidebarList.innerHTML = '';
+      const colorsList = ['blue', 'green', 'purple', 'amber', 'rose'];
+      const colorMap = { blue: '#3b82f6', green: '#10b981', purple: '#8b5cf6', amber: '#f59e0b', rose: '#f43f5e' };
+
+      classes.forEach((cls, index) => {
+          const color = colorsList[index % colorsList.length];
+          let displayName = cls.class_name.split(' - ')[0];
+
+          const sidebarItem = document.createElement('a');
+          sidebarItem.className = 'sidebar-nav-item';
+          
+          // Mimics Dashboard logic: Navigates cleanly to the specific course dashboard view
+          sidebarItem.onclick = () => window.location.href = `teacher-courses.html?id=${cls.course_id}`;
+          
+          if(activeId === cls.course_id || (!activeId && index === 0)) {
+              sidebarItem.classList.add('active');
+          }
+
+          sidebarItem.innerHTML = `
+              <div class="class-color-dot" style="background-color: ${colorMap[color]};"></div>
+              <span style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${displayName}</span>
+          `;
+          sidebarList.appendChild(sidebarItem);
+      });
+  }
+
+  // --- PYTHON BACKEND RAG INTEGRATION ---
+  async function loadFiles() {
+      if (!activeClassId) return;
+      
+      try {
+          const response = await fetch(`${API_BASE}/files?course_id=${activeClassId}`);
+          
+          // Proper Error parsing for Get Files
+          if(!response.ok) {
+              const err = await response.json();
+              throw new Error(err.error || `HTTP ${response.status}`);
+          }
+          
+          const data = await response.json();
+          if (data.files) {
+              renderFileList(data.files);
+          }
+      } catch (error) {
+          console.error('Error loading files:', error);
+          document.getElementById('fileList').innerHTML = 
+              `<div class="error-state"><i class="fas fa-server" style="margin-right: 8px;"></i> Backend connection failed: ${error.message}</div>`;
+      }
+  }
+
+  function renderFileList(files) {
+      const container = document.getElementById('fileList');
+      
+      if (files.length === 0) {
+          container.innerHTML = '<div class="empty-state"><i class="fas fa-folder-open" style="font-size: 2rem; color: var(--border-color); display: block; margin-bottom: 12px;"></i> No materials uploaded yet.</div>';
+          return;
+      }
+
+      container.innerHTML = files.map(file => {
+          const ext = (file.file_type || file.file_name.split('.').pop()).toLowerCase();
+          const iconClass = (ext === 'docx' || ext === 'doc') ? 'fa-file-word' : 'fa-file-pdf';
+          const iconColor = (ext === 'docx' || ext === 'doc') ? 'var(--primary)' : 'var(--accent-red)';
+
+          return `
+              <div class="file-item">
+                  <span class="file-name">
+                      <i class="fas ${iconClass}" style="color: ${iconColor};"></i>
+                      ${file.file_name}
+                  </span>
+                  <div class="file-status status-indexed"><i class="fas fa-check-circle"></i> Uploaded</div>
+              </div>
+          `;
+      }).join('');
+  }
+
+  // --- UPLOAD LOGIC ---
+  async function handleFileSelect(files) {
+      if (!activeClassId || !currentTeacherId) {
+          showToast('Initialization incomplete. Missing course context.', true);
+          return;
+      }
+
+      const dropZone = document.getElementById('dropZone');
+      const originalHtml = dropZone.innerHTML;
+
+      for (const file of files) {
+          const fileName = file.name.toLowerCase();
+          
+          if (!fileName.endsWith('.pdf') && !fileName.endsWith('.docx')) {
+              showToast(`Invalid file type: ${file.name}. Only PDF and DOCX files are allowed.`, true);
+              continue;
+          }
+
+          if (file.size > 50 * 1024 * 1024) {
+              showToast(`File too large: ${file.name}. Maximum size is 50MB.`, true);
+              continue;
+          }
+
+          const formData = new FormData();
+          formData.append('file', file);
+          formData.append('course_id', activeClassId);
+          formData.append('teacher_id', currentTeacherId); // Passed to map vectors appropriately
+
+          try {
+              // Show loading state that blocks interactions
+              dropZone.style.pointerEvents = 'none';
+              dropZone.style.borderColor = 'var(--primary)';
+              dropZone.innerHTML = `
+                  <div class="upload-icon" style="animation: spin 1s linear infinite; background: transparent; box-shadow: none;">
+                      <i class="fas fa-circle-notch"></i>
+                  </div>
+                  <p class="upload-text">Processing & Indexing <span>${file.name}</span></p>
+                  <p class="upload-hint">Please keep this window open. This might take a moment.</p>
+              `;
+              
+              const response = await fetch(`${API_BASE}/upload`, {
+                  method: 'POST',
+                  body: formData
+              });
+
+              const result = await response.json();
+
+              if (response.ok) {
+                  showToast(`${file.name} uploaded successfully!`);
+                  await loadFiles();
+              } else {
+                  // Graceful JSON error tracking from python output
+                  showToast(`Error: ${result.error || 'Upload failed due to unknown error.'}`, true);
+              }
+          } catch (error) {
+              showToast(`Backend server not reachable. Please try again.`, true);
+          }
+      }
+      
+      // Reset dropzone
+      dropZone.style.pointerEvents = 'auto';
+      dropZone.style.borderColor = '';
+      dropZone.innerHTML = originalHtml;
+      document.getElementById('fileInput').value = '';
+  }
+
+  // --- UI/UX UTILITIES ---
+  function showToast(message, isError = false) {
+    const toast = document.getElementById('toast');
+    const icon = toast.querySelector('i');
+    
+    document.getElementById('toastMessage').textContent = message;
+    
+    if (isError) {
+        toast.style.background = 'var(--accent-red)';
+        icon.className = 'fas fa-exclamation-circle';
+    } else {
+        toast.style.background = 'var(--text-main)';
+        icon.className = 'fas fa-check-circle';
+    }
+    
+    toast.classList.add('show');
+    setTimeout(() => toast.classList.remove('show'), 3500);
+  }
+
+  // --- DRAG AND DROP EVENTS ---
+  const dropZone = document.getElementById('dropZone');
+
+  dropZone.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      dropZone.classList.add('dragover');
+  });
+
+  dropZone.addEventListener('dragleave', () => {
+      dropZone.classList.remove('dragover');
+  });
+
+  dropZone.addEventListener('drop', (e) => {
+      e.preventDefault();
+      dropZone.classList.remove('dragover');
+      if (e.dataTransfer.files.length > 0) {
+          handleFileSelect(e.dataTransfer.files);
+      }
+  });
+
+  // --- SIDEBAR UI LOGIC ---
+  const sidebar = document.getElementById('sidebar');
+  const sidebarToggle = document.getElementById('sidebarToggle');
+  sidebarToggle.addEventListener('click', () => sidebar.classList.toggle('open'));
+
+  document.addEventListener('click', (e) => {
+    if (window.innerWidth <= 1024) {
+      if (!sidebar.contains(e.target) && !sidebarToggle.contains(e.target)) {
+        sidebar.classList.remove('open');
+      }
+    }
+  });
+
+  async function logoutUser() {
+      await supabaseClient.auth.signOut();
+      window.location.href = 'teacher-dashboard.html';
+  }
+</script>
+
+</body>
+</html>

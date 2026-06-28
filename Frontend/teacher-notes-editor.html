@@ -1,0 +1,1338 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Notes Editor - Cassandra AI Class Companion">
+  <title>Notes Editor | Cassandra</title>
+  <link rel="icon" type="image/png" href="Assets/favicon.png">
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,300;12..96,400;12..96,500;12..96,600;12..96,700&display=swap" rel="stylesheet">
+  
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
+  <!-- Toast UI Editor -->
+  <link rel="stylesheet" href="https://uicdn.toast.com/editor/latest/toastui-editor.min.css">
+  
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <style>
+    :root {
+      --primary: #0060e7;
+      --primary-dark: #004ba8;
+      --primary-light: #3082ff;
+      --primary-alpha: rgba(0, 96, 231, 0.1);
+      --accent-red: #ef4444;
+      --accent-green: #10b981;
+      --accent-amber: #f59e0b;
+      
+      --bg-body: #f4f7f9;
+      --bg-surface: #ffffff;
+      --bg-main: #F8FAFC;
+      --bg-hover: #f1f5f9;
+      
+      --text-main: #0f172a;
+      --text-muted: #64748b;
+      --text-secondary: #475569;
+      
+      --border-color: #e2e8f0;
+      --border-light: #f1f5f9;
+      
+      --spacing-xs: 0.25rem;
+      --spacing-sm: 0.5rem;
+      --spacing-md: 1rem;
+      --spacing-lg: 1.5rem;
+      --spacing-xl: 2rem;
+      
+      --radius-sm: 8px;
+      --radius-md: 12px;
+      --radius-lg: 16px;
+      
+      --shadow-sm: 0 1px 3px rgba(0,0,0,0.05), 0 1px 2px rgba(0,0,0,0.03);
+      --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.05), 0 2px 4px -1px rgba(0,0,0,0.03);
+      --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.05), 0 4px 6px -2px rgba(0,0,0,0.03);
+      --shadow-hover: 0 20px 25px -5px rgba(0,0,0,0.08), 0 10px 10px -5px rgba(0,0,0,0.04);
+      
+      --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Bricolage Grotesque', sans-serif;
+      background-color: var(--bg-body);
+      color: var(--text-main);
+      min-height: 100vh;
+      line-height: 1.5;
+      overflow-x: hidden;
+    }
+
+    /* Layout */
+    .app-container { display: flex; height: 100vh; overflow: hidden; }
+
+    /* Sidebar - Exact match from other pages */
+    .sidebar { 
+      width: 280px; 
+      background-color: var(--bg-surface); 
+      border-right: 1px solid var(--border-color); 
+      display: flex; 
+      flex-direction: column; 
+      transition: var(--transition); 
+      z-index: 40; 
+    }
+    .sidebar-header { 
+      padding: var(--spacing-lg); 
+      display: flex; 
+      align-items: center; 
+      border-bottom: 1px solid var(--border-color); 
+      height: 80px; 
+    }
+    .sidebar-header img { height: 40px; width: auto; object-fit: contain; }
+    .sidebar-nav { 
+      padding: var(--spacing-md); 
+      flex: 1; 
+      overflow-y: auto; 
+    }
+    .sidebar-nav-title { 
+      font-size: 0.75rem; 
+      text-transform: uppercase; 
+      letter-spacing: 0.05em; 
+      color: var(--text-muted); 
+      font-weight: 600; 
+      margin: var(--spacing-md) 0 var(--spacing-sm) var(--spacing-sm); 
+    }
+    .sidebar-nav-item { 
+      display: flex; 
+      align-items: center; 
+      gap: var(--spacing-md); 
+      padding: 10px 16px; 
+      color: var(--text-main); 
+      text-decoration: none; 
+      border-radius: var(--radius-sm); 
+      font-weight: 500; 
+      transition: var(--transition); 
+      margin-bottom: 4px; 
+      cursor: pointer; 
+    }
+    .sidebar-nav-item:hover { 
+      background-color: var(--bg-body); 
+      transform: translateX(4px); 
+    }
+    .sidebar-nav-item.active { 
+      background-color: var(--primary-alpha); 
+      color: var(--primary); 
+      font-weight: 600; 
+    }
+    .sidebar-nav-item.active i { color: var(--primary); }
+    .sidebar-nav-item i { 
+      font-size: 1.1rem; 
+      color: var(--text-muted); 
+      width: 24px; 
+      text-align: center; 
+      transition: var(--transition); 
+    }
+    .class-color-dot { 
+      width: 12px; 
+      height: 12px; 
+      border-radius: 50%; 
+      margin-left: 6px; 
+      margin-right: 6px; 
+    }
+
+    /* Main Content */
+    .main-wrapper { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+
+    /* Header */
+    .header { 
+      height: 80px; 
+      background: rgba(255, 255, 255, 0.85); 
+      backdrop-filter: blur(12px); 
+      border-bottom: 1px solid var(--border-color); 
+      display: flex; 
+      align-items: center; 
+      justify-content: space-between; 
+      padding: 0 var(--spacing-xl); 
+      z-index: 30; 
+      position: sticky; 
+      top: 0; 
+    }
+    .sidebar-toggle { 
+      display: none; 
+      background: none; 
+      border: none; 
+      font-size: 1.5rem; 
+      color: var(--text-main); 
+      cursor: pointer; 
+    }
+    .header-actions { 
+      display: flex; 
+      align-items: center; 
+      gap: var(--spacing-md); 
+      margin-left: auto; 
+    }
+    .header-icon { 
+      display: flex; 
+      align-items: center; 
+      justify-content: center; 
+      width: 40px; 
+      height: 40px; 
+      border-radius: 50%; 
+      color: var(--text-muted); 
+      text-decoration: none; 
+      transition: var(--transition); 
+      font-size: 1.25rem; 
+      background-color: transparent; 
+      cursor: pointer; 
+      overflow: hidden; 
+    }
+    .header-icon:hover { 
+      background-color: var(--bg-body); 
+      color: var(--primary); 
+    }
+
+    .main-content { 
+      flex: 1; 
+      padding: var(--spacing-xl); 
+      overflow-y: auto; 
+      display: flex; 
+      flex-direction: column; 
+    }
+    
+    .editor-container { 
+      width: 100%; 
+      max-width: 1200px; 
+      margin: 0 auto; 
+      display: flex; 
+      flex-direction: column; 
+      gap: var(--spacing-md); 
+      animation: fadeInUp 0.6s ease-out forwards;
+    }
+
+    /* Page Header */
+    .page-header { 
+      display: flex; 
+      justify-content: space-between; 
+      align-items: flex-start; 
+      flex-wrap: wrap; 
+      gap: var(--spacing-md); 
+      margin-bottom: var(--spacing-lg); 
+    }
+    .page-title-section { flex: 1; }
+    .page-title { 
+      font-size: 1.75rem; 
+      font-weight: 700; 
+      color: var(--text-main); 
+      letter-spacing: -0.02em; 
+      margin-bottom: 4px;
+    }
+    .page-subtitle { 
+      color: var(--text-muted); 
+      font-size: 0.95rem; 
+    }
+    .page-actions { 
+      display: flex; 
+      gap: var(--spacing-sm); 
+      align-items: center;
+    }
+
+    /* Note Info Card */
+    .note-info-card {
+      background: var(--bg-surface);
+      border-radius: var(--radius-md);
+      padding: var(--spacing-lg);
+      box-shadow: var(--shadow-sm);
+      border: 1px solid var(--border-color);
+      display: flex;
+      align-items: center;
+      gap: var(--spacing-lg);
+      flex-wrap: wrap;
+      margin-bottom: var(--spacing-md);
+    }
+    .note-meta-item {
+      display: flex;
+      align-items: center;
+      gap: var(--spacing-sm);
+      color: var(--text-secondary);
+      font-size: 0.9rem;
+    }
+    .note-meta-item i {
+      color: var(--primary);
+      font-size: 1rem;
+    }
+    .note-meta-item strong {
+      color: var(--text-main);
+      font-weight: 600;
+    }
+    .status-badge {
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .status-badge.draft {
+      background: var(--accent-amber);
+      color: white;
+    }
+    .status-badge.published {
+      background: var(--accent-green);
+      color: white;
+    }
+
+    /* Toast UI Editor Customization - Word Doc Style */
+    .editor-wrapper {
+      background: var(--bg-surface);
+      border-radius: var(--radius-md);
+      box-shadow: var(--shadow-sm);
+      border: 1px solid var(--border-color);
+      overflow: hidden;
+      flex: 1;
+      min-height: 500px;
+      display: flex;
+      flex-direction: column;
+    }
+    
+    .toastui-editor-defaultUI {
+      border: none !important;
+      border-radius: 0 !important;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+    }
+    .toastui-editor-toolbar {
+      background: var(--bg-main) !important;
+      border-bottom: 1px solid var(--border-color) !important;
+    }
+    .toastui-editor-defaultUI-toolbar button {
+      color: var(--text-secondary) !important;
+      border-radius: var(--radius-sm) !important;
+    }
+    .toastui-editor-defaultUI-toolbar button:hover {
+      background: var(--bg-hover) !important;
+      color: var(--primary) !important;
+    }
+    .toastui-editor-defaultUI-toolbar .active {
+      background: var(--primary-alpha) !important;
+      color: var(--primary) !important;
+    }
+    .toastui-editor-ww-container {
+      background: #fdfdfd !important; /* Gentle off-white background */
+      display: flex;
+      justify-content: center;
+    }
+    .toastui-editor-contents {
+      font-family: 'Bricolage Grotesque', sans-serif !important;
+      background: white;
+      max-width: 850px;
+      width: 100%;
+      margin: 20px auto !important;
+      padding: 40px !important;
+      box-shadow: var(--shadow-sm);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-sm);
+      min-height: calc(100% - 40px);
+    }
+    .toastui-editor-contents h1,
+    .toastui-editor-contents h2,
+    .toastui-editor-contents h3 {
+      color: var(--text-main) !important;
+      border-bottom-color: var(--border-color) !important;
+    }
+    .toastui-editor-contents p {
+      color: var(--text-secondary) !important;
+      font-size: 1.05rem !important;
+    }
+    .toastui-editor-contents code {
+      background: var(--bg-main) !important;
+      color: var(--primary) !important;
+    }
+    .toastui-editor-contents pre {
+      background: var(--bg-main) !important;
+      border: 1px solid var(--border-color) !important;
+    }
+
+    /* Action Bar */
+    .action-bar {
+      background: var(--bg-surface);
+      border-radius: var(--radius-md);
+      padding: var(--spacing-md) var(--spacing-lg);
+      box-shadow: var(--shadow-sm);
+      border: 1px solid var(--border-color);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: var(--spacing-md);
+    }
+    .action-group {
+      display: flex;
+      gap: var(--spacing-sm);
+      align-items: center;
+    }
+
+    /* Buttons */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 10px 20px;
+      border-radius: var(--radius-sm);
+      font-family: inherit;
+      font-weight: 600;
+      font-size: 0.95rem;
+      cursor: pointer;
+      border: 1px solid transparent;
+      transition: var(--transition);
+      text-decoration: none;
+    }
+    .btn:active { transform: scale(0.97); }
+    .btn:disabled { 
+      opacity: 0.6; 
+      cursor: not-allowed; 
+    }
+    .btn-primary {
+      background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+      color: white;
+      box-shadow: 0 4px 12px rgba(0, 96, 231, 0.25);
+    }
+    .btn-primary:hover:not(:disabled) {
+      background: linear-gradient(135deg, var(--primary-light) 0%, var(--primary) 100%);
+      box-shadow: 0 6px 16px rgba(0, 96, 231, 0.35);
+      transform: translateY(-1px);
+    }
+    .btn-secondary {
+      background-color: var(--bg-body);
+      color: var(--text-main);
+      border-color: var(--border-color);
+    }
+    .btn-secondary:hover:not(:disabled) {
+      background-color: var(--border-color);
+    }
+    .btn-outline {
+      background-color: transparent;
+      color: var(--text-main);
+      border-color: var(--border-color);
+    }
+    .btn-outline:hover:not(:disabled) {
+      border-color: var(--primary);
+      color: var(--primary);
+      background-color: var(--primary-alpha);
+    }
+    .btn-success {
+      background: linear-gradient(135deg, var(--accent-green) 0%, #059669 100%);
+      color: white;
+      box-shadow: 0 4px 12px rgba(16, 185, 129, 0.25);
+    }
+    .btn-success:hover:not(:disabled) {
+      box-shadow: 0 6px 16px rgba(16, 185, 129, 0.35);
+      transform: translateY(-1px);
+    }
+    .btn-sm { padding: 6px 12px; font-size: 0.85rem; }
+
+    /* Loading States */
+    .loading-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(255, 255, 255, 0.9);
+      backdrop-filter: blur(4px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      gap: var(--spacing-lg);
+      z-index: 2000;
+    }
+    .loading-overlay.active { display: flex; }
+    .loading-spinner {
+      width: 60px;
+      height: 60px;
+      border: 4px solid var(--border-color);
+      border-top-color: var(--primary);
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+    .loading-text {
+      color: var(--text-main);
+      font-weight: 600;
+      font-size: 1.1rem;
+    }
+    .loading-subtext {
+      color: var(--text-muted);
+      font-size: 0.9rem;
+    }
+
+    /* Modal */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(15, 23, 42, 0.4);
+      backdrop-filter: blur(4px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+      opacity: 0;
+      visibility: hidden;
+      transition: all 0.3s ease;
+    }
+    .modal-overlay.active {
+      opacity: 1;
+      visibility: visible;
+      display: flex;
+    }
+    .modal {
+      background: var(--bg-surface);
+      width: 100%;
+      max-width: 500px;
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-lg);
+      transform: translateY(20px) scale(0.95);
+      transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+      overflow: hidden;
+    }
+    .modal-overlay.active .modal {
+      transform: translateY(0) scale(1);
+    }
+    .modal-header {
+      padding: var(--spacing-lg) var(--spacing-xl);
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background-color: #fcfcfd;
+    }
+    .modal-title {
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: var(--text-main);
+    }
+    .modal-close {
+      background: none;
+      border: none;
+      font-size: 1.25rem;
+      color: var(--text-muted);
+      cursor: pointer;
+      transition: var(--transition);
+      width: 32px;
+      height: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 50%;
+    }
+    .modal-close:hover {
+      background-color: var(--border-color);
+      color: var(--text-main);
+    }
+    .modal-body {
+      padding: var(--spacing-xl);
+    }
+    .modal-footer {
+      padding: var(--spacing-md) var(--spacing-xl);
+      border-top: 1px solid var(--border-color);
+      display: flex;
+      justify-content: flex-end;
+      gap: var(--spacing-md);
+      background-color: #fcfcfd;
+    }
+
+    /* Toast Notification */
+    .toast {
+      position: fixed;
+      bottom: 32px;
+      left: 50%;
+      transform: translateX(-50%) translateY(100px);
+      background: var(--text-main);
+      color: white;
+      padding: 16px 24px;
+      border-radius: 50px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      box-shadow: var(--shadow-lg);
+      opacity: 0;
+      transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+      z-index: 2000;
+      font-weight: 500;
+      font-size: 0.95rem;
+    }
+    .toast.show {
+      transform: translateX(-50%) translateY(0);
+      opacity: 1;
+    }
+    .toast.success { background: var(--accent-green); }
+    .toast.error { background: var(--accent-red); }
+
+    /* Animations */
+    @keyframes fadeInUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    /* Responsive */
+    @media (max-width: 1024px) {
+      .sidebar { position: fixed; left: -280px; height: 100vh; }
+      .sidebar.open { left: 0; box-shadow: var(--shadow-lg); }
+      .sidebar-toggle { display: block; }
+      .header { padding: 0 var(--spacing-md); }
+      .editor-container { padding: 0 var(--spacing-md); }
+      .action-bar { flex-direction: column; align-items: stretch; }
+      .action-group { justify-content: center; }
+    }
+  </style>
+<base target="_blank">
+</head>
+<body>
+
+  <!-- Loading Overlay -->
+  <div class="loading-overlay" id="loadingOverlay">
+    <div class="loading-spinner"></div>
+    <div class="loading-text" id="loadingText">Processing...</div>
+    <div class="loading-subtext" id="loadingSubtext">Please wait while we save your changes</div>
+  </div>
+
+  <div class="app-container">
+    
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-header">
+        <a href="teacher-dashboard.html" class="logo" style="text-decoration: none;">
+          <img src="Assets/Cassandra-Logo.png" alt="Cassandra" onerror="this.outerHTML='<h2 style=\'color: var(--primary); font-weight: 800; font-size: 1.5rem; margin: 0; text-decoration: none;\'>Cassandra.</h2>'" style="height: 40px; width: auto; object-fit: contain;">
+        </a>
+      </div>
+      
+      <nav class="sidebar-nav">
+        <p class="sidebar-nav-title">Main Menu</p>
+        <a href="teacher-dashboard.html" class="sidebar-nav-item">
+          <i class="fas fa-home"></i> <span>Dashboard</span>
+        </a>
+        
+        <p class="sidebar-nav-title" style="margin-top: var(--spacing-lg);">Your Classes</p>
+        <div id="sidebarClassesList">
+            <span style="font-size: 0.8rem; color: var(--text-muted); padding-left: 1rem;">Loading...</span>
+        </div>
+        
+        <p class="sidebar-nav-title" style="margin-top: var(--spacing-lg);">Account</p>
+        <a href="teacher-profile.html" class="sidebar-nav-item">
+          <i class="fas fa-user"></i> <span>Profile</span>
+        </a>
+        <a onclick="logoutUser()" class="sidebar-nav-item" style="cursor: pointer;">
+          <i class="fas fa-sign-out-alt"></i> <span>Logout</span>
+        </a>
+      </nav>
+    </aside>
+
+    <!-- Main Content -->
+    <div class="main-wrapper">
+      
+      <!-- Header (Matched Exactly to Notes Library) -->
+      <header class="header">
+        <button class="sidebar-toggle" id="sidebarToggle" aria-label="Toggle sidebar">
+          <i class="fas fa-bars"></i>
+        </button>
+        
+        <div class="header-actions">
+          <a href="teacher-profile.html" class="header-icon" title="Profile">
+            <i class="fas fa-user-circle"></i>
+          </a>
+          <a onclick="logoutUser()" class="header-icon" title="Logout" style="cursor: pointer;">
+            <i class="fas fa-sign-out-alt"></i>
+          </a>
+        </div>
+      </header>
+
+      <!-- Main Editor Area -->
+      <main class="main-content">
+        <div class="editor-container">
+          
+          <!-- Page Header -->
+          <header class="page-header">
+            <div class="page-title-section">
+              <h1 class="page-title">
+                <i class="fas fa-file-alt" style="color: var(--primary); margin-right: 8px;"></i>
+                Notes Editor
+              </h1>
+              <p class="page-subtitle">Edit and refine your generated lecture notes in a clean document view</p>
+            </div>
+            <div class="page-actions">
+              <button class="btn btn-secondary" onclick="goBack()">
+                <i class="fas fa-arrow-left"></i> Back to Library
+              </button>
+            </div>
+          </header>
+
+          <!-- Note Info Card -->
+          <div class="note-info-card" id="noteInfoCard" style="display: none;">
+            <div class="note-meta-item">
+              <i class="fas fa-book"></i>
+              <span>Course: <strong id="infoCourseName">--</strong></span>
+            </div>
+            <div class="note-meta-item">
+              <i class="fas fa-chalkboard"></i>
+              <span>Class: <strong id="infoClassName">--</strong></span>
+            </div>
+            <span class="status-badge draft" id="statusBadge">DRAFT</span>
+          </div>
+
+          <!-- Toast UI Editor (WYSIWYG Word Doc Style) -->
+          <div class="editor-wrapper">
+            <div id="toastEditor"></div>
+          </div>
+
+          <!-- Action Bar -->
+          <div class="action-bar">
+            <!-- Emptied the left side for clean layout (Removed Download MD) -->
+            <div class="action-group"></div>
+            
+            <div class="action-group">
+              <button class="btn btn-primary" onclick="saveChanges()" id="saveBtn">
+                <i class="fas fa-save"></i> Save Changes
+              </button>
+              <button class="btn btn-success" onclick="openPublishModal()" id="publishBtn" disabled>
+                <i class="fas fa-paper-plane"></i> Post to Class
+              </button>
+            </div>
+          </div>
+
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <!-- Publish Confirmation Modal -->
+  <div id="publishModal" class="modal-overlay">
+    <div class="modal">
+      <div class="modal-header">
+        <h3 class="modal-title">Publish Notes to Class</h3>
+        <button class="modal-close" onclick="closeModal('publishModal')"><i class="fas fa-times"></i></button>
+      </div>
+      <div class="modal-body">
+        <p style="margin-bottom: var(--spacing-md); color: var(--text-secondary);">
+          This will make the notes available to all enrolled students and vectorise them for AI in:
+        </p>
+        <div style="background: var(--bg-main); padding: var(--spacing-md); border-radius: var(--radius-sm); margin-bottom: var(--spacing-md);">
+          <strong id="publishClassName" style="color: var(--text-main); display: block; margin-bottom: 4px;">--</strong>
+          <span id="publishCourseName" style="color: var(--text-muted); font-size: 0.9rem;">--</span>
+        </div>
+        <p style="color: var(--text-muted); font-size: 0.9rem;">
+          <i class="fas fa-info-circle" style="color: var(--primary); margin-right: 6px;"></i>
+          Students will receive a notification and can download the PDF from their library.
+        </p>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="closeModal('publishModal')">Cancel</button>
+        <button class="btn btn-success" onclick="publishNotes()" id="confirmPublishBtn">
+          <i class="fas fa-check"></i> Confirm Publish
+        </button>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- Toast Notification -->
+  <div class="toast" id="toast">
+    <i class="fas fa-info-circle"></i>
+    <span id="toastMessage">Notification</span>
+  </div>
+
+  <!-- Toast UI Editor JS -->
+  <script src="https://uicdn.toast.com/editor/latest/toastui-editor-all.min.js"></script>
+
+  <script>
+    // SUPABASE CONFIG
+    const SUPABASE_URL = 'https://lchcfsgexlkjxrhfjrna.supabase.co'; 
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxjaGNmc2dleGxranhyaGZqcm5hIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2MDI4NDIxNywiZXhwIjoyMDc1ODYwMjE3fQ.u8xbJWho6qFVW5f7tmhtK9hq5X5ApQVC4QK04jfjj0k'; 
+    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    // RAG API URL
+    const RAG_API_URL = 'http://cassandra-student-rag-dpffgbfkewe4f6au.canadacentral-01.azurewebsites.net';
+
+    // STATE
+    let currentTeacherId = null;
+    let editor = null;
+    let activeNoteData = null;
+    let activeClassData = null;
+    let originalMarkdown = '';
+    let hasChanges = false;
+    let currentNoteId = null;
+    let currentCourseId = null;
+
+    // Color map for sidebar
+    const colorHexMap = { 
+      blue: '#3b82f6', 
+      green: '#10b981', 
+      purple: '#8b5cf6', 
+      amber: '#f59e0b', 
+      rose: '#f43f5e' 
+    };
+    const colorsList = ['blue', 'green', 'purple', 'amber', 'rose'];
+
+    // ============================================================
+    // MATH NORMALIZATION HELPERS
+    // ============================================================
+    // Strip LaTeX markdown delimiters ($$, $, \[ \, \( \))
+    // so the WYSIWYG editor shows clean Word-like text.
+
+    function stripMathDelimiters(text) {
+      if (!text) return '';
+      return text
+        .replace(/\$\$/g, '')
+        .replace(/\$(?![\$])/g, '')
+        .replace(/\\\[/g, '')
+        .replace(/\\\]/g, '')
+        .replace(/\\\(/g, '')
+        .replace(/\\\)/g, '');
+    }
+
+    // Re-wrap math-like standalone lines back into $$...$$ before saving.
+    // Heuristic: short lines with math symbols and very few regular words.
+    function restoreMathDelimiters(text) {
+      if (!text) return '';
+      const lines = text.split('\n');
+      const restored = lines.map(line => {
+        const trimmed = line.trim();
+        if (!trimmed) return line;
+        const hasMathSymbols = /[=+\-*/^_\\]/.test(trimmed);
+        const hasWords = /\b[a-zA-Z]{3,}\b/.test(trimmed);
+        const wordCount = (trimmed.match(/\b[a-zA-Z]{3,}\b/g) || []).length;
+        if ((hasMathSymbols) && wordCount <= 2 && trimmed.length < 200 && !trimmed.startsWith('#')) {
+          return '$$\n' + trimmed + '\n$$';
+        }
+        return line;
+      });
+      return restored.join('\n');
+    }
+
+    // INIT
+    document.addEventListener('DOMContentLoaded', async () => {
+      const { data: { session } } = await supabaseClient.auth.getSession();
+      
+      if (!session || !session.user) {
+        window.location.replace('teacher-login.html');
+        return;
+      }
+
+      currentTeacherId = session.user.id;
+      
+      const urlParams = new URLSearchParams(window.location.search);
+      currentNoteId = urlParams.get('note_id');
+      currentCourseId = urlParams.get('course_id');
+
+      if (!currentNoteId || !currentCourseId) {
+        showToast('Missing note or course ID', true);
+        setTimeout(() => window.location.href = 'teacher-notes-library.html', 2000);
+        return;
+      }
+
+      // Initialize editor first (empty)
+      initEditor();
+
+      // Load data (Removed loadProfileImage call as per new spec)
+      await Promise.all([
+        loadSidebarClasses(),
+        loadNoteData(currentNoteId, currentCourseId)
+      ]);
+    });
+
+    // EDITOR SETUP
+    function initEditor() {
+      editor = new toastui.Editor({
+        el: document.querySelector('#toastEditor'),
+        height: '600px',
+        initialEditType: 'wysiwyg',
+        hideModeSwitch: true, // Forces WYSIWYG "Word Doc" view by hiding Markdown tabs
+        initialValue: '',
+        useCommandShortcut: true,
+        toolbarItems: [
+          ['heading', 'bold', 'italic', 'strike'],
+          ['hr', 'quote'],
+          ['ul', 'ol', 'task', 'indent', 'outdent'],
+          ['table', 'image', 'link']
+        ],
+        hooks: {
+          addImageBlobHook: async (blob, callback) => {
+            const fileName = `editor-img-${Date.now()}-${blob.name}`;
+            const { data, error } = await supabaseClient
+              .storage
+              .from('editor-images')
+              .upload(`${currentTeacherId}/${fileName}`, blob);
+            
+            if (error) {
+              showToast('Failed to upload image', true);
+              return;
+            }
+            
+            const { data: urlData } = supabaseClient
+              .storage
+              .from('editor-images')
+              .getPublicUrl(`${currentTeacherId}/${fileName}`);
+            
+            callback(urlData.publicUrl, fileName);
+          }
+        },
+        events: {
+          change: () => {
+            hasChanges = true;
+            updateSaveButton();
+          }
+        }
+      });
+    }
+
+    // DATA LOADING
+    async function loadNoteData(noteId, courseId) {
+      showLoading('Loading note...', 'Fetching from storage');
+      
+      try {
+        const { data: classData, error: classError } = await supabaseClient
+          .from('class')
+          .select('*')
+          .eq('course_id', courseId)
+          .eq('teacher_id', currentTeacherId)
+          .maybeSingle();
+
+        if (classData) {
+          activeClassData = classData;
+        } else {
+          activeClassData = {
+            course_id: courseId,
+            course_name: 'Unknown Course',
+            class_name: 'Unknown Class',
+            class_id: null
+          };
+        }
+
+        const { data: fileList, error: listError } = await supabaseClient
+          .storage
+          .from('generated_notes')
+          .list(`${courseId}/${noteId}`, {
+            limit: 100,
+            offset: 0,
+            sortBy: { column: 'name', order: 'asc' }
+          });
+
+        if (listError) throw new Error('Could not access note folder');
+        if (!fileList || fileList.length === 0) throw new Error('No files found in note folder');
+
+        const mdFile = fileList.find(f => f.name.endsWith('.md'));
+        if (!mdFile) throw new Error('No markdown file found in note folder');
+
+        const filePath = `${courseId}/${noteId}/${mdFile.name}`;
+        // Cache-bust: append timestamp to force fresh download from CDN
+        const cacheBustPath = `${filePath}?t=${Date.now()}`;
+        const { data: mdFileData, error: downloadError } = await supabaseClient
+          .storage
+          .from('generated_notes')
+          .download(cacheBustPath);
+
+        if (downloadError || !mdFileData) throw new Error('Failed to download markdown file');
+
+        const markdownText = await mdFileData.text();
+
+        let noteTitle = noteId;
+        const lines = markdownText.split('\n');
+        for (const line of lines) {
+          const match = line.match(/^#\s+(.+)$/);
+          if (match) {
+            noteTitle = match[1];
+            break;
+          }
+        }
+
+        activeNoteData = {
+          notes_id: noteId,
+          course_id: courseId,
+          lecture_title: noteTitle,
+          lecture_date: new Date().toISOString(),
+          is_published: false,
+          markdown_content: markdownText,
+          markdown_file_path: filePath,
+          storage_file_name: mdFile.name
+        };
+
+        originalMarkdown = markdownText;
+
+        if (editor) {
+          editor.setMarkdown(stripMathDelimiters(markdownText));
+        }
+        
+        hasChanges = false;
+        updateSaveButton();
+        updateNoteInfo(activeNoteData, activeClassData);
+
+        document.getElementById('publishBtn').disabled = false;
+        hideLoading();
+
+      } catch (err) {
+        hideLoading();
+        console.error('Error loading note:', err);
+        showToast('Error: ' + err.message, true);
+        
+        activeNoteData = {
+          notes_id: noteId,
+          course_id: courseId,
+          lecture_title: noteId,
+          lecture_date: new Date().toISOString(),
+          is_published: false,
+          markdown_content: `# ${noteId}\n\nStart editing your notes here...`,
+          markdown_file_path: `${courseId}/${noteId}/${courseId}_Whiteboard_${noteId}.md`
+        };
+        
+        if (editor) editor.setMarkdown(activeNoteData.markdown_content);
+        updateNoteInfo(activeNoteData, activeClassData);
+        document.getElementById('publishBtn').disabled = false;
+      }
+    }
+
+    function updateNoteInfo(noteData, classData) {
+      const infoCard = document.getElementById('noteInfoCard');
+      infoCard.style.display = 'flex';
+
+      let className = classData ? classData.class_name : 'Unknown Class';
+      let sectionName = '';
+      if (className && className.includes(' - ')) {
+        const parts = className.split(' - ');
+        className = parts[0];
+        sectionName = parts[1];
+      }
+
+      document.getElementById('infoCourseName').textContent = classData ? classData.course_name : 'Unknown Course';
+      document.getElementById('infoClassName').textContent = className + (sectionName ? ` (${sectionName})` : '');
+
+      const statusBadge = document.getElementById('statusBadge');
+      if (noteData.is_published) {
+        statusBadge.textContent = 'PUBLISHED';
+        statusBadge.className = 'status-badge published';
+        document.getElementById('publishBtn').innerHTML = '<i class="fas fa-check"></i> Already Published';
+        document.getElementById('publishBtn').disabled = true;
+      } else {
+        statusBadge.textContent = 'DRAFT';
+        statusBadge.className = 'status-badge draft';
+      }
+
+      document.getElementById('publishClassName').textContent = className;
+      document.getElementById('publishCourseName').textContent = classData ? classData.course_name : 'Unknown Course';
+    }
+
+    async function loadSidebarClasses() {
+      const { data: classes, error } = await supabaseClient
+        .from('class')
+        .select('*')
+        .eq('teacher_id', currentTeacherId)
+        .order('course_name', { ascending: true });
+
+      if (error || !classes) return;
+
+      const sidebarList = document.getElementById('sidebarClassesList');
+      sidebarList.innerHTML = '';
+
+      classes.forEach((cls, index) => {
+        const colorName = colorsList[index % colorsList.length];
+        const hexColor = colorHexMap[colorName];
+        let displayName = cls.class_name ? cls.class_name.split(' - ')[0] : 'Unnamed Class';
+
+        const sidebarItem = document.createElement('a');
+        sidebarItem.className = 'sidebar-nav-item';
+        sidebarItem.href = `teacher-courses.html?id=${cls.course_id}`;
+        
+        if (cls.course_id === currentCourseId) {
+          sidebarItem.classList.add('active');
+        }
+
+        sidebarItem.innerHTML = `
+          <div class="class-color-dot" style="background-color: ${hexColor};"></div>
+          <span style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${displayName}</span>
+        `;
+        sidebarList.appendChild(sidebarItem);
+      });
+    }
+
+    // EDITOR ACTIONS
+    function updateSaveButton() {
+      const saveBtn = document.getElementById('saveBtn');
+      if (hasChanges) {
+        saveBtn.innerHTML = '<i class="fas fa-save"></i> Save Changes*';
+      } else {
+        saveBtn.innerHTML = '<i class="fas fa-save"></i> Save Changes';
+      }
+    }
+
+    async function saveChanges() {
+      if (!activeNoteData || !activeClassData) {
+        showToast('Error: Note or class data not loaded', true);
+        return;
+      }
+
+      const cleanContent = editor.getMarkdown();
+      const markdownContent = restoreMathDelimiters(cleanContent);
+      showLoading('Saving changes...', 'Uploading to storage');
+
+      try {
+        const noteId = activeNoteData.notes_id;
+        const courseId = activeClassData.course_id;
+        
+        const fileName = activeNoteData.storage_file_name || `${courseId}_Whiteboard_${noteId}.md`;
+        const markdownPath = `${courseId}/${noteId}/${fileName}`;
+        
+        const blob = new Blob([markdownContent], { type: 'text/markdown' });
+        
+        const { error: uploadError } = await supabaseClient
+          .storage
+          .from('generated_notes')
+          .upload(markdownPath, blob, { upsert: true });
+
+        if (uploadError) throw uploadError;
+
+        const htmlContent = generateStyledHTML(markdownContent, activeNoteData.lecture_title);
+        const htmlFileName = `${courseId}_Whiteboard_${noteId}.html`;
+        const htmlPath = `${courseId}/${noteId}/${htmlFileName}`;
+
+        const htmlBlob = new Blob([htmlContent], { type: 'text/html' });
+        await supabaseClient.storage.from('generated_notes').upload(htmlPath, htmlBlob, { upsert: true });
+
+        try {
+          const { error: dbError } = await supabaseClient
+            .from('generated_notes')
+            .update({ 
+              markdown_content: markdownContent,
+              markdown_file_path: markdownPath,
+              updated_at: new Date().toISOString()
+            })
+            .eq('notes_id', noteId);
+
+          if (dbError) {
+            await supabaseClient.from('generated_notes').insert([{
+              notes_id: noteId,
+              course_id: courseId,
+              lecture_title: activeNoteData.lecture_title,
+              lecture_date: activeNoteData.lecture_date,
+              markdown_content: markdownContent,
+              markdown_file_path: markdownPath,
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString()
+            }]);
+          }
+        } catch (dbErr) {
+          console.warn('Database operation failed:', dbErr);
+        }
+
+        // Last Modified removed per user request
+        originalMarkdown = markdownContent;
+        hasChanges = false;
+        updateSaveButton();
+
+        hideLoading();
+        showToast('Changes saved successfully!', false, 'success');
+
+      } catch (err) {
+        hideLoading();
+        console.error('Save error:', err);
+        showToast(err.message || 'Failed to save changes', true);
+      }
+    }
+
+    function generateStyledHTML(markdown, title) {
+      let html = markdown.replace(/\$\$[\s]*\n?([\s\S]*?)\n?[\s]*\$\$/g, function(match, mathContent) {
+        return `<div class="math-block">${mathContent.trim()}</div>`;
+      });
+      html = html.replace(/(?<!\$)\$(?!\$)([^$\n]+?)\$(?!\$)/g, function(match, mathContent) {
+        return `<span class="math-inline">${mathContent.trim()}</span>`;
+      });
+
+      html = html
+        .replace(/^### (.*$)/gim, '<h3>$1</h3>')
+        .replace(/^## (.*$)/gim, '<h2>$1</h2>')
+        .replace(/^# (.*$)/gim, '<h1>$1</h1>')
+        .replace(/\*\*(.*)\*\*/gim, '<strong>$1</strong>')
+        .replace(/\*(.*)\*/gim, '<em>$1</em>')
+        .replace(/`([^`]+)`/gim, '<code>$1</code>')
+        .replace(/```([\s\S]*?)```/gim, '<pre><code>$1</code></pre>')
+        .replace(/^\- (.*$)/gim, '<li>$1</li>')
+        .replace(/^\d+\. (.*$)/gim, '<li>$1</li>')
+        .replace(/\[(.*?)\]\((.*?)\)/gim, '<a href="$2">$1</a>')
+        .replace(/!\[(.*?)\]\((.*?)\)/gim, '<img alt="$1" src="$2" style="max-width:100%;">')
+        .replace(/\n/gim, '<br>');
+
+      html = html.replace(/(<li>.*<\/li>)+/g, '<ul>$&</ul>');
+
+      return `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>${title || 'Lecture Notes'} - Cassandra</title><style>* {box-sizing: border-box;margin: 0;padding: 0;}body {font-family: 'Georgia', 'Times New Roman', serif;line-height: 1.6;color: #333;background: white;padding: 20px;font-size: 12pt;}h1 {color: #0060e7;border-bottom: 2px solid #0060e7;padding-bottom: 10px;font-size: 24pt;margin-top: 0;margin-bottom: 15px;}h2 {color: #004ba8;margin-top: 25px;margin-bottom: 10px;font-size: 18pt;}h3 {color: #3082ff;font-size: 14pt;margin-top: 20px;margin-bottom: 8px;}p {margin-bottom: 10px;color: #333;}code {background: #f4f7f9;padding: 2px 6px;border-radius: 3px;font-family: 'Courier New', monospace;color: #0060e7;font-size: 10pt;}pre {background: #1e293b;color: #e2e8f0;padding: 15px;border-radius: 5px;overflow-x: auto;margin: 15px 0;}pre code {background: transparent;color: inherit;padding: 0;}blockquote {border-left: 4px solid #0060e7;margin: 15px 0;padding-left: 20px;color: #666;font-style: italic;}table {width: 100%;border-collapse: collapse;margin: 15px 0;}th, td {border: 1px solid #ddd;padding: 8px;text-align: left;}th {background: #f4f7f9;font-weight: 600;}img {max-width: 100%;height: auto;border-radius: 5px;margin: 10px 0;}a {color: #0060e7;text-decoration: none;}ul, ol {margin: 10px 0;padding-left: 30px;}li {margin: 5px 0;}.header {text-align: center;margin-bottom: 30px;padding-bottom: 20px;border-bottom: 1px solid #e2e8f0;}.header h1 {border: none;color: #0060e7;margin: 0;}.footer {text-align: center;margin-top: 40px;padding-top: 20px;border-top: 1px solid #e2e8f0;color: #999;font-size: 10pt;}.math-block {background: #f8fafc;border: 1px solid #e2e8f0;border-left: 4px solid #0060e7;border-radius: 5px;padding: 15px 20px;margin: 15px 0;font-family: 'Courier New', 'Lucida Console', monospace;font-size: 11pt;color: #1e293b;overflow-x: auto;white-space: pre-wrap;word-wrap: break-word;}.math-inline {background: #f4f7f9;padding: 2px 6px;border-radius: 3px;font-family: 'Courier New', monospace;color: #0060e7;font-size: 0.95em;}</style></head><body><div class="header"><h1>${title || 'Lecture Notes'}</h1><p>Generated by Cassandra AI • Edited by Teacher</p></div>${html}<div class="footer"><p>Generated by Cassandra: All You Need in a Class Companion</p><p>${new Date().toLocaleDateString()}</p></div></body></html>`;
+    }
+
+    // PUBLISH FUNCTIONALITY
+    function openPublishModal() {
+      if (hasChanges) {
+        showToast('Please save your changes before publishing', true);
+        return;
+      }
+      if (!activeNoteData || !activeClassData) {
+        showToast('Error: Note data not fully loaded', true);
+        return;
+      }
+      openModal('publishModal');
+    }
+
+    async function publishNotes() {
+      if (!activeNoteData || !activeClassData) return;
+
+      const btn = document.getElementById('confirmPublishBtn');
+      btn.disabled = true;
+      btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Publishing...';
+
+      try {
+        const noteId = activeNoteData.notes_id;
+        const courseId = activeClassData.course_id;
+        const classId = activeClassData.class_id;
+        const cleanContent = editor.getMarkdown();
+        const markdownContent = restoreMathDelimiters(cleanContent);
+
+        if (!classId) throw new Error('Class ID not available for publishing');
+
+        try {
+          const { error: updateError } = await supabaseClient
+            .from('generated_notes')
+            .update({ 
+              is_published: true,
+              published_at: new Date().toISOString(),
+              updated_at: new Date().toISOString()
+            })
+            .eq('notes_id', noteId);
+
+          if (updateError) {
+            await supabaseClient.from('generated_notes').insert([{
+              notes_id: noteId,
+              course_id: courseId,
+              lecture_title: activeNoteData.lecture_title,
+              is_published: true,
+              published_at: new Date().toISOString(),
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString()
+            }]);
+          }
+        } catch (dbErr) {
+          console.warn('Database update failed:', dbErr);
+        }
+
+        try {
+          await supabaseClient.from('announcement').insert([{
+            content: `<p><strong>New lecture notes available!</strong></p><p>The notes for "<strong>${activeNoteData.lecture_title}</strong>" are now published and available in your notes library.</p>`,
+            class_id: classId,
+            course_id: courseId,
+            teacher_id: currentTeacherId,
+            posted_at: new Date().toISOString()
+          }]);
+        } catch (announcementError) {
+          console.warn('Announcement creation failed:', announcementError);
+        }
+
+        try {
+          const ragResponse = await fetch(`${RAG_API_URL}/api/upload-notes`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              text: markdownContent,
+              course_id: courseId,
+              teacher_id: currentTeacherId,
+              note_id: noteId
+            })
+          });
+
+          if (!ragResponse.ok) {
+            console.error('RAG vectorization issue:', await ragResponse.text());
+            showToast('Published, but vectorization for AI failed', true);
+          }
+        } catch (ragError) {
+          console.error('Error hitting RAG API:', ragError);
+          showToast('Published, but AI API could not be reached', true);
+        }
+
+        activeNoteData.is_published = true;
+        updateNoteInfo(activeNoteData, activeClassData);
+
+        closeModal('publishModal');
+        showToast('Notes published successfully!', false, 'success');
+
+      } catch (err) {
+        console.error('Publish error:', err);
+        showToast(err.message || 'Failed to publish notes', true);
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-check"></i> Confirm Publish';
+      }
+    }
+
+    // UI HELPERS
+    function showLoading(text, subtext) {
+      document.getElementById('loadingText').textContent = text;
+      document.getElementById('loadingSubtext').textContent = subtext || '';
+      document.getElementById('loadingOverlay').classList.add('active');
+    }
+
+    function hideLoading() {
+      document.getElementById('loadingOverlay').classList.remove('active');
+    }
+
+    function openModal(id) {
+      const m = document.getElementById(id);
+      m.style.display = 'flex';
+      setTimeout(() => m.classList.add('active'), 10);
+    }
+
+    function closeModal(id) {
+      const m = document.getElementById(id);
+      m.classList.remove('active');
+      setTimeout(() => m.style.display = 'none', 300);
+    }
+
+    function showToast(message, isError = false, type = '') {
+      const toast = document.getElementById('toast');
+      const msgEl = document.getElementById('toastMessage');
+      
+      msgEl.textContent = message;
+      toast.className = 'toast ' + (isError ? 'error' : type || 'success');
+      
+      toast.classList.add('show');
+      setTimeout(() => toast.classList.remove('show'), 3000);
+    }
+
+    function goBack() {
+      if (hasChanges) {
+        if (!confirm('You have unsaved changes. Are you sure you want to leave?')) {
+          return;
+        }
+      }
+      window.location.href = `teacher-notes-library.html?id=${currentCourseId || ''}`;
+    }
+
+    // NAVIGATION
+    const sidebar = document.getElementById('sidebar');
+    document.getElementById('sidebarToggle').addEventListener('click', () => {
+      sidebar.classList.toggle('open');
+    });
+
+    async function logoutUser() {
+      await supabaseClient.auth.signOut();
+      window.location.replace('teacher-login.html');
+    }
+
+    window.addEventListener('beforeunload', (e) => {
+      if (hasChanges) {
+        e.preventDefault();
+        e.returnValue = '';
+      }
+    });
+  </script>
+</body>
+</html>

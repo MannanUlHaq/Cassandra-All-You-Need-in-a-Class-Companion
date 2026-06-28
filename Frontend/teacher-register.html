@@ -1,0 +1,841 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Teacher Registration - Cassandra AI Class Companion">
+  <title>Teacher Registration | Cassandra</title>
+  <link rel="icon" type="image/png" href="Assets/favicon.png">
+  
+  <!-- Google Fonts - Updated to include Bricolage Grotesque and Inter for a SaaS aesthetic -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,200..800&family=Inter:wght@300;400;500;600&family=Montserrat:wght@500;600;700;800&family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+  
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+  <style>
+    /* ============================================
+       CSS VARIABLES - MODERN SAAS PALETTE
+       ============================================ */
+    :root {
+      /* Brand Colors - From Prompt */
+      --primary: #0060e7;
+      --primary-dark: #004ba8;
+      --primary-light: #3082ff;
+      --primary-glow: rgba(0, 96, 231, 0.15);
+      
+      /* Accents */
+      --accent-green: #059669;
+      --accent-amber: #F59E0B;
+      
+      /* Neutrals */
+      --bg-main: #F8FAFC;
+      --bg-neutral: #F1F5F9;
+      --bg-light: #FFFFFF;
+      --text-primary: #0F172A;
+      --text-secondary: #475569;
+      --text-muted: #94A3B8;
+      --border-color: #E2E8F0;
+      --white: #FFFFFF;
+      
+      /* Typography */
+      --font-brand: 'Bricolage Grotesque', sans-serif;
+      --font-heading: 'Montserrat', sans-serif;
+      --font-body: 'Inter', 'Roboto', sans-serif;
+
+      /* Shadows */
+      --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+      --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+      --shadow-lg: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+      --shadow-glow: 0 0 20px var(--primary-glow);
+      
+      /* Shapes & Transitions */
+      --radius-sm: 8px;
+      --radius-md: 12px;
+      --radius-lg: 24px;
+      --transition-fast: all 0.2s ease-out;
+      --transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    /* ============================================
+       RESET & BASE STYLES
+       ============================================ */
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: var(--font-body);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      /* Softened overlay to make the form pop more */
+      background: linear-gradient(135deg, rgba(248, 250, 252, 0.85) 0%, rgba(241, 245, 249, 0.95) 100%),
+                  url('Assets/Teacher Registration Back.jpg') center/cover no-repeat fixed;
+      padding: 2rem 1rem;
+      color: var(--text-primary);
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
+    h1, h2, h3, h4 {
+      font-family: var(--font-brand);
+      letter-spacing: -0.02em;
+    }
+
+    a {
+      text-decoration: none;
+      color: inherit;
+      transition: var(--transition-fast);
+    }
+
+    /* ============================================
+       LAYOUT & CONTAINERS
+       ============================================ */
+    .auth-container {
+      display: flex;
+      width: 100%;
+      max-width: 1050px;
+      min-height: 650px;
+      background: var(--white);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-lg), 0 0 0 1px var(--border-color);
+      overflow: hidden;
+      opacity: 0; /* Handled by JS animation */
+      transform: translateY(20px);
+    }
+
+    /* ============================================
+       LEFT PANEL - WELCOME
+       ============================================ */
+    .auth-welcome {
+      flex: 0 0 420px;
+      background: linear-gradient(145deg, var(--primary-dark) 0%, var(--primary) 100%);
+      color: var(--white);
+      padding: 4rem 3rem;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* Subtle background pattern/glow for the left panel */
+    .auth-welcome::before {
+      content: '';
+      position: absolute;
+      top: -50%;
+      left: -50%;
+      width: 200%;
+      height: 200%;
+      background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 60%);
+      pointer-events: none;
+    }
+
+    .auth-logo {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      font-family: var(--font-brand);
+      font-size: 1.75rem;
+      font-weight: 800;
+      margin-bottom: 3rem;
+      position: relative;
+      z-index: 1;
+    }
+
+    /* Constraining the inline 230px height to look modern */
+    .auth-logo img {
+      height: auto !important;
+      max-height: 45px !important;
+      object-fit: contain;
+    }
+
+    .auth-welcome h1 {
+      font-size: 2.5rem;
+      font-weight: 800;
+      color: var(--white);
+      margin-bottom: 1.25rem;
+      line-height: 1.15;
+      position: relative;
+      z-index: 1;
+    }
+
+    .auth-welcome p {
+      font-size: 1.05rem;
+      line-height: 1.7;
+      color: rgba(255, 255, 255, 0.9);
+      margin-bottom: 2.5rem;
+      position: relative;
+      z-index: 1;
+    }
+
+    .auth-welcome .tagline {
+      font-size: 0.95rem;
+      color: rgba(255, 255, 255, 0.7);
+      margin-top: auto;
+      padding-top: 2.5rem;
+      font-weight: 500;
+      border-top: 1px solid rgba(255, 255, 255, 0.15);
+    }
+
+    .auth-welcome .features-list {
+      list-style: none;
+      position: relative;
+      z-index: 1;
+    }
+
+    .auth-welcome .features-list li {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      margin-bottom: 1rem;
+      font-size: 1rem;
+      font-weight: 500;
+      color: var(--white);
+    }
+
+    .auth-welcome .features-list i {
+      color: var(--primary-light);
+      background: rgba(255, 255, 255, 0.1);
+      padding: 0.4rem;
+      border-radius: 50%;
+      font-size: 0.85rem;
+    }
+
+    /* ============================================
+       RIGHT PANEL - FORM
+       ============================================ */
+    .auth-form-panel {
+      flex: 1;
+      padding: 3.5rem 4rem;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      overflow-y: auto;
+      background: var(--white);
+    }
+
+    .auth-tabs {
+      display: flex;
+      gap: 2.5rem;
+      margin-bottom: 2.5rem;
+      border-bottom: 1px solid var(--border-color);
+      position: relative;
+    }
+
+    .auth-tab {
+      font-family: var(--font-body);
+      font-weight: 600;
+      font-size: 1.05rem;
+      color: var(--text-muted);
+      padding-bottom: 1rem;
+      border-bottom: 3px solid transparent;
+      margin-bottom: -1px;
+      transition: var(--transition-fast);
+      cursor: pointer;
+    }
+
+    .auth-tab:hover {
+      color: var(--text-primary);
+    }
+
+    .auth-tab.active {
+      color: var(--primary);
+      border-bottom-color: var(--primary);
+    }
+
+    .auth-form-panel h2 {
+      font-size: 1.75rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin-bottom: 2rem;
+    }
+
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.25rem;
+    }
+
+    .form-group {
+      margin-bottom: 1.5rem;
+      opacity: 0; /* Handled by JS stagger */
+      transform: translateY(10px);
+    }
+
+    .form-label {
+      display: block;
+      font-size: 0.875rem;
+      font-weight: 600;
+      color: var(--text-secondary);
+      margin-bottom: 0.5rem;
+    }
+
+    .form-input-wrapper {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+
+    .form-input-wrapper i.fa-user,
+    .form-input-wrapper i.fa-envelope,
+    .form-input-wrapper i.fa-university,
+    .form-input-wrapper i.fa-lock {
+      position: absolute;
+      left: 1rem;
+      color: var(--text-muted);
+      font-size: 1.1rem;
+      transition: var(--transition-fast);
+      z-index: 2;
+    }
+
+    .form-input {
+      width: 100%;
+      padding: 0.875rem 1rem 0.875rem 2.75rem;
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      font-size: 0.95rem;
+      font-family: var(--font-body);
+      color: var(--text-primary);
+      background: var(--bg-main);
+      transition: var(--transition-fast);
+    }
+    
+    select.form-input {
+      cursor: pointer;
+      appearance: auto; /* Keeps the native dropdown arrow but styles the box */
+      padding-right: 2rem; /* Ensure text doesn't overlap the native arrow */
+    }
+
+    .form-input::placeholder {
+      color: var(--text-muted);
+    }
+
+    .form-input:hover {
+      border-color: #CBD5E1;
+    }
+
+    .form-input:focus {
+      outline: none;
+      background: var(--white);
+      border-color: var(--primary);
+      box-shadow: 0 0 0 4px var(--primary-glow);
+    }
+
+    .form-input-wrapper:focus-within i.fa-user,
+    .form-input-wrapper:focus-within i.fa-envelope,
+    .form-input-wrapper:focus-within i.fa-university,
+    .form-input-wrapper:focus-within i.fa-lock {
+      color: var(--primary);
+    }
+
+    /* Password Rules Styles */
+    .password-rules {
+      list-style: none;
+      margin-top: 0.75rem;
+      padding: 0;
+      font-size: 0.825rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+    }
+
+    .password-rules li {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      color: var(--text-muted);
+      transition: var(--transition-fast);
+    }
+
+    .password-rules li i {
+      font-size: 0.85rem;
+      width: 14px;
+      text-align: center;
+    }
+
+    .password-rules li.valid {
+      color: var(--accent-green);
+    }
+
+    .password-rules li.valid i::before {
+      content: "\f00c"; /* fa-check */
+    }
+
+    .password-rules li.invalid i::before {
+      content: "\f00d"; /* fa-times */
+    }
+
+    .form-checkbox {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      font-size: 0.9rem;
+      color: var(--text-secondary);
+      cursor: pointer;
+      margin-top: 0.5rem;
+    }
+
+    .form-checkbox input {
+      width: 1.15rem;
+      height: 1.15rem;
+      accent-color: var(--primary);
+      cursor: pointer;
+      border: 1px solid var(--border-color);
+      border-radius: 4px;
+    }
+
+    .form-checkbox span {
+      line-height: 1.4;
+    }
+
+    .form-checkbox a {
+      color: var(--primary);
+      font-weight: 600;
+    }
+
+    .form-checkbox a:hover {
+      text-decoration: underline;
+    }
+
+    /* CTA Buttons */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.6rem;
+      padding: 1rem 1.5rem;
+      font-family: var(--font-body);
+      font-weight: 600;
+      font-size: 1rem;
+      border-radius: var(--radius-md);
+      transition: var(--transition);
+      cursor: pointer;
+      border: none;
+      width: 100%;
+      margin-top: 1rem;
+      position: relative;
+      overflow: hidden;
+      z-index: 1;
+    }
+
+    .btn::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(255,255,255,0.15);
+      z-index: -1;
+      transform: translateX(-100%);
+      transition: transform 0.5s ease;
+    }
+
+    .btn:hover::before { transform: translateX(0); }
+    .btn:disabled { opacity: 0.7; cursor: not-allowed; }
+
+    .btn-primary {
+      background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+      color: var(--white);
+      box-shadow: 0 4px 12px var(--primary-glow);
+    }
+
+    .btn-primary:hover:not(:disabled) {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 20px var(--primary-glow);
+    }
+
+    .auth-footer {
+      text-align: center;
+      margin-top: 2.5rem;
+      padding-top: 2rem;
+      border-top: 1px solid var(--border-color);
+    }
+
+    .auth-footer p {
+      color: var(--text-secondary);
+      font-size: 0.95rem;
+      margin-bottom: 0.75rem;
+    }
+
+    .auth-footer a {
+      color: var(--primary);
+      font-weight: 600;
+      margin-left: 0.25rem;
+    }
+
+    .auth-footer a:hover {
+      color: var(--primary-dark);
+      text-decoration: underline;
+    }
+
+    .back-link {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      color: var(--text-muted);
+      font-size: 0.95rem;
+      font-weight: 500;
+      margin-top: 1.5rem;
+      width: 100%;
+    }
+
+    .back-link:hover {
+      color: var(--text-primary);
+      transform: translateX(-3px);
+    }
+
+    /* Dynamic Error Message Box */
+    #formError {
+      background: #FEE2E2;
+      color: #DC2626;
+      padding: 1rem;
+      border-radius: var(--radius-sm);
+      margin-bottom: 1.5rem;
+      font-size: 0.9rem;
+      font-weight: 500;
+      display: none;
+    }
+
+    /* ============================================
+       RESPONSIVE DESIGN
+       ============================================ */
+    @media (max-width: 900px) {
+      .auth-container {
+        flex-direction: column;
+        min-height: auto;
+        max-width: 550px;
+      }
+
+      .auth-welcome {
+        flex: none;
+        padding: 3rem 2rem;
+        text-align: center;
+      }
+
+      .auth-logo {
+        justify-content: center;
+        margin-bottom: 2rem;
+      }
+
+      .auth-welcome h1 {
+        font-size: 2rem;
+      }
+
+      .auth-welcome .features-list {
+        display: none;
+      }
+
+      .auth-welcome .tagline {
+        padding-top: 1.5rem;
+        margin-top: 0;
+      }
+
+      .auth-form-panel {
+        padding: 2.5rem 2rem;
+        max-height: none;
+      }
+
+      .form-row {
+        grid-template-columns: 1fr;
+        gap: 0;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .auth-tabs {
+        gap: 1.5rem;
+      }
+      .auth-form-panel {
+        padding: 2rem 1.5rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="auth-container" id="authContainer">
+    <!-- Left Panel - Welcome -->
+    <section class="auth-welcome">
+      <div class="auth-logo">
+        <img src="Assets/Cassandra-Logo-footer.png" alt="Cassandra" style="height: 230px; width: auto;">
+      </div>
+      <h1>Join as a Teacher!</h1>
+      <p>Create your account to manage courses, start AI-powered lectures, and provide enriched learning experiences to your students.</p>
+      <ul class="features-list">
+        <li><i class="fas fa-check-circle" aria-hidden="true"></i> Create and manage courses</li>
+        <li><i class="fas fa-check-circle" aria-hidden="true"></i> Start AI-powered lecture capture</li>
+        <li><i class="fas fa-check-circle" aria-hidden="true"></i> Auto-generate structured notes</li>
+        <li><i class="fas fa-check-circle" aria-hidden="true"></i> Query course materials with AI</li>
+      </ul>
+      <p class="tagline"><i class="fas fa-chalkboard-teacher" aria-hidden="true"></i> Your All-in-One Class Companion.</p>
+    </section>
+
+    <!-- Right Panel - Form -->
+    <section class="auth-form-panel">
+      <div class="auth-tabs">
+        <a href="teacher-login.html" class="auth-tab">Login</a>
+        <span class="auth-tab active">Register</span>
+      </div>
+
+      <h2>Create Teacher Account</h2>
+
+      <div id="formError"></div>
+
+      <form id="teacherRegisterForm">
+        <div class="form-row">
+          <div class="form-group stagger-item">
+            <label for="firstName" class="form-label">First Name</label>
+            <div class="form-input-wrapper">
+              <i class="fas fa-user" aria-hidden="true"></i>
+              <input 
+                type="text" 
+                id="firstName" 
+                name="firstName" 
+                class="form-input" 
+                placeholder="First name"
+                required
+              >
+            </div>
+          </div>
+
+          <div class="form-group stagger-item">
+            <label for="lastName" class="form-label">Last Name</label>
+            <div class="form-input-wrapper">
+              <i class="fas fa-user" aria-hidden="true"></i>
+              <input 
+                type="text" 
+                id="lastName" 
+                name="lastName" 
+                class="form-input" 
+                placeholder="Last name"
+                required
+              >
+            </div>
+          </div>
+        </div>
+
+        <div class="form-group stagger-item">
+          <label for="email" class="form-label">Email Address</label>
+          <div class="form-input-wrapper">
+            <i class="fas fa-envelope" aria-hidden="true"></i>
+            <input 
+              type="email" 
+              id="email" 
+              name="email" 
+              class="form-input" 
+              placeholder="you@example.com"
+              required
+            >
+          </div>
+        </div>
+
+        <div class="form-group stagger-item">
+          <label for="instituteName" class="form-label">Institute Name</label>
+          <div class="form-input-wrapper">
+            <i class="fas fa-university" aria-hidden="true"></i>
+            <select 
+              id="instituteName" 
+              name="instituteName" 
+              class="form-input" 
+              required
+            >
+              <option value="" disabled selected>Select your institute</option>
+              <option value="FAST National University of Computer and Emerging Sciences">FAST National University of Computer and Emerging Sciences</option>
+              <option value="National University of Science and Technology">National University of Science and Technology</option>
+              <option value="University of the Punjab">University of the Punjab</option>
+              <option value="University of Engineering and Technology">University of Engineering and Technology</option>
+              <option value="Lahore University of Management Sciences">Lahore University of Management Sciences</option>
+              <option value="Forman Christian College">Forman Christian College</option>
+              <option value="University of Lahore">University of Lahore</option>
+              <option value="University of Central Punjab">University of Central Punjab</option>
+              <option value="University of Management and Technology">University of Management and Technology</option>
+              <option value="Government College University">Government College University</option>
+              <option value="Information Technology University">Information Technology University</option>
+              <option value="Superior Group of Colleges">Superior Group of Colleges</option>
+              <option value="University of South Asia">University of South Asia</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group stagger-item">
+          <label for="password" class="form-label">Password</label>
+          <div class="form-input-wrapper">
+            <i class="fas fa-lock" aria-hidden="true"></i>
+            <input 
+              type="password" 
+              id="password" 
+              name="password" 
+              class="form-input" 
+              placeholder="Create a password"
+              required
+            >
+          </div>
+          <!-- Dynamic Password Rules List -->
+          <ul class="password-rules" id="passwordRules">
+            <li id="rule-length" class="invalid"><i class="fas fa-times"></i> At least 8 characters</li>
+            <li id="rule-upper" class="invalid"><i class="fas fa-times"></i> At least 1 uppercase letter</li>
+            <li id="rule-lower" class="invalid"><i class="fas fa-times"></i> At least 1 lowercase letter</li>
+            <li id="rule-number" class="invalid"><i class="fas fa-times"></i> At least 1 number</li>
+            <li id="rule-special" class="invalid"><i class="fas fa-times"></i> At least 1 special character (!@#$%^&*)</li>
+          </ul>
+        </div>
+
+        <div class="form-group stagger-item">
+          <label for="confirmPassword" class="form-label">Confirm Password</label>
+          <div class="form-input-wrapper">
+            <i class="fas fa-lock" aria-hidden="true"></i>
+            <input 
+              type="password" 
+              id="confirmPassword" 
+              name="confirmPassword" 
+              class="form-input" 
+              placeholder="Confirm your password"
+              required
+            >
+          </div>
+        </div>
+
+        <div class="form-group stagger-item">
+          <label class="form-checkbox">
+            <input type="checkbox" name="terms" required>
+            <span>I agree to the <a href="#">Terms of Service</a> and <a href="#">Privacy Policy</a></span>
+          </label>
+        </div>
+
+        <button type="submit" id="submitBtn" class="btn btn-primary stagger-item">
+          Proceed to Voice Enrollment <i class="fas fa-arrow-right" aria-hidden="true"></i>
+        </button>
+      </form>
+
+      <div class="auth-footer stagger-item">
+        <p>Already have an account? <a href="teacher-login.html">Sign In</a></p>
+        <p>Are you a Student? <a href="student-register.html">Register here</a></p>
+      </div>
+
+      <a href="index.html" class="back-link stagger-item">
+        <i class="fas fa-arrow-left" aria-hidden="true"></i>
+        Back to Home
+      </a>
+    </section>
+  </main>
+
+  <!-- ============================================
+       VANILLA JAVASCRIPT FOR INTERACTIONS
+       ============================================ -->
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      // Container entrance animation
+      const container = document.getElementById('authContainer');
+      requestAnimationFrame(() => {
+        container.style.transition = 'all 0.6s cubic-bezier(0.16, 1, 0.3, 1)';
+        container.style.opacity = '1';
+        container.style.transform = 'translateY(0)';
+      });
+
+      // Staggered form element entrance
+      const formElements = document.querySelectorAll('.stagger-item');
+      formElements.forEach((el, index) => {
+        setTimeout(() => {
+          el.style.transition = 'all 0.5s cubic-bezier(0.16, 1, 0.3, 1)';
+          el.style.opacity = '1';
+          el.style.transform = 'translateY(0)';
+        }, 150 + (index * 70)); 
+      });
+
+      // --- PASSWORD STRENGTH VALIDATION LOGIC ---
+      const passwordInput = document.getElementById('password');
+      const requirements = {
+        length: { regex: /.{8,}/, el: document.getElementById('rule-length') },
+        upper: { regex: /[A-Z]/, el: document.getElementById('rule-upper') },
+        lower: { regex: /[a-z]/, el: document.getElementById('rule-lower') },
+        number: { regex: /[0-9]/, el: document.getElementById('rule-number') },
+        special: { regex: /[^A-Za-z0-9]/, el: document.getElementById('rule-special') }
+      };
+      
+      let isPasswordStrong = false;
+
+      passwordInput.addEventListener('input', (e) => {
+        const passwordValue = e.target.value;
+        let validCount = 0;
+
+        for (const req in requirements) {
+          const rule = requirements[req];
+          if (rule.regex.test(passwordValue)) {
+            rule.el.classList.remove('invalid');
+            rule.el.classList.add('valid');
+            validCount++;
+          } else {
+            rule.el.classList.remove('valid');
+            rule.el.classList.add('invalid');
+          }
+        }
+        
+        // If all 5 rules are passed, the password is strong
+        isPasswordStrong = (validCount === Object.keys(requirements).length);
+      });
+
+      // --- REGISTRATION LOGIC ---
+      const form = document.getElementById('teacherRegisterForm');
+      const formError = document.getElementById('formError');
+      const submitBtn = document.getElementById('submitBtn');
+
+      form.addEventListener('submit', (e) => {
+        e.preventDefault();
+        formError.style.display = 'none';
+
+        const firstName = document.getElementById('firstName').value.trim();
+        const lastName = document.getElementById('lastName').value.trim();
+        const email = document.getElementById('email').value.trim();
+        const institute_name = document.getElementById('instituteName').value.trim();
+        const password = passwordInput.value;
+        const confirmPassword = document.getElementById('confirmPassword').value;
+
+        // Validation Checks
+        if (!isPasswordStrong) {
+          formError.textContent = "Please ensure your password meets all strength requirements.";
+          formError.style.display = 'block';
+          return;
+        }
+
+        if (password !== confirmPassword) {
+          formError.textContent = "Passwords do not match.";
+          formError.style.display = 'block';
+          return;
+        }
+
+        // Transition State Update
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Moving to Voice Enrollment...';
+
+        try {
+          // 1. Compile User Data
+          const teacherRegData = {
+            firstName,
+            lastName,
+            email,
+            institute_name,
+            password
+          };
+
+          // 2. Save Securely to Browser Session (Cleared when tab closes)
+          sessionStorage.setItem('teacherRegData', JSON.stringify(teacherRegData));
+
+          // 3. Redirect to the Voice Enrollment page to finish the creation loop
+          window.location.href = 'voice-enrollment.html';
+
+        } catch (err) {
+          formError.textContent = "An error occurred passing data. Please ensure cookies/storage are enabled.";
+          formError.style.display = 'block';
+          submitBtn.disabled = false;
+          submitBtn.innerHTML = 'Proceed to Voice Enrollment <i class="fas fa-arrow-right" aria-hidden="true"></i>';
+        }
+      });
+    });
+  </script>
+</body>
+</html>

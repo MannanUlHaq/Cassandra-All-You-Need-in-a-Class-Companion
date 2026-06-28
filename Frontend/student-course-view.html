@@ -1,0 +1,2203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Student Course View - Cassandra AI Class Companion">
+  <title>Student Course View | Cassandra</title>
+  <link rel="icon" type="image/png" href="Assets/favicon.png">
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,300;12..96,400;12..96,500;12..96,600;12..96,700&display=swap" rel="stylesheet">
+  
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+
+  <style>
+    :root {
+      --primary: #0060e7;
+      --primary-dark: #004ba8;
+      --primary-light: #3082ff;
+      --primary-alpha: rgba(0, 96, 231, 0.1);
+      --bg-body: #f4f7f9;
+      --bg-surface: #ffffff;
+      --bg-main: #F8FAFC;
+      --text-main: #0f172a;
+      --text-muted: #64748b;
+      --text-secondary: #475569;
+      --border-color: #e2e8f0;
+      --spacing-xs: 0.25rem;
+      --spacing-sm: 0.5rem;
+      --spacing-md: 1rem;
+      --spacing-lg: 1.5rem;
+      --spacing-xl: 2rem;
+      --radius-sm: 8px;
+      --radius-md: 12px;
+      --radius-lg: 16px;
+      --shadow-sm: 0 1px 3px rgba(0,0,0,0.05), 0 1px 2px rgba(0,0,0,0.03);
+      --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.05), 0 2px 4px -1px rgba(0,0,0,0.03);
+      --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.05), 0 4px 6px -2px rgba(0,0,0,0.03);
+      --shadow-hover: 0 20px 25px -5px rgba(0,0,0,0.08), 0 10px 10px -5px rgba(0,0,0,0.04);
+      --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Bricolage Grotesque', sans-serif;
+      background-color: var(--bg-body);
+      color: var(--text-main);
+      min-height: 100vh;
+      line-height: 1.5;
+      overflow-x: hidden;
+    }
+
+    .app-container { display: flex; height: 100vh; overflow: hidden; }
+
+    .sidebar { 
+      width: 280px; 
+      background-color: var(--bg-surface); 
+      border-right: 1px solid var(--border-color); 
+      display: flex; 
+      flex-direction: column; 
+      transition: var(--transition); 
+      z-index: 40; 
+    }
+    
+    .sidebar-header { 
+      padding: var(--spacing-lg); 
+      display: flex; 
+      align-items: center; 
+      border-bottom: 1px solid var(--border-color); 
+      height: 80px; 
+    }
+    
+    .sidebar-header img { 
+      height: 40px; 
+      width: auto; 
+      object-fit: contain; 
+    }
+    
+    .sidebar-nav { 
+      padding: var(--spacing-md); 
+      flex: 1; 
+      overflow-y: auto; 
+    }
+    
+    .sidebar-nav-title { 
+      font-size: 0.75rem; 
+      text-transform: uppercase; 
+      letter-spacing: 0.05em; 
+      color: var(--text-muted); 
+      font-weight: 600; 
+      margin: var(--spacing-md) 0 var(--spacing-sm) var(--spacing-sm); 
+    }
+    
+    .sidebar-nav-item { 
+      display: flex; 
+      align-items: center; 
+      gap: var(--spacing-md); 
+      padding: 10px 16px; 
+      color: var(--text-main); 
+      text-decoration: none; 
+      border-radius: var(--radius-sm); 
+      font-weight: 500; 
+      transition: var(--transition); 
+      margin-bottom: 4px; 
+      cursor: pointer; 
+    }
+    
+    .sidebar-nav-item:hover { 
+      background-color: var(--bg-body); 
+      transform: translateX(4px); 
+    }
+    
+    .sidebar-nav-item.active { 
+      background-color: var(--primary-alpha); 
+      color: var(--primary); 
+      font-weight: 600; 
+    }
+    
+    .sidebar-nav-item.active i { 
+      color: var(--primary); 
+    }
+    
+    .sidebar-nav-item i { 
+      font-size: 1.1rem; 
+      color: var(--text-muted); 
+      width: 24px; 
+      text-align: center; 
+      transition: var(--transition); 
+    }
+    
+    .class-color-dot { 
+      width: 12px; 
+      height: 12px; 
+      border-radius: 50%; 
+      margin-left: 6px; 
+      margin-right: 6px; 
+      flex-shrink: 0;
+    }
+
+    .main-wrapper { 
+      flex: 1; 
+      display: flex; 
+      flex-direction: column; 
+      overflow: hidden; 
+    }
+
+    .header { 
+      height: 80px; 
+      background: rgba(255, 255, 255, 0.85); 
+      backdrop-filter: blur(12px); 
+      border-bottom: 1px solid var(--border-color); 
+      display: flex; 
+      align-items: center; 
+      justify-content: space-between; 
+      padding: 0 var(--spacing-xl); 
+      z-index: 30; 
+      position: sticky; 
+      top: 0; 
+    }
+    
+    .sidebar-toggle { 
+      display: none; 
+      background: none; 
+      border: none; 
+      font-size: 1.5rem; 
+      color: var(--text-main); 
+      cursor: pointer; 
+    }
+    
+    .header-actions { 
+      display: flex; 
+      align-items: center; 
+      gap: var(--spacing-md); 
+      margin-left: auto; 
+    }
+    
+    .header-icon { 
+      display: flex; 
+      align-items: center; 
+      justify-content: center; 
+      width: 40px; 
+      height: 40px; 
+      border-radius: 50%; 
+      color: var(--text-muted); 
+      text-decoration: none; 
+      transition: var(--transition); 
+      font-size: 1.25rem; 
+      background-color: transparent; 
+      cursor: pointer; 
+      overflow: hidden; 
+    }
+    
+    .header-icon img { 
+      width: 100%; 
+      height: 100%; 
+      object-fit: cover; 
+    }
+    
+    .header-icon:hover { 
+      background-color: var(--bg-body); 
+      color: var(--primary); 
+    }
+
+    .main-content { 
+      flex: 1; 
+      padding: var(--spacing-xl); 
+      overflow-y: auto; 
+      display: flex; 
+      flex-direction: column; 
+      align-items: center; 
+    }
+    
+    .content-container { 
+      width: 100%; 
+      max-width: 1000px; 
+      display: flex; 
+      flex-direction: column; 
+      gap: var(--spacing-md); 
+      animation: fadeInUp 0.6s ease-out forwards; 
+    }
+
+    .course-hero {
+      background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+      border-radius: var(--radius-lg);
+      padding: 2.5rem;
+      color: white;
+      position: relative;
+      box-shadow: var(--shadow-md);
+      overflow: hidden;
+      margin-bottom: var(--spacing-sm);
+    }
+    
+    .course-hero::after {
+      content: '';
+      position: absolute;
+      top: 0; right: 0; bottom: 0; left: 0;
+      background: url('data:image/svg+xml;utf8,<svg width="100" height="100" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><circle cx="50" cy="50" r="40" stroke="rgba(255,255,255,0.05)" stroke-width="2" fill="none"/></svg>') repeat;
+      opacity: 0.5;
+      pointer-events: none;
+    }
+
+    .hero-meta {
+      display: inline-block;
+      background: rgba(255,255,255,0.2);
+      backdrop-filter: blur(4px);
+      padding: 6px 12px;
+      border-radius: 20px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+      margin-bottom: 1rem;
+    }
+
+    .hero-title { 
+      font-size: 2.5rem; 
+      font-weight: 800; 
+      margin-bottom: 0.5rem; 
+      line-height: 1.1; 
+      letter-spacing: -0.02em; 
+    }
+    
+    .hero-subtitle { 
+      font-size: 1.1rem; 
+      opacity: 0.9; 
+      margin-bottom: 2rem; 
+      font-weight: 500; 
+    }
+
+    .hero-actions {
+      display: flex;
+      gap: 1rem;
+      flex-wrap: wrap;
+      position: relative;
+      z-index: 2;
+    }
+
+    .btn-glass {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(255, 255, 255, 0.15);
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      color: white;
+      padding: 10px 20px;
+      border-radius: var(--radius-sm);
+      font-weight: 600;
+      font-size: 0.95rem;
+      cursor: pointer;
+      backdrop-filter: blur(10px);
+      transition: var(--transition);
+      text-decoration: none;
+    }
+
+    .btn-glass:hover {
+      background: white;
+      color: var(--primary-dark);
+      transform: translateY(-2px);
+      box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+    }
+    
+    .btn-glass i { font-size: 1.1rem; }
+
+    .tabs-container {
+      display: flex;
+      gap: 1rem;
+      border-bottom: 1px solid var(--border-color);
+      margin-bottom: var(--spacing-md);
+    }
+
+    .tab-btn {
+      background: none;
+      border: none;
+      padding: 1rem 1.5rem;
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      cursor: pointer;
+      border-bottom: 3px solid transparent;
+      transition: var(--transition);
+      display: flex; 
+      align-items: center; 
+      gap: 8px;
+    }
+
+    .tab-btn:hover { color: var(--primary); }
+    
+    .tab-btn.active {
+      color: var(--primary);
+      border-bottom-color: var(--primary);
+    }
+    
+    .tab-content { 
+      display: none; 
+      animation: fadeIn 0.4s ease forwards; 
+    }
+    
+    .tab-content.active { 
+      display: block; 
+    }
+
+    .announcements-wrapper { 
+      display: flex; 
+      flex-direction: column; 
+      gap: var(--spacing-md); 
+    }
+
+    .avatar-circle {
+      width: 42px; 
+      height: 42px;
+      border-radius: 50%;
+      background: var(--primary);
+      color: white;
+      display: flex; 
+      align-items: center; 
+      justify-content: center;
+      font-weight: 700; 
+      font-size: 1rem; 
+      flex-shrink: 0;
+      overflow: hidden;
+    }
+    
+    .avatar-circle img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .avatar-circle.profile-boundery {
+      padding: 3px;
+      background: linear-gradient(135deg, var(--primary) 0%, #10b981 50%, #8b5cf6 100%) !important;
+      box-shadow: 0 4px 15px rgba(0, 96, 231, 0.25);
+      overflow: visible;
+    }
+    
+    .avatar-circle.profile-boundery img {
+      border-radius: 50%;
+      border: 2px solid #ffffff;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+      background-color: #fff;
+    }
+
+    .post-card {
+      background: var(--bg-surface);
+      border-radius: var(--radius-lg);
+      padding: 1.5rem;
+      box-shadow: var(--shadow-sm);
+      border: 1px solid var(--border-color);
+      animation: fadeInUp 0.4s ease-out;
+      margin-bottom: var(--spacing-md);
+    }
+
+    .post-header {
+      display: flex; 
+      align-items: center; 
+      gap: 1rem; 
+      margin-bottom: 1rem;
+    }
+
+    .post-meta h3 { 
+      font-size: 1rem; 
+      font-weight: 600; 
+      color: var(--text-main); 
+      margin-bottom: 2px; 
+    }
+    
+    .post-meta span { 
+      font-size: 0.8rem; 
+      color: var(--text-muted); 
+    }
+    
+    .post-content { 
+      font-size: 0.95rem; 
+      color: var(--text-main); 
+      line-height: 1.6; 
+      margin-bottom: 1rem; 
+    }
+    
+    .post-content a { 
+      color: var(--primary); 
+      text-decoration: none; 
+      font-weight: 500; 
+    }
+    
+    .post-content a:hover { 
+      text-decoration: underline; 
+    }
+
+    .post-attachments { 
+      display: flex; 
+      flex-direction: column; 
+      gap: 0.5rem; 
+    }
+    
+    .attachment-card {
+      display: flex; 
+      align-items: center; 
+      gap: 12px;
+      padding: 12px 16px;
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-sm);
+      text-decoration: none; 
+      color: var(--text-main);
+      transition: var(--transition);
+    }
+    
+    .attachment-card:hover { 
+      background: var(--bg-main); 
+      border-color: var(--primary-alpha); 
+    }
+    
+    .attachment-icon {
+      width: 40px; 
+      height: 40px; 
+      border-radius: 8px;
+      background: var(--primary-alpha); 
+      color: var(--primary);
+      display: flex; 
+      align-items: center; 
+      justify-content: center; 
+      font-size: 1.2rem;
+    }
+    
+    .attachment-details h4 { 
+      font-size: 0.9rem; 
+      font-weight: 600; 
+      margin-bottom: 2px; 
+    }
+    
+    .attachment-details span { 
+      font-size: 0.75rem; 
+      color: var(--text-muted); 
+      text-transform: uppercase; 
+    }
+
+    /* ============================================
+       ASSIGNMENT SECTION STYLES (GCR-Style)
+       ============================================ */
+    
+    .assignments-list {
+      display: flex;
+      flex-direction: column;
+      gap: var(--spacing-md);
+    }
+
+    .assignment-card {
+      background: var(--bg-surface);
+      border-radius: var(--radius-lg);
+      border: 1px solid var(--border-color);
+      box-shadow: var(--shadow-sm);
+      overflow: hidden;
+      transition: var(--transition);
+      animation: fadeInUp 0.4s ease-out;
+    }
+
+    .assignment-card:hover {
+      box-shadow: var(--shadow-md);
+      border-color: #cbd5e1;
+    }
+
+    .assignment-main {
+      display: flex;
+      padding: var(--spacing-lg);
+      gap: var(--spacing-lg);
+    }
+
+    .assignment-icon-wrap {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      background: var(--primary-alpha);
+      color: var(--primary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.25rem;
+      flex-shrink: 0;
+    }
+
+    .assignment-icon-wrap.completed {
+      background: rgba(16, 185, 129, 0.1);
+      color: #059669;
+    }
+
+    .assignment-body {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .assignment-title {
+      font-size: 1.05rem;
+      font-weight: 600;
+      color: var(--text-main);
+      margin-bottom: 6px;
+      cursor: pointer;
+      display: inline-block;
+    }
+
+    .assignment-title:hover {
+      color: var(--primary);
+    }
+
+    .assignment-meta {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .assignment-meta .due-soon {
+      color: #d97706;
+      font-weight: 600;
+    }
+
+    .assignment-meta .overdue {
+      color: #ef4444;
+      font-weight: 600;
+    }
+
+    .assignment-meta .completed-text {
+      color: #059669;
+      font-weight: 600;
+    }
+
+    .assignment-meta .status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 2px 8px;
+      border-radius: 12px;
+      font-size: 0.75rem;
+      font-weight: 600;
+    }
+
+    .status-badge.assigned {
+      background: var(--primary-alpha);
+      color: var(--primary);
+    }
+
+    .status-badge.submitted {
+      background: rgba(16, 185, 129, 0.1);
+      color: #059669;
+    }
+
+    .status-badge.graded {
+      background: rgba(139, 92, 246, 0.1);
+      color: #7c3aed;
+    }
+
+    .assignment-instructions {
+      font-size: 0.9rem;
+      color: var(--text-secondary);
+      margin-top: 8px;
+      line-height: 1.5;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
+    .assignment-work-panel {
+      width: 280px;
+      flex-shrink: 0;
+      border-left: 1px solid var(--border-color);
+      padding-left: var(--spacing-lg);
+      display: flex;
+      flex-direction: column;
+      gap: var(--spacing-md);
+    }
+
+    .work-panel-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.9rem;
+      font-weight: 600;
+    }
+
+    .work-panel-header .work-title {
+      color: var(--text-main);
+    }
+
+    .work-panel-header .work-status {
+      color: var(--text-muted);
+      font-size: 0.8rem;
+    }
+
+    .work-panel-header .work-status.submitted {
+      color: #059669;
+    }
+
+    .file-upload-area {
+      border: 2px dashed var(--border-color);
+      border-radius: var(--radius-md);
+      padding: var(--spacing-md);
+      text-align: center;
+      cursor: pointer;
+      transition: var(--transition);
+      background: var(--bg-main);
+    }
+
+    .file-upload-area:hover {
+      border-color: var(--primary-light);
+      background: var(--primary-alpha);
+    }
+
+    .file-upload-area.has-files {
+      border-style: solid;
+      border-color: var(--primary);
+      background: var(--primary-alpha);
+    }
+
+    .file-upload-area input[type="file"] {
+      display: none;
+    }
+
+    .upload-placeholder {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      color: var(--primary);
+      font-weight: 600;
+      font-size: 0.9rem;
+    }
+
+    .upload-placeholder i {
+      font-size: 1.25rem;
+    }
+
+    .uploaded-files-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .uploaded-file-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 12px;
+      background: var(--bg-surface);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-sm);
+      font-size: 0.85rem;
+    }
+
+    .uploaded-file-item i {
+      color: var(--primary);
+      font-size: 1.1rem;
+    }
+
+    .uploaded-file-item .file-info {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .uploaded-file-item .file-name {
+      font-weight: 600;
+      color: var(--text-main);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .uploaded-file-item .file-size {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }
+
+    .uploaded-file-item .remove-file {
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      cursor: pointer;
+      padding: 4px;
+      border-radius: 4px;
+      transition: var(--transition);
+    }
+
+    .uploaded-file-item .remove-file:hover {
+      background: #fee2e2;
+      color: #ef4444;
+    }
+
+    .btn-mark-done {
+      width: 100%;
+      padding: 12px;
+      border: none;
+      border-radius: var(--radius-sm);
+      font-family: inherit;
+      font-weight: 600;
+      font-size: 0.95rem;
+      cursor: pointer;
+      transition: var(--transition);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    .btn-mark-done.mark {
+      background: var(--primary);
+      color: white;
+    }
+
+    .btn-mark-done.mark:hover {
+      background: var(--primary-dark);
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(0, 96, 231, 0.3);
+    }
+
+    .btn-mark-done.unmark {
+      background: var(--bg-main);
+      color: var(--text-main);
+      border: 1px solid var(--border-color);
+    }
+
+    .btn-mark-done.unmark:hover {
+      background: #fee2e2;
+      color: #ef4444;
+      border-color: #fecaca;
+    }
+
+    .btn-mark-done:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      transform: none !important;
+    }
+
+    .submission-note {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      text-align: center;
+      font-style: italic;
+    }
+
+    .submission-note.late {
+      color: #ef4444;
+    }
+
+    .submission-time {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      text-align: center;
+      margin-top: 4px;
+    }
+
+    .submission-time .time-label {
+      font-weight: 600;
+    }
+
+    .grade-display {
+      text-align: center;
+      padding: var(--spacing-md);
+      background: rgba(139, 92, 246, 0.05);
+      border-radius: var(--radius-sm);
+      border: 1px solid rgba(139, 92, 246, 0.15);
+    }
+
+    .grade-display .grade-label {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 4px;
+    }
+
+    .grade-display .grade-value {
+      font-size: 1.75rem;
+      font-weight: 800;
+      color: #7c3aed;
+    }
+
+    .grade-display .grade-total {
+      font-size: 0.9rem;
+      color: var(--text-muted);
+    }
+
+    .feedback-box {
+      background: var(--bg-main);
+      border-radius: var(--radius-sm);
+      padding: var(--spacing-md);
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+      border-left: 3px solid var(--primary);
+    }
+
+    .feedback-box strong {
+      color: var(--text-main);
+      display: block;
+      margin-bottom: 4px;
+    }
+
+    .assignment-detail-modal {
+      display: none;
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(15, 23, 42, 0.5);
+      backdrop-filter: blur(4px);
+      z-index: 2000;
+      align-items: center;
+      justify-content: center;
+      padding: var(--spacing-xl);
+    }
+
+    .assignment-detail-modal.active {
+      display: flex;
+    }
+
+    .modal-content {
+      background: var(--bg-surface);
+      border-radius: var(--radius-lg);
+      width: 100%;
+      max-width: 700px;
+      max-height: 90vh;
+      overflow-y: auto;
+      box-shadow: var(--shadow-hover);
+      animation: fadeInUp 0.3s ease-out;
+    }
+
+    .modal-header {
+      padding: var(--spacing-lg);
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .modal-header h2 {
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: var(--text-main);
+    }
+
+    .modal-close {
+      background: none;
+      border: none;
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      cursor: pointer;
+      color: var(--text-muted);
+      font-size: 1.25rem;
+      transition: var(--transition);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .modal-close:hover {
+      background: var(--bg-body);
+      color: var(--text-main);
+    }
+
+    .modal-body {
+      padding: var(--spacing-lg);
+    }
+
+    .modal-meta {
+      display: flex;
+      gap: var(--spacing-md);
+      margin-bottom: var(--spacing-lg);
+      flex-wrap: wrap;
+    }
+
+    .modal-meta-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.9rem;
+      color: var(--text-muted);
+    }
+
+    .modal-meta-item i {
+      color: var(--primary);
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 3rem;
+      background: var(--bg-surface);
+      border: 1px dashed var(--border-color);
+      border-radius: var(--radius-lg);
+      color: var(--text-muted);
+    }
+    
+    .empty-state i { 
+      font-size: 2.5rem; 
+      color: var(--border-color); 
+      margin-bottom: 1rem; 
+    }
+
+    #aiFloatBtn {
+      position: fixed; 
+      bottom: 30px; 
+      right: 30px; 
+      width: 60px; 
+      height: 60px;
+      border-radius: 50%; 
+      background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+      border: none; 
+      cursor: pointer; 
+      box-shadow: 0 4px 20px rgba(16, 185, 129, 0.4);
+      z-index: 1000; 
+      display: flex; 
+      align-items: center; 
+      justify-content: center;
+      transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    
+    #aiFloatBtn:hover { 
+      transform: scale(1.1); 
+      box-shadow: 0 6px 25px rgba(16, 185, 129, 0.5); 
+    }
+
+    #aiChatWidget {
+      opacity: 0; 
+      transform: translateY(20px); 
+      transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+      display: none; 
+      position: fixed; 
+      bottom: 100px; 
+      right: 30px; 
+      width: 380px; 
+      height: 550px;
+      background: white; 
+      border-radius: var(--radius-lg); 
+      box-shadow: var(--shadow-xl);
+      z-index: 1001; 
+      overflow: hidden; 
+      flex-direction: column; 
+      border: 1px solid var(--border-color);
+    }
+    
+    #aiChatWidget.active { 
+      opacity: 1; 
+      transform: translateY(0); 
+      display: flex; 
+    }
+    
+    #aiChatWidget.fullscreen { 
+      width: 90vw; 
+      height: 90vh; 
+      bottom: 5vh; 
+      right: 5vw; 
+    }
+
+    .ai-bubble-content {
+      max-width: 85%; 
+      background: white; 
+      color: var(--text-main); 
+      padding: 12px 16px; 
+      border-radius: 16px 16px 16px 4px; 
+      font-size: 0.9rem; 
+      line-height: 1.5; 
+      border: 1px solid var(--border-color);
+    }
+    
+    .ai-bubble-content p { margin-bottom: 0.5rem; }
+    .ai-bubble-content p:last-child { margin-bottom: 0; }
+    .ai-bubble-content ul, .ai-bubble-content ol { padding-left: 1.25rem; margin-bottom: 0.5rem; }
+    .ai-bubble-content li { margin-bottom: 0.25rem; }
+    .ai-bubble-content strong { font-weight: 700; color: var(--text-main); }
+    .ai-bubble-content blockquote { border-left: 3px solid var(--primary-alpha); padding-left: 10px; color: var(--text-secondary); font-style: italic; }
+
+    .toast {
+      position: fixed; 
+      bottom: 32px; 
+      left: 50%; 
+      transform: translateX(-50%) translateY(100px);
+      background: var(--text-main); 
+      color: white; 
+      padding: 16px 24px; 
+      border-radius: 50px;
+      display: flex; 
+      align-items: center; 
+      gap: 12px; 
+      box-shadow: var(--shadow-lg);
+      opacity: 0; 
+      transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1); 
+      z-index: 2000; 
+      font-weight: 500; 
+      font-size: 0.95rem;
+    }
+    
+    .toast.show { 
+      transform: translateX(-50%) translateY(0); 
+      opacity: 1; 
+    }
+
+    @keyframes fadeInUp { 
+      from { opacity: 0; transform: translateY(20px); } 
+      to { opacity: 1; transform: translateY(0); } 
+    }
+    
+    @keyframes fadeIn { 
+      from { opacity: 0; } 
+      to { opacity: 1; } 
+    }
+
+    @media (max-width: 1024px) {
+      .sidebar { 
+        position: fixed; 
+        left: -280px; 
+        height: 100vh; 
+      }
+      
+      .sidebar.open { 
+        left: 0; 
+        box-shadow: var(--shadow-lg); 
+      }
+      
+      .sidebar-toggle { 
+        display: block; 
+      }
+      
+      .header { 
+        padding: 0 var(--spacing-md); 
+      }
+
+      .assignment-main {
+        flex-direction: column;
+      }
+
+      .assignment-work-panel {
+        width: 100%;
+        border-left: none;
+        border-top: 1px solid var(--border-color);
+        padding-left: 0;
+        padding-top: var(--spacing-lg);
+      }
+    }
+    
+    @media (max-width: 640px) {
+      .hero-title { 
+        font-size: 2rem; 
+      }
+      
+      .hero-actions { 
+        flex-direction: column; 
+      }
+      
+      .btn-glass { 
+        width: 100%; 
+        justify-content: center; 
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="app-container">
+    
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-header">
+        <a href="student-dashboard.html" class="logo" style="text-decoration: none;">
+          <img src="Assets/Cassandra-Logo.png" alt="Cassandra" onerror="this.outerHTML='<h2 style=\'color: var(--primary); font-weight: 800; font-size: 1.5rem; margin: 0; text-decoration: none;\'>Cassandra.</h2>'" style="height: 40px; width: auto; object-fit: contain;">
+        </a>
+      </div>
+      
+      <nav class="sidebar-nav">
+        <p class="sidebar-nav-title">Main Menu</p>
+        <a href="student-dashboard.html" class="sidebar-nav-item">
+          <i class="fas fa-home"></i> <span>Dashboard</span>
+        </a>
+        
+        <p class="sidebar-nav-title" style="margin-top: var(--spacing-lg);">Your Classes</p>
+        <div id="sidebarClassesList">
+            <span style="font-size: 0.8rem; color: var(--text-muted); padding-left: 1rem;">Loading...</span>
+        </div>
+        
+        <p class="sidebar-nav-title" style="margin-top: var(--spacing-lg);">Account</p>
+        <a href="student-profile.html" class="sidebar-nav-item">
+          <i class="fas fa-user"></i> <span>Profile</span>
+        </a>
+        <a onclick="logoutUser()" class="sidebar-nav-item" style="cursor: pointer;">
+          <i class="fas fa-sign-out-alt"></i> <span>Logout</span>
+        </a>
+      </nav>
+    </aside>
+
+    <div class="main-wrapper">
+      
+      <header class="header">
+        <button class="sidebar-toggle" id="sidebarToggle" aria-label="Toggle sidebar">
+          <i class="fas fa-bars"></i>
+        </button>
+        
+        <div class="header-actions">
+          <a href="student-profile.html" class="header-icon" id="headerProfileCircle" title="Profile">
+            <i class="fas fa-user-circle"></i>
+          </a>
+          <a onclick="logoutUser()" class="header-icon" title="Logout" style="cursor: pointer;">
+            <i class="fas fa-sign-out-alt"></i>
+          </a>
+        </div>
+      </header>
+
+      <main class="main-content">
+        <div class="content-container">
+          
+          <section class="course-hero">
+            <span class="hero-meta">
+              <i class="fas fa-book"></i> <span id="headerCourseCode">Loading...</span>
+            </span>
+            <h1 class="hero-title" id="headerClassName">Loading Class...</h1>
+            <p class="hero-subtitle">
+              <span id="headerCourseName">Loading Course...</span><span id="headerSectionName"></span>
+              <span style="margin: 0 8px; opacity: 0.5;">|</span>
+              <i class="fas fa-chalkboard-teacher" style="font-size:0.85em; margin-right:4px;"></i><span id="headerTeacherName">Loading...</span>
+            </p>
+            
+            <div class="hero-actions">
+              <a href="student-notes-library.html" class="btn-glass" id="navNotesLibraryBtn">
+                <i class="fas fa-folder-open"></i> Notes Library
+              </a>
+              <a href="student-messages.html" class="btn-glass" id="navChatBtn">
+                <i class="fas fa-comments"></i> Chat with Teacher
+              </a>
+              <a href="student-assignments.html" class="btn-glass" id="navAssignmentsBtn" style="background: white; color: var(--primary-dark);">
+                <i class="fas fa-tasks"></i> Assignments
+              </a>
+            </div>
+          </section>
+
+          <div class="tabs-container">
+            <button class="tab-btn active" onclick="switchTab('announcementsTab', this)">
+              <i class="fas fa-bullhorn"></i> Announcements
+            </button>
+            <button class="tab-btn" onclick="switchTab('assignmentsTab', this)">
+              <i class="fas fa-tasks"></i> Assignments
+            </button>
+          </div>
+
+          <!-- Announcements Tab -->
+          <div id="announcementsTab" class="tab-content active">
+            <section class="announcements-wrapper">
+              <div id="announcementsFeed">
+                 <div class="empty-state" style="padding: 2rem; border:none; background: transparent;">
+                    <i class="fas fa-spinner fa-spin" style="font-size: 1.5rem; color: var(--primary);"></i>
+                 </div>
+              </div>
+            </section>
+          </div>
+
+          <!-- Assignments Tab -->
+          <div id="assignmentsTab" class="tab-content">
+            <div id="assignmentsList" class="assignments-list">
+               <div class="empty-state">
+                  <i class="fas fa-spinner fa-spin"></i>
+                  <p>Loading Assignments...</p>
+               </div>
+            </div>
+          </div>
+
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <!-- Assignment Detail Modal -->
+  <div id="assignmentModal" class="assignment-detail-modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 id="modalTitle">Assignment Details</h2>
+        <button class="modal-close" onclick="closeAssignmentModal()">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+      <div class="modal-body" id="modalBody">
+        <!-- Dynamic content -->
+      </div>
+    </div>
+  </div>
+
+  <button onclick="toggleAIChat()" id="aiFloatBtn">
+    <i class="fas fa-robot" style="color: white; font-size: 1.5rem;"></i>
+  </button>
+
+  <div id="aiChatWidget">
+    <div style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); padding: 16px 20px; display: flex; align-items: center; justify-content: space-between;">
+      <div style="display: flex; align-items: center; gap: 12px;">
+        <div style="width: 36px; height: 36px; background: rgba(255,255,255,0.2); border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+          <i class="fas fa-brain" style="color: white; font-size: 1.1rem;"></i>
+        </div>
+        <div>
+          <h3 style="color: white; margin: 0; font-size: 1rem; font-weight: 600;">Cassandra AI</h3>
+          <span style="color: rgba(255,255,255,0.9); font-size: 0.75rem; display: flex; align-items: center; gap: 6px;">
+            <span style="width: 8px; height: 8px; background: #a7f3d0; border-radius: 50%; display: inline-block; box-shadow: 0 0 5px #a7f3d0;"></span>
+            Assistant Ready
+          </span>
+        </div>
+      </div>
+      <div style="display: flex; gap: 8px;">
+        <button onclick="toggleFullscreen()" style="width: 32px; height: 32px; background: rgba(255,255,255,0.2); border: none; border-radius: 8px; cursor: pointer; color: white; display: flex; align-items: center; justify-content: center; transition: background 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.3)'" onmouseout="this.style.background='rgba(255,255,255,0.2)'">
+          <i class="fas fa-expand" style="font-size: 0.875rem;"></i>
+        </button>
+        <button onclick="toggleAIChat()" style="width: 32px; height: 32px; background: rgba(255,255,255,0.2); border: none; border-radius: 8px; cursor: pointer; color: white; display: flex; align-items: center; justify-content: center; transition: background 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.3)'" onmouseout="this.style.background='rgba(255,255,255,0.2)'">
+          <i class="fas fa-times" style="font-size: 0.875rem;"></i>
+        </button>
+      </div>
+    </div>
+
+    <div id="chatMessages" style="flex: 1; padding: 20px; overflow-y: auto; background: var(--bg-body);">
+      <div id="welcomeMessage" style="text-align: center; margin-top: 40px; margin-bottom: 20px;">
+        <div style="width: 70px; height: 70px; background: rgba(16, 185, 129, 0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px;">
+          <i class="fas fa-robot" style="color: #10b981; font-size: 2rem;"></i>
+        </div>
+        <h2 style="color: var(--text-main); margin-bottom: 8px; font-size: 1.1rem; font-weight: 600;">How can I assist your learning?</h2>
+        <p style="color: var(--text-muted); font-size: 0.85rem; line-height: 1.5; max-width: 250px; margin: 0 auto;">
+          I can help explain concepts, summarize notes, or answer questions about your course.
+        </p>
+      </div>
+    </div>
+
+    <div style="padding: 16px; background: white; border-top: 1px solid var(--border-color);">
+      <div style="display: flex; gap: 12px; align-items: center; background: var(--bg-main); border: 1px solid var(--border-color); border-radius: 24px; padding: 6px 6px 6px 16px; transition: border-color 0.2s;" id="chatInputWrapper">
+        <input type="text" id="chatInput" placeholder="Ask Cassandra..." onkeypress="if(event.key === 'Enter') sendChatMessage()" onfocus="document.getElementById('chatInputWrapper').style.borderColor='#10b981'" onblur="document.getElementById('chatInputWrapper').style.borderColor='var(--border-color)'" style="flex: 1; border: none; background: transparent; font-size: 0.9rem; outline: none; color: var(--text-main);">
+        <button onclick="sendChatMessage()" id="chatSendBtn" style="width: 36px; height: 36px; background: #10b981; border: none; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; color: white; transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
+          <i class="fas fa-paper-plane" style="font-size: 0.85rem; margin-right: 2px; margin-top: 2px;"></i>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast">
+    <i class="fas fa-info-circle"></i>
+    <span id="toastMessage">Notification</span>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <script>
+    // --- SUPABASE CONFIGURATION ---
+    const SUPABASE_URL = 'https://lchcfsgexlkjxrhfjrna.supabase.co'; 
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxjaGNmc2dleGxranhyaGZqcm5hIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2MDI4NDIxNywiZXhwIjoyMDc1ODYwMjE3fQ.u8xbJWho6qFVW5f7tmhtK9hq5X5ApQVC4QK04jfjj0k'; 
+    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    
+    const API_URL = 'https://cassandra-student-chatbot-fpfyfedfc6ezh2fz.canadacentral-01.azurewebsites.net/api'; 
+
+    let currentStudentId = null;
+    let activeClassData = null;
+    let currentTeacherName = "Teacher";
+    let assignmentSubmissions = {}; // Cache for submissions
+
+    document.addEventListener('DOMContentLoaded', async () => {
+        const { data: { session } } = await supabaseClient.auth.getSession();
+        if (session && session.user) {
+            currentStudentId = session.user.id;
+            
+            await loadCourseData();
+            
+            if (activeClassData) {
+                fetchAnnouncements();
+                fetchAssignments();
+                loadChatHistory();
+            }
+        } else {
+            window.location.href = 'student-dashboard.html';
+        }
+    });
+
+    function switchTab(tabId, btnElement) {
+        document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
+        document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+        document.getElementById(tabId).classList.add('active');
+        btnElement.classList.add('active');
+    }
+
+    async function loadCourseData() {
+        const urlParams = new URLSearchParams(window.location.search);
+        let courseId = urlParams.get('id');
+
+        const { data: enrollments, error: enrollError } = await supabaseClient
+            .from('enrollment')
+            .select('class_id')
+            .eq('student_id', currentStudentId);
+
+        if (enrollError || !enrollments || enrollments.length === 0) {
+            document.getElementById('sidebarClassesList').innerHTML = '<span style="font-size: 0.85rem; padding: 10px 16px; color: var(--text-muted);">No enrolled classes</span>';
+            document.getElementById('announcementsFeed').innerHTML = `<div class="empty-state" style="border:none;"><i class="fas fa-book"></i><p>You are not enrolled in any classes.</p></div>`;
+            return;
+        }
+
+        const enrolledClassIds = enrollments.map(e => e.class_id);
+
+        const { data: classes, error: classError } = await supabaseClient
+            .from('class')
+            .select('*')
+            .in('class_id', enrolledClassIds)
+            .order('course_name', { ascending: true });
+
+        if (classError || !classes || classes.length === 0) {
+            document.getElementById('sidebarClassesList').innerHTML = '<span style="font-size: 0.85rem; padding: 10px 16px; color: var(--text-muted);">No class details found</span>';
+            return;
+        }
+
+        renderSidebar(classes);
+
+        if (!courseId) courseId = classes[0].course_id;
+        
+        const currentClass = classes.find(c => c.course_id === courseId);
+        if (currentClass) {
+            activeClassData = currentClass;
+            
+            let cName = currentClass.class_name;
+            let sName = "";
+            if (cName && cName.includes(' - ')) {
+                const parts = cName.split(' - ');
+                cName = parts[0];
+                sName = parts[1];
+            }
+
+            const { data: teacher, error: teacherError } = await supabaseClient
+                .from('teacher')
+                .select('name')
+                .eq('id', currentClass.teacher_id)
+                .single();
+
+            if (teacher && teacher.name) {
+                currentTeacherName = teacher.name;
+            } else {
+                currentTeacherName = 'Teacher';
+            }
+
+            document.getElementById('headerCourseCode').textContent = currentClass.course_code || 'N/A';
+            document.getElementById('headerClassName').textContent = cName;
+            document.getElementById('headerCourseName').textContent = currentClass.course_name;
+            document.getElementById('headerSectionName').textContent = sName ? ` • ${sName}` : '';
+            document.getElementById('headerTeacherName').textContent = currentTeacherName;
+
+            document.getElementById('navNotesLibraryBtn').href = `student-notes-library.html?id=${currentClass.course_id}`;
+            document.getElementById('navChatBtn').href = `student-messages.html?id=${currentClass.course_id}`;
+            document.getElementById('navAssignmentsBtn').href = `student-assignments.html?id=${currentClass.course_id}`;
+        }
+    }
+
+    function renderSidebar(classes) {
+        const sidebarList = document.getElementById('sidebarClassesList');
+        sidebarList.innerHTML = '';
+        const colorMap = { blue: '#3b82f6', green: '#10b981', purple: '#8b5cf6', amber: '#f59e0b', rose: '#f43f5e' };
+        const keys = Object.keys(colorMap);
+
+        classes.forEach((cls, index) => {
+            const color = colorMap[keys[index % keys.length]];
+            let displayName = cls.class_name;
+            if (displayName && displayName.includes(' - ')) {
+                displayName = displayName.split(' - ')[0];
+            }
+
+            const sidebarItem = document.createElement('a');
+            sidebarItem.className = 'sidebar-nav-item';
+            sidebarItem.href = `student-course-view.html?id=${cls.course_id}`; 
+            
+            const urlParams = new URLSearchParams(window.location.search);
+            const currentId = urlParams.get('id');
+            if ((currentId === cls.course_id) || (!currentId && index === 0)) {
+                sidebarItem.classList.add('active');
+            }
+
+            sidebarItem.innerHTML = `
+                <div class="class-color-dot" style="background-color: ${color};"></div>
+                <span style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${displayName}</span>
+            `;
+            sidebarList.appendChild(sidebarItem);
+        });
+    }
+
+    async function fetchAnnouncements() {
+        const feed = document.getElementById('announcementsFeed');
+        if (!activeClassData || !activeClassData.class_id) return;
+
+        try {
+            const { data: posts, error } = await supabaseClient
+                .from('announcement')
+                .select('*')
+                .eq('class_id', activeClassData.class_id)
+                .order('posted_at', { ascending: false });
+
+            if (error) throw error;
+
+            if (!posts || posts.length === 0) {
+                feed.innerHTML = `<div class="empty-state" style="border:none;"><i class="fas fa-bullhorn"></i><p>No announcements yet.</p></div>`;
+                return;
+            }
+
+            feed.innerHTML = '';
+
+            const { data: teacher } = await supabaseClient
+                .from('teacher')
+                .select('name')
+                .eq('id', activeClassData.teacher_id)
+                .single();
+            
+            const teacherName = (teacher && teacher.name) ? teacher.name : currentTeacherName;
+            const teacherInitials = teacherName.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
+
+            let teacherProfileImgUrl = null;
+            try {
+                const { data: files } = await supabaseClient
+                    .storage
+                    .from('teacher_profile')
+                    .list(activeClassData.teacher_id);
+
+                if (files && files.length > 0) {
+                    const fileName = files[0].name;
+                    const { data: urlData } = supabaseClient
+                        .storage
+                        .from('teacher_profile')
+                        .getPublicUrl(`${activeClassData.teacher_id}/${fileName}`);
+                    teacherProfileImgUrl = urlData.publicUrl;
+                }
+            } catch (imgErr) {
+                console.warn("Could not load teacher profile image:", imgErr);
+            }
+
+            for (const post of posts) {
+                const { data: files } = await supabaseClient
+                    .storage
+                    .from('annoucements_data')
+                    .list(post.announcement_id.toString());
+                
+                let attachmentsHTML = '';
+                if (files && files.length > 0) {
+                    // Filter out folders and placeholder metadata
+                    const validFiles = files.filter(f => f.name !== '.emptyFolderPlaceholder' && (f.id || f.metadata));
+                    
+                    if (validFiles.length > 0) {
+                        attachmentsHTML = `<div class="post-attachments">`;
+                        for (const file of validFiles) {
+                            const { data: urlData } = supabaseClient
+                                .storage
+                                .from('annoucements_data')
+                                .getPublicUrl(`${post.announcement_id}/${file.name}`);
+                            
+                            const fileExt = file.name.split('.').pop().toLowerCase();
+                            let iconClass = 'fa-file';
+                            if (['pdf'].includes(fileExt)) iconClass = 'fa-file-pdf';
+                            else if (['py','js','html','css'].includes(fileExt)) iconClass = 'fa-file-code';
+                            else if (['jpg','jpeg','png','gif'].includes(fileExt)) iconClass = 'fa-file-image';
+                            
+                            attachmentsHTML += `
+                              <a href="${urlData.publicUrl}" target="_blank" class="attachment-card">
+                                <div class="attachment-icon"><i class="fas ${iconClass}"></i></div>
+                                <div class="attachment-details"><h4>${file.name}</h4><span>${fileExt.toUpperCase()}</span></div>
+                              </a>
+                            `;
+                        }
+                        attachmentsHTML += `</div>`;
+                    }
+                }
+
+                let avatarContent, avatarClass, avatarStyle;
+                if (teacherProfileImgUrl) {
+                    avatarContent = `<img src="${teacherProfileImgUrl}" alt="${teacherName}">`;
+                    avatarClass = 'avatar-circle profile-boundery';
+                    avatarStyle = '';
+                } else {
+                    avatarContent = teacherInitials;
+                    avatarClass = 'avatar-circle';
+                    avatarStyle = 'background: linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%);';
+                }
+
+                const postEl = document.createElement('article');
+                postEl.className = 'post-card';
+                postEl.innerHTML = `
+                  <div class="post-header">
+                    <div class="${avatarClass}" style="${avatarStyle}">
+                        ${avatarContent}
+                    </div>
+                    <div class="post-meta">
+                      <h3>${teacherName}</h3>
+                      <span>${new Date(post.posted_at).toLocaleString()}</span>
+                    </div>
+                  </div>
+                  <div class="post-content">${post.content}</div>
+                  ${attachmentsHTML}
+                `;
+                feed.appendChild(postEl);
+            }
+        } catch (err) {
+            console.error("Error fetching announcements:", err);
+            feed.innerHTML = `<div class="empty-state" style="color: #ef4444;"><p>Failed to load announcements.</p></div>`;
+        }
+    }
+
+    // ============================================
+    // ASSIGNMENT & SUBMISSION FUNCTIONS
+    // ============================================
+
+    async function fetchAssignments() {
+        const list = document.getElementById('assignmentsList');
+        if (!activeClassData || !activeClassData.class_id) return;
+
+        try {
+            // Fetch assignments for this class
+            const { data: assignments, error } = await supabaseClient
+                .from('assignment')
+                .select('*')
+                .eq('class_id', activeClassData.class_id)
+                .order('due_date', { ascending: true });
+
+            if (error) {
+                list.innerHTML = `<div class="empty-state"><i class="fas fa-tasks"></i><p>No assignments available.</p></div>`;
+                return;
+            }
+
+            if (!assignments || assignments.length === 0) {
+                list.innerHTML = `<div class="empty-state"><i class="fas fa-tasks"></i><p>No assignments yet.</p></div>`;
+                return;
+            }
+
+            // Fetch student's submissions for these assignments
+            const assignmentIds = assignments.map(a => a.assignment_id);
+            const { data: submissions, error: subError } = await supabaseClient
+                .from('assignment_submission')
+                .select('*')
+                .eq('student_id', currentStudentId)
+                .in('assignment_id', assignmentIds);
+
+            if (!subError && submissions) {
+                submissions.forEach(sub => {
+                    assignmentSubmissions[sub.assignment_id] = sub;
+                });
+            }
+
+            list.innerHTML = '';
+            for (const assignment of assignments) {
+                // Fetch attachments to embed directly on the card
+                let teacherFiles = [];
+                try {
+                    const { data: files, error: filesError } = await supabaseClient.storage.from('assignment').list(assignment.assignment_id.toString());
+                    if (filesError) {
+                        console.error("Storage list error for assignment", assignment.assignment_id, filesError);
+                    }
+                    if (files && files.length > 0) {
+                        // Crucial: Filter out folders/placeholders
+                        teacherFiles = files.filter(f => f.name !== '.emptyFolderPlaceholder' && (f.id || f.metadata));
+                    }
+                } catch(e) {
+                    console.error("Exception fetching assignment files:", e);
+                }
+                
+                assignment.teacherFiles = teacherFiles;
+
+                const card = createAssignmentCard(assignment);
+                list.appendChild(card);
+            }
+
+        } catch (err) {
+            console.error("Error fetching assignments:", err);
+            list.innerHTML = `<div class="empty-state"><p>Error loading assignments.</p></div>`;
+        }
+    }
+
+    function createAssignmentCard(assignment) {
+        const submission = assignmentSubmissions[assignment.assignment_id];
+        const isSubmitted = !!submission;
+        const isGraded = isSubmitted && submission.status === 'graded';
+        
+        const dueDate = assignment.due_date ? new Date(assignment.due_date) : null;
+        const now = new Date();
+        const isOverdue = dueDate && !isSubmitted && dueDate < now;
+        const isDueSoon = dueDate && !isSubmitted && !isOverdue && (dueDate - now) < (24 * 60 * 60 * 1000);
+
+        const card = document.createElement('div');
+        card.className = 'assignment-card';
+        card.id = `assignment-card-${assignment.assignment_id}`;
+
+        // Determine status display
+        let statusBadgeClass = 'assigned';
+        let statusText = 'Assigned';
+        if (isGraded) {
+            statusBadgeClass = 'graded';
+            statusText = 'Graded';
+        } else if (isSubmitted) {
+            statusBadgeClass = 'submitted';
+            statusText = 'Submitted';
+        }
+
+        // Date formatting
+        let dateDisplay = '';
+        if (dueDate) {
+            const options = { month: 'short', day: 'numeric' };
+            const timeOptions = { hour: 'numeric', minute: '2-digit' };
+            if (isOverdue) {
+                dateDisplay = `<span class="overdue">Overdue: ${dueDate.toLocaleDateString('en-US', options)}</span>`;
+            } else if (isDueSoon) {
+                dateDisplay = `<span class="due-soon">Due ${dueDate.toLocaleDateString('en-US', options)}, ${dueDate.toLocaleTimeString('en-US', timeOptions)}</span>`;
+            } else {
+                dateDisplay = `Due ${dueDate.toLocaleDateString('en-US', options)}, ${dueDate.toLocaleTimeString('en-US', timeOptions)}`;
+            }
+        }
+
+        // --- Build directly visible attachments HTML ---
+        let attachmentsHTML = '';
+        if (assignment.teacherFiles && assignment.teacherFiles.length > 0) {
+            attachmentsHTML = `<div class="post-attachments" style="margin-top: 1rem; flex-direction: row; flex-wrap: wrap; gap: 0.75rem;">`;
+            for (const file of assignment.teacherFiles) {
+                const { data: urlData } = supabaseClient.storage.from('assignment').getPublicUrl(`${assignment.assignment_id}/${file.name}`);
+                
+                const fileExt = file.name.split('.').pop().toLowerCase();
+                let iconClass = 'fa-file';
+                if (['pdf'].includes(fileExt)) iconClass = 'fa-file-pdf';
+                else if (['py','js','html','css'].includes(fileExt)) iconClass = 'fa-file-code';
+                else if (['jpg','jpeg','png','gif'].includes(fileExt)) iconClass = 'fa-file-image';
+                
+                attachmentsHTML += `
+                  <a href="${urlData.publicUrl}" target="_blank" class="attachment-card" onclick="event.stopPropagation();" style="width: auto; min-width: 200px; text-decoration: none; display: inline-flex; flex: 0 1 auto; background: var(--bg-body);">
+                    <div class="attachment-icon" style="width: 36px; height: 36px; font-size: 1rem;"><i class="fas ${iconClass}"></i></div>
+                    <div class="attachment-details">
+                        <h4 style="max-width: 150px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${file.name}</h4>
+                        <span>${fileExt.toUpperCase()}</span>
+                    </div>
+                  </a>
+                `;
+            }
+            attachmentsHTML += `</div>`;
+        }
+
+        // Work panel content based on submission state
+        let workPanelHTML = '';
+        if (isGraded) {
+            workPanelHTML = `
+                <div class="work-panel-header">
+                    <span class="work-title">Your work</span>
+                    <span class="work-status submitted">Graded</span>
+                </div>
+                <div class="grade-display">
+                    <div class="grade-label">Grade</div>
+                    <div class="grade-value">${submission.grade_obtained !== null ? submission.grade_obtained : '-'}</div>
+                    ${assignment.Grades ? `<div class="grade-total">out of ${assignment.Grades}</div>` : ''}
+                </div>
+                ${submission.feedback ? `
+                    <div class="feedback-box">
+                        <strong>Teacher Feedback:</strong>
+                        ${submission.feedback}
+                    </div>
+                ` : ''}
+                ${submission.is_late ? `<div class="submission-note late">Submitted late</div>` : ''}
+            `;
+        } else if (isSubmitted) {
+            workPanelHTML = `
+                <div class="work-panel-header">
+                    <span class="work-title">Your work</span>
+                    <span class="work-status submitted">Submitted</span>
+                </div>
+                <div class="submission-time">
+                    <span class="time-label">Submitted:</span> ${new Date(submission.submitted_at).toLocaleString()}
+                </div>
+                ${submission.is_late ? `<div class="submission-note late">Submitted late</div>` : ''}
+                <button class="btn-mark-done unmark" onclick="unsubmitAssignment('${assignment.assignment_id}')">
+                    <i class="fas fa-undo"></i> Unsubmit
+                </button>
+            `;
+        } else {
+            // Not submitted - show upload area
+            const isLate = isOverdue;
+            workPanelHTML = `
+                <div class="work-panel-header">
+                    <span class="work-title">Your work</span>
+                    <span class="work-status">${isLate ? 'Overdue' : 'Assigned'}</span>
+                </div>
+                <div class="file-upload-area" id="upload-area-${assignment.assignment_id}" onclick="document.getElementById('file-input-${assignment.assignment_id}').click()">
+                    <input type="file" id="file-input-${assignment.assignment_id}" onchange="handleFileSelect(event, '${assignment.assignment_id}')" multiple>
+                    <div class="upload-placeholder" id="upload-placeholder-${assignment.assignment_id}">
+                        <i class="fas fa-plus"></i>
+                        <span>Add or create</span>
+                    </div>
+                    <div class="uploaded-files-list" id="file-list-${assignment.assignment_id}" style="display: none;"></div>
+                </div>
+                <button class="btn-mark-done mark" id="btn-submit-${assignment.assignment_id}" onclick="submitAssignment('${assignment.assignment_id}')" disabled>
+                    <i class="fas fa-check"></i> Mark as done
+                </button>
+                ${isLate ? `<div class="submission-note late">Work cannot be turned in after the due date</div>` : ''}
+            `;
+        }
+
+        card.innerHTML = `
+            <div class="assignment-main">
+                <div class="assignment-icon-wrap ${isSubmitted ? 'completed' : ''}">
+                    <i class="fas ${isSubmitted ? 'fa-check' : 'fa-clipboard-list'}"></i>
+                </div>
+                <div class="assignment-body">
+                    <div class="assignment-title" onclick="openAssignmentDetail('${assignment.assignment_id}')">
+                        ${assignment.title || 'Untitled Assignment'}
+                    </div>
+                    <div class="assignment-meta">
+                        <span class="status-badge ${statusBadgeClass}">${statusText}</span>
+                        <span>•</span>
+                        <span>${dateDisplay}</span>
+                        ${assignment.topic ? `<span>•</span><span>${assignment.topic}</span>` : ''}
+                    </div>
+                    ${assignment.instructions ? `<div class="assignment-instructions">${assignment.instructions}</div>` : ''}
+                    ${attachmentsHTML}
+                </div>
+                <div class="assignment-work-panel">
+                    ${workPanelHTML}
+                </div>
+            </div>
+        `;
+
+        return card;
+    }
+
+    // File handling for assignment submission
+    let pendingFiles = {}; // assignment_id -> [files]
+
+    function handleFileSelect(event, assignmentId) {
+        const files = Array.from(event.target.files);
+        if (!pendingFiles[assignmentId]) pendingFiles[assignmentId] = [];
+        pendingFiles[assignmentId] = [...pendingFiles[assignmentId], ...files];
+        
+        updateFileListUI(assignmentId);
+    }
+
+    function updateFileListUI(assignmentId) {
+        const files = pendingFiles[assignmentId] || [];
+        const listEl = document.getElementById(`file-list-${assignmentId}`);
+        const placeholder = document.getElementById(`upload-placeholder-${assignmentId}`);
+        const uploadArea = document.getElementById(`upload-area-${assignmentId}`);
+        const submitBtn = document.getElementById(`btn-submit-${assignmentId}`);
+
+        if (files.length > 0) {
+            listEl.style.display = 'flex';
+            placeholder.style.display = 'none';
+            uploadArea.classList.add('has-files');
+            submitBtn.disabled = false;
+        } else {
+            listEl.style.display = 'none';
+            placeholder.style.display = 'flex';
+            uploadArea.classList.remove('has-files');
+            submitBtn.disabled = true;
+        }
+
+        listEl.innerHTML = files.map((file, index) => `
+            <div class="uploaded-file-item">
+                <i class="fas fa-file"></i>
+                <div class="file-info">
+                    <div class="file-name">${file.name}</div>
+                    <div class="file-size">${formatFileSize(file.size)}</div>
+                </div>
+                <button class="remove-file" onclick="removeFile('${assignmentId}', ${index})" title="Remove file">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+        `).join('');
+    }
+
+    function removeFile(assignmentId, index) {
+        if (pendingFiles[assignmentId]) {
+            pendingFiles[assignmentId].splice(index, 1);
+            updateFileListUI(assignmentId);
+        }
+    }
+
+    function formatFileSize(bytes) {
+        if (bytes === 0) return '0 Bytes';
+        const k = 1024;
+        const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+    }
+
+    async function submitAssignment(assignmentId) {
+    // Validate assignmentId
+    if (!assignmentId || assignmentId.length !== 36) {
+        showToast('Error: Invalid assignment ID', true);
+        return;
+    }
+
+    const files = pendingFiles[assignmentId] || [];
+    const submitBtn = document.getElementById(`btn-submit-${assignmentId}`);
+    
+    if (files.length === 0) {
+        showToast('Please attach at least one file', true);
+        return;
+    }
+
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Submitting...';
+
+    try {
+        // CRITICAL: Fetch the assignment to get its correct class_id
+        const { data: assignmentData, error: assignError } = await supabaseClient
+            .from('assignment')
+            .select('assignment_id, class_id, due_date, title')
+            .eq('assignment_id', assignmentId)
+            .single();
+
+        if (assignError || !assignmentData) {
+            throw new Error('Could not find assignment: ' + (assignError?.message || 'Not found'));
+        }
+
+        // Use class_id from the assignment record itself!
+        const classId = assignmentData.class_id;
+        
+        if (!classId) {
+            throw new Error('Assignment has no class_id');
+        }
+
+        // Upload files
+        const uploadedFiles = [];
+        for (const file of files) {
+            const filePath = `${assignmentId}/${currentStudentId}/${Date.now()}_${file.name}`;
+            const { error: uploadError } = await supabaseClient
+                .storage
+                .from('assignment_submission')
+                .upload(filePath, file);
+
+            if (uploadError) {
+                console.error('File upload error:', uploadError);
+                throw new Error('Failed to upload file: ' + uploadError.message);
+            }
+            uploadedFiles.push(filePath);
+        }
+
+        // Check lateness
+        const isLate = assignmentData.due_date 
+            ? new Date() > new Date(assignmentData.due_date) 
+            : false;
+
+        // Insert submission with CORRECT class_id from assignment
+        const submissionPayload = {
+            assignment_id: assignmentId,
+            student_id: currentStudentId,
+            class_id: classId,  // ← CRITICAL FIX: Use from assignment, not activeClassData
+            submitted_at: new Date().toISOString(),
+            is_late: isLate,
+            status: 'submitted'
+        };
+
+        const { data, error } = await supabaseClient
+            .from('assignment_submission')
+            .insert(submissionPayload)
+            .select()
+            .single();
+
+        if (error) {
+            console.error('Database insert error:', error);
+            throw new Error(error.message || 'Database insert failed');
+        }
+
+        assignmentSubmissions[assignmentId] = data;
+        showToast('Assignment submitted successfully!');
+        pendingFiles[assignmentId] = [];
+        fetchAssignments();
+
+    } catch (error) {
+        console.error('Complete error:', error);
+        showToast(`Failed to submit: ${error.message}`, true);
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = '<i class="fas fa-check"></i> Mark as done';
+    }
+}
+
+    async function unsubmitAssignment(assignmentId) {
+    if (!assignmentId || assignmentId.length !== 36) {
+        showToast('Error: Invalid assignment ID', true);
+        return;
+    }
+
+    const submission = assignmentSubmissions[assignmentId];
+    if (!submission || !submission.submission_id) {
+        showToast('No submission found to unsubmit', true);
+        return;
+    }
+
+    if (!confirm('Are you sure you want to unsubmit this assignment?')) return;
+
+    try {
+        const { error } = await supabaseClient
+            .from('assignment_submission')
+            .delete()
+            .eq('submission_id', submission.submission_id);
+
+        if (error) throw error;
+
+        // Delete files from storage
+        const { data: files } = await supabaseClient
+            .storage
+            .from('assignment_submission')
+            .list(`${assignmentId}/${currentStudentId}`);
+
+        if (files && files.length > 0) {
+            const filesToRemove = files.map(f => `${assignmentId}/${currentStudentId}/${f.name}`);
+            await supabaseClient
+                .storage
+                .from('assignment_submission')
+                .remove(filesToRemove);
+        }
+
+        delete assignmentSubmissions[assignmentId];
+        showToast('Assignment unsubmitted successfully');
+        fetchAssignments();
+
+    } catch (error) {
+        console.error('Unsubmit error:', error);
+        showToast(`Failed to unsubmit: ${error.message}`, true);
+    }
+}
+
+    function openAssignmentDetail(assignmentId) {
+        const modal = document.getElementById('assignmentModal');
+        const modalBody = document.getElementById('modalBody');
+        const modalTitle = document.getElementById('modalTitle');
+        
+        // Fetch assignment details
+        supabaseClient
+            .from('assignment')
+            .select('*')
+            .eq('assignment_id', assignmentId)
+            .single()
+            .then(async ({ data: assignment, error }) => {
+                if (error || !assignment) return;
+                
+                modalTitle.textContent = assignment.title || 'Assignment Details';
+                
+                const dueDate = assignment.due_date ? new Date(assignment.due_date) : null;
+                const dueDateStr = dueDate ? dueDate.toLocaleString() : 'No due date';
+                
+                let attachmentsHTML = '';
+                
+                try {
+                    // Fetch attachments
+                    const { data: files, error: filesError } = await supabaseClient.storage.from('assignment').list(assignmentId.toString());
+                    
+                    if (filesError) console.error("Error fetching detail attachments:", filesError);
+
+                    if (files && files.length > 0) {
+                        // Filter out folders and placeholders safely
+                        const validFiles = files.filter(f => f.name !== '.emptyFolderPlaceholder' && (f.id || f.metadata));
+                        
+                        if (validFiles.length > 0) {
+                            attachmentsHTML = `<div style="margin-top: 1.5rem;"><h4 style="font-size: 0.95rem; font-weight: 600; margin-bottom: 0.75rem;">Teacher Attachments</h4><div style="display: flex; flex-direction: column; gap: 0.5rem;">`;
+                            
+                            for (const file of validFiles) {
+                                const { data: urlData } = supabaseClient.storage.from('assignment').getPublicUrl(`${assignmentId}/${file.name}`);
+                                
+                                const fileExt = file.name.split('.').pop().toLowerCase();
+                                let iconClass = 'fa-file';
+                                if (['pdf'].includes(fileExt)) iconClass = 'fa-file-pdf';
+                                else if (['py','js','html','css'].includes(fileExt)) iconClass = 'fa-file-code';
+                                else if (['jpg','jpeg','png','gif'].includes(fileExt)) iconClass = 'fa-file-image';
+                                
+                                attachmentsHTML += `
+                                  <a href="${urlData.publicUrl}" target="_blank" class="attachment-card" style="text-decoration: none;">
+                                    <div class="attachment-icon"><i class="fas ${iconClass}"></i></div>
+                                    <div class="attachment-details"><h4>${file.name}</h4><span>${fileExt.toUpperCase()}</span></div>
+                                  </a>
+                                `;
+                            }
+                            attachmentsHTML += `</div></div>`;
+                        }
+                    }
+                } catch (err) {
+                    console.error("Error fetching assignment attachments exception:", err);
+                }
+                
+                modalBody.innerHTML = `
+                    <div class="modal-meta">
+                        <div class="modal-meta-item">
+                            <i class="fas fa-calendar-alt"></i>
+                            <span>Due: ${dueDateStr}</span>
+                        </div>
+                        ${assignment.topic ? `
+                        <div class="modal-meta-item">
+                            <i class="fas fa-tag"></i>
+                            <span>${assignment.topic}</span>
+                        </div>
+                        ` : ''}
+                        ${assignment.Grades ? `
+                        <div class="modal-meta-item">
+                            <i class="fas fa-star"></i>
+                            <span>${assignment.Grades} points</span>
+                        </div>
+                        ` : ''}
+                    </div>
+                    <div style="font-size: 0.95rem; line-height: 1.7; color: var(--text-main);">
+                        ${assignment.instructions || 'No instructions provided.'}
+                    </div>
+                    ${attachmentsHTML}
+                `;
+                
+                modal.classList.add('active');
+            });
+    }
+
+    function closeAssignmentModal() {
+        document.getElementById('assignmentModal').classList.remove('active');
+    }
+
+    // Close modal on outside click
+    document.getElementById('assignmentModal').addEventListener('click', function(e) {
+        if (e.target === this) closeAssignmentModal();
+    });
+
+    function showToast(message, isError = false) {
+        const toast = document.getElementById('toast');
+        document.getElementById('toastMessage').textContent = message;
+        toast.style.background = isError ? '#ef4444' : '#0f172a';
+        toast.classList.add('show');
+        setTimeout(() => toast.classList.remove('show'), 3000);
+    }
+
+    // --- AI CHAT WIDGET ---
+    let isChatOpen = false;
+    let isFullscreen = false;
+
+    function toggleAIChat() {
+        const widget = document.getElementById('aiChatWidget');
+        const floatBtn = document.getElementById('aiFloatBtn');
+        isChatOpen = !isChatOpen;
+        
+        if (isChatOpen) {
+            widget.classList.add('active');
+            floatBtn.innerHTML = '<i class="fas fa-times" style="color: white; font-size: 1.5rem;"></i>';
+        } else {
+            widget.classList.remove('active');
+            widget.classList.remove('fullscreen');
+            isFullscreen = false;
+            floatBtn.innerHTML = '<i class="fas fa-robot" style="color: white; font-size: 1.5rem;"></i>';
+        }
+    }
+
+    function toggleFullscreen() {
+        const widget = document.getElementById('aiChatWidget');
+        isFullscreen = !isFullscreen;
+        if (isFullscreen) {
+            widget.classList.add('fullscreen');
+        } else {
+            widget.classList.remove('fullscreen');
+        }
+    }
+
+    async function loadChatHistory() {
+        if (!activeClassData || !currentStudentId) return;
+        
+        try {
+            const response = await fetch(`${API_URL}/history?student_id=${currentStudentId}&course_id=${activeClassData.course_id}`);
+            const data = await response.json();
+            
+            if (data.history && data.history.length > 0) {
+                const messagesContainer = document.getElementById('chatMessages');
+                messagesContainer.innerHTML = ''; 
+                
+                data.history.forEach(msg => {
+                    appendUserMessage(msg.message);
+                    appendAIMessage(msg.response);
+                });
+                
+                messagesContainer.scrollTop = messagesContainer.scrollHeight;
+            }
+        } catch (error) {
+            console.error("Error loading chat history:", error);
+        }
+    }
+
+    function appendUserMessage(text) {
+        const messages = document.getElementById('chatMessages');
+        const div = document.createElement('div');
+        div.style.cssText = 'display: flex; justify-content: flex-end; margin-bottom: 12px;';
+        div.innerHTML = `<div style="max-width: 80%; background: #10b981; color: white; padding: 10px 14px; border-radius: 16px 16px 4px 16px; font-size: 0.9rem; line-height: 1.4;">${text}</div>`;
+        messages.appendChild(div);
+    }
+
+    function appendAIMessage(markdownText) {
+        const messages = document.getElementById('chatMessages');
+        const div = document.createElement('div');
+        div.style.cssText = 'display: flex; justify-content: flex-start; margin-bottom: 12px;';
+        
+        const htmlContent = marked.parse(markdownText);
+        
+        div.innerHTML = `
+            <div class="ai-bubble-content">
+                <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 6px; color: #10b981; font-weight: 600; font-size: 0.8rem;">
+                    <i class="fas fa-robot"></i> Cassandra AI
+                </div>
+                <div>${htmlContent}</div>
+            </div>
+        `;
+        messages.appendChild(div);
+    }
+
+    async function sendChatMessage() {
+        const input = document.getElementById('chatInput');
+        const btn = document.getElementById('chatSendBtn');
+        const messages = document.getElementById('chatMessages');
+        const message = input.value.trim();
+        
+        if (!message) return;
+        
+        const welcomeMsg = document.getElementById('welcomeMessage');
+        if (welcomeMsg) welcomeMsg.remove();
+        
+        appendUserMessage(message);
+        input.value = '';
+        messages.scrollTop = messages.scrollHeight;
+        
+        input.disabled = true;
+        btn.disabled = true;
+
+        const loadingId = 'loading-' + Date.now();
+        const loadingDiv = document.createElement('div');
+        loadingDiv.id = loadingId;
+        loadingDiv.style.cssText = 'display: flex; justify-content: flex-start; margin-bottom: 12px;';
+        loadingDiv.innerHTML = `
+            <div style="max-width: 85%; background: white; color: var(--text-muted); padding: 12px 16px; border-radius: 16px 16px 16px 4px; font-size: 0.9rem; border: 1px solid var(--border-color); font-style: italic;">
+                Cassandra is thinking... <i class="fas fa-circle-notch fa-spin" style="margin-left: 5px;"></i>
+            </div>
+        `;
+        messages.appendChild(loadingDiv);
+        messages.scrollTop = messages.scrollHeight;
+
+        try {
+            const response = await fetch(`${API_URL}/chat`, {
+                method: 'POST', 
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ 
+                    message: message, 
+                    student_id: currentStudentId,
+                    course_id: activeClassData ? activeClassData.course_id : null
+                })
+            });
+
+            const data = await response.json();
+            const loader = document.getElementById(loadingId);
+            if (loader) loader.remove();
+
+            const aiResponse = data.response || "I'm sorry, I couldn't process your request. Please try again.";
+            appendAIMessage(aiResponse);
+
+        } catch (error) {
+            const loader = document.getElementById(loadingId);
+            if (loader) loader.remove();
+            appendAIMessage("❌ **Connection Error**: Could not connect to the backend server. Make sure your Python API is running!");
+            console.error("Chat Error:", error);
+        } finally {
+            input.disabled = false;
+            btn.disabled = false;
+            input.focus();
+            messages.scrollTop = messages.scrollHeight;
+        }
+    }
+
+    const sidebar = document.getElementById('sidebar');
+    document.getElementById('sidebarToggle').addEventListener('click', () => sidebar.classList.toggle('open'));
+
+    async function logoutUser() {
+        await supabaseClient.auth.signOut();
+        window.location.href = 'student-login.html';
+    }
+  </script>
+</body>
+</html>

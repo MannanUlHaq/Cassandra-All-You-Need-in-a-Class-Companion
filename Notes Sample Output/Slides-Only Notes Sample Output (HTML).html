@@ -1,0 +1,506 @@
+
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Lecture Notes</title>
+        
+    <style>
+        :root {
+            --fg-color: #37352f;
+            --bg-color: #ffffff;
+            --gray-bg: #f7f6f3;
+            --border-color: #e0e0e0;
+            --link-color: #0b6e99;
+            --code-bg: #f7f6f3;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+            color: var(--fg-color);
+            background-color: var(--bg-color);
+            line-height: 1.6;
+            font-size: 17px;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+
+        /* HEADERS */
+        h1, h2, h3, h4, h5, h6 { color: #202020; font-weight: 600; line-height: 1.3; }
+        h1 { font-size: 2.2em; margin-top: 2em; margin-bottom: 0.5em; border-bottom: 1px solid var(--border-color); padding-bottom: 0.2em; letter-spacing: -0.02em;}
+        h2 { font-size: 1.8em; margin-top: 1.8em; margin-bottom: 0.5em; border-bottom: 1px solid var(--border-color); padding-bottom: 0.2em;}
+        h3 { font-size: 1.4em; margin-top: 1.5em; margin-bottom: 0.5em; }
+        h4 { font-size: 1.2em; margin-top: 1.2em; margin-bottom: 0.5em; }
+
+        /* TEXT & LISTS */
+        p { margin-bottom: 1.2em; }
+        ul, ol { margin-top: 0.5em; margin-bottom: 1.2em; padding-left: 2em; }
+        li { margin-bottom: 0.4em; }
+        li > p { margin-top: 0.2em; margin-bottom: 0.2em; }
+        li > ul, li > ol { margin-top: 0.4em; }
+        strong { font-weight: 600; color: #111; }
+        em { font-style: italic; }
+        a { color: var(--link-color); text-decoration: none; }
+        a:hover { text-decoration: underline; }
+        hr { border: 0; border-top: 1px solid var(--border-color); margin: 2.5em 0; }
+
+        /* QUOTES */
+        blockquote {
+            background-color: var(--gray-bg);
+            border-left: 4px solid #4a4a4a;
+            padding: 16px 20px;
+            margin: 1.5em 0;
+            border-radius: 0 4px 4px 0;
+            color: #555;
+        }
+
+        /* IMAGES: Fixed Size & Centered */
+        figure { margin: 2em 0; text-align: center; }
+        img {
+            display: block;
+            margin: 20px auto;
+            max-width: 70%;
+            max-height: 400px;
+            width: auto;
+            height: auto;
+            border-radius: 6px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+        }
+        figcaption { margin-top: 0.8em; font-size: 0.9em; color: #666; font-style: italic; text-align: center; }
+
+        /* TABLES */
+        table { border-collapse: collapse; width: 100%; margin: 2em 0; font-size: 16px; border: 1px solid var(--border-color); }
+        th, td { border: 1px solid var(--border-color); padding: 12px 16px; vertical-align: top; text-align: left; }
+        th { background-color: var(--gray-bg); font-weight: 600; }
+        tr:nth-child(even) { background-color: #fafafa; }
+
+        /* MATH & CODE */
+        mjx-container { overflow-x: auto; overflow-y: hidden; max-width: 100%; }
+        pre { background-color: var(--code-bg); padding: 20px; border-radius: 6px; overflow-x: auto; margin: 1.5em 0; border: 1px solid var(--border-color); }
+        code { font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace; background-color: rgba(135,131,120,0.15); color: #EB5757; padding: 0.2em 0.4em; border-radius: 3px; font-size: 0.9em; }
+        pre > code { background-color: transparent; padding: 0; color: #333; font-size: 14px; border: none; }
+    </style>
+    
+        
+    <script>
+    MathJax = {
+      tex: {
+        inlineMath: [['$', '$']], 
+        displayMath: [['$$', '$$']],
+        processEscapes: true,
+        packages: {'[+]': ['noerrors', 'noundefined']}
+      },
+      options: {
+        ignoreHtmlClass: 'tex2jax_ignore',
+        processHtmlClass: 'tex2jax_process'
+      },
+      svg: { fontCache: 'global' }
+    };
+    </script>
+    <script type="text/javascript" id="MathJax-script" async
+      src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js">
+    </script>
+    
+    </head>
+    <body>
+        <h1>MEASUREMENT</h1>
+<p>Today we are beginning our discussion on the topic of Measurement. This opening statement introduces the core theme of the lecture, which is the fundamental process of quantifying and defining the properties of the world around us. We'll explore how measurement provides the essential data and standardized language that allows us to analyze, compare, and understand phenomena in a scientific and objective way.</p>
+<p>Measurement isn't just for the laboratory; we use it constantly in everyday life. This idea highlights how fundamental measurement is to our daily routines, not just scientific experiments. For instance, you rely on measuring mass when weighing produce at a store, and you measure volume when pouring a liquid like milk. These common actions are practical applications of the same core principles used in any lab.</p>
+<h2>Measurement of mass</h2>
+<p>For example, when you go to the grocery store and weigh vegetables on a scale, you are performing a measurement of mass.</p>
+<p><img alt="a man standing in front of a scale" src="media/slide2_e0_image.png" /></p>
+<p>This everyday action demonstrates that mass is a measure of the amount of matter in an object, which we quantify using tools like scales. It's a fundamental property that doesn't change with location, unlike weight. By weighing vegetables, you are applying the same core principle of comparison to a standard unit—like grams or kilograms—that scientists use in the lab.</p>
+<h2>Measurement of volume</h2>
+<p>When you pour milk into a jug, you are dealing with the measurement of volume.</p>
+<p><img alt="a man pouring milk into a container" src="media/slide2_e4_image.png" /></p>
+<p>This example connects the abstract concept of volume to a familiar action: pouring milk into a jug. You are determining how much three-dimensional space the milk occupies, which is the essence of measuring volume. Just like measuring mass with a scale, this is a practical, everyday application of a fundamental scientific measurement.</p>
+<h2>Measurement in everyday life</h2>
+<p>"Measurement in everyday life" refers to the routine, practical ways we use numbers and units to understand the world around us. For instance, you measure length when tailoring clothes and measure temperature when checking for a fever. These common actions show how fundamental measurement is to daily tasks and decisions.</p>
+<h2>Measurement of length</h2>
+<p>When measuring a piece of clothing or fabric, we are measuring length.</p>
+<p><img alt="a man measuring his shirt" src="media/slide3_e3_image.png" /></p>
+<p>This is a fundamental example of how we use measurement to quantify a physical property—in this case, the extent of an object from one end to the other. By measuring fabric, you are applying a standard unit to determine its size, which is essential for tasks like sewing or construction. It highlights that measurement is a practical, everyday tool for making accurate comparisons and decisions.</p>
+<h2>Measurement of temperature</h2>
+<p>When we use a thermometer to check if someone has a fever, we are measuring temperature.</p>
+<p><img alt="a young girl with a thermometer in her hand" src="media/slide3_e4_image.png" /></p>
+<p>This example connects the abstract concept of measurement to a common, real-world health scenario. You are quantifying a body's thermal energy to assess a specific physical condition—in this case, a fever. It demonstrates how measurement provides objective data for making important decisions.</p>
+<h2>Need for measurement in physics</h2>
+<p>Now, why is measurement so critical specifically in physics? Measurement is critical because physics is built on experiments, and experiments are meaningless without quantifying the properties you observe. It is through precise measurement that we can test our theories, confirm the laws of nature, and truly understand how the physical world works.</p>
+<p>To understand any phenomenon in physics we have to perform experiments. Experiments require measurements, and we measure several physical properties like length, mass, time, temperature, pressure etc. Experimental verification of laws &amp; theories also needs measurement of physical properties.</p>
+<p>Physics is inherently an experimental science. To understand any phenomenon, we must perform experiments, and you cannot perform an experiment without measuring physical properties like length, mass, time, or pressure. Furthermore, to verify any physical law or theory, we need accurate measurements.</p>
+<p>Measurement is the essential bridge between our theoretical ideas about the universe and the physical reality we aim to understand. Without it, we couldn't conduct experiments to observe phenomena or gather the precise data needed to confirm or refine our scientific laws. In short, measurement transforms physics from abstract thought into a concrete, evidence-based science.</p>
+<h2>Physical Quantity</h2>
+<p>A physical quantity is a measurable property of an object or system that can be expressed numerically with a unit. For example, mass, length, and temperature are all physical quantities because you can assign a number and a unit, like 65 kg or 300 K, to describe them. This numerical description allows us to quantify, compare, and perform calculations with the physical world.</p>
+<p>A physical property that can be measured and described by a number is called physical quantity.</p>
+<p>This leads us to the definition of a 'Physical Quantity'. A physical quantity is simply any physical property that can be measured and described by a number. For instance, if you say the mass of a person is 65 kg, or the area of a hall is 100 square meters, you are describing physical quantities.</p>
+<p>A physical quantity is a measurable property of an object or system, expressed as a numerical value combined with a unit. The examples, like a mass of 65 kg or a length of 3 meters, illustrate that these quantities are not just descriptive ideas—they are concrete attributes we can quantify. This concept is fundamental because it allows us to use mathematics to describe and analyze the physical world.</p>
+<h3>Examples:</h3>
+<p>These are concrete instances that illustrate the abstract definition. They show you how a measurable property, like mass or area, becomes a specific quantity when paired with a number and a unit. Each example transforms a general concept into a specific, numerical description you can use in calculations.</p>
+<ul>
+<li>Mass of a person is 65 kg.</li>
+<li>Length of a table is 3 m.</li>
+<li>Area of a hall is 100 m².</li>
+<li>Temperature of a room is 300 K.</li>
+</ul>
+<p>These are all examples of physical quantities, which are measurable properties of objects or systems. Each example pairs the type of quantity (like mass or area) with a numerical value and a standard unit (like kg or m²), which is how we quantify and communicate measurements in science.</p>
+<h3>Types of physical quantities</h3>
+<p>We classify these quantities into two types. The four primary examples are Mass, Length, Time, and Temperature.</p>
+<h4>Fundamental quantities:</h4>
+<p>First, we have Fundamental Quantities.</p>
+<p>The physical quantities which do not depend on any other physical quantities for their measurements are known as fundamental quantities. These are the quantities that do not depend on any other physical quantities for their measurement.</p>
+<p>Fundamental quantities are the basic building blocks of measurement in physics. They are defined independently, meaning you don't need other quantities to describe them. Mass, length, time, and temperature are classic examples because you can measure each one without first having to define or measure something else.</p>
+<p><strong>Examples:</strong></p>
+<ul>
+<li>Mass</li>
+<li>Length</li>
+<li>Time</li>
+<li>Temperature</li>
+</ul>
+<p>These are examples of fundamental quantities, which means they are the most basic, independent building blocks we use to describe the physical world. We define units for these quantities directly, and then use them to derive units for all other measured quantities, like speed or force.</p>
+<h4>Derived quantities:</h4>
+<p>The second type is Derived Quantities. Volume and Force are other common examples.</p>
+<p>The physical quantities which depend on one or more fundamental quantities for their measurements are known as derived quantities. As the name implies, these are quantities that depend on one or more fundamental quantities. For example, Speed is derived from distance and time.</p>
+<p>Derived quantities are built by combining fundamental quantities through multiplication or division. For instance, speed is not a standalone measurement; it is calculated by dividing the fundamental quantity of distance by the fundamental quantity of time. Similarly, area is derived by multiplying two lengths, and force is derived from mass, length, and time.</p>
+<p><strong>Examples:</strong></p>
+<ul>
+<li>Area</li>
+<li>Volume</li>
+<li>Speed</li>
+<li>Force</li>
+</ul>
+<p>Area is a derived quantity because it is calculated by multiplying two lengths together. This means its measurement depends on the fundamental quantity of length. Similarly, volume, speed, and force are all derived from combinations of fundamental quantities like length, time, and mass.</p>
+<h2>International System of units (SI)</h2>
+<p>To ensure that measurements are understood globally, we need a standard. This system consists of seven fundamental units and two supplementary units.</p>
+<p>In 1971, General Conference on Weight and Measures held its meeting and decided a system of units for international usage. This system is called international system of units and abbreviated as SI from its French name. The SI unit consists of seven fundamental units and two supplementary units. In 1971, the General Conference on Weights and Measures established the International System of Units, abbreviated as SI.</p>
+<p>The International System of Units (SI) is the globally agreed-upon standard for measurement, created to ensure consistency and clarity in science and trade worldwide. Its foundation is built on seven fundamental units—like the meter for length and the kilogram for mass—which define all other measurable quantities.</p>
+<h3>Seven fundamental units</h3>
+<p>These seven base units are the essential building blocks of the International System of Units (SI). Each one defines a fundamental physical quantity, and from them, we can derive every other unit of measurement used in science and engineering.</p>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;"><strong>FUNDAMENTAL QUANTITY</strong></th>
+<th style="text-align: left;"><strong>SI UNIT</strong></th>
+<th style="text-align: left;"><strong>SYMBOL</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;">Length</td>
+<td style="text-align: left;">meter</td>
+<td style="text-align: left;">m</td>
+</tr>
+<tr>
+<td style="text-align: left;">Mass</td>
+<td style="text-align: left;">kilogram</td>
+<td style="text-align: left;">kg</td>
+</tr>
+<tr>
+<td style="text-align: left;">Time</td>
+<td style="text-align: left;">second</td>
+<td style="text-align: left;">s</td>
+</tr>
+<tr>
+<td style="text-align: left;">Temperature</td>
+<td style="text-align: left;">kelvin</td>
+<td style="text-align: left;">K</td>
+</tr>
+<tr>
+<td style="text-align: left;">Electric current</td>
+<td style="text-align: left;">ampere</td>
+<td style="text-align: left;">A</td>
+</tr>
+<tr>
+<td style="text-align: left;">Luminous intensity</td>
+<td style="text-align: left;">candela</td>
+<td style="text-align: left;">cd</td>
+</tr>
+<tr>
+<td style="text-align: left;">Amount of substance</td>
+<td style="text-align: left;">mole</td>
+<td style="text-align: left;"><em>mol</em></td>
+</tr>
+</tbody>
+</table>
+<h3>Rules for writing SI units</h3>
+<p>There are strict rules for writing these SI units. These rules exist to ensure scientific communication is clear and consistent worldwide.</p>
+<p><strong>1. Full name of unit always starts with small letter even if named after a person.</strong></p>
+<p>Rule number one: When writing the full name of a unit, you must start with a small letter, even if the unit is named after a person. For example, we write 'newton' with a lowercase 'n', not a capital one. This rule ensures consistency in scientific communication. Even when a unit honors a scientist, like Isaac Newton, its full name is written in lowercase: 'newton'. This distinguishes the unit itself from the person it commemorates.</p>
+<p><strong>Correct:</strong> newton, ampere, coulomb</p>
+<p><strong>Incorrect:</strong> Newton, Ampere, Coulomb</p>
+<p>These are examples of units named after scientists, but when writing their full names, you always use lowercase letters. So, you write 'newton', 'ampere', and 'coulomb' instead of capitalizing them like the scientists' last names. This rule keeps the notation for units consistent and distinct from proper nouns.</p>
+<p><strong>2. Symbol for unit named after a scientist should be in a capital letter.</strong></p>
+<p>If a unit is named after a scientist, its symbol must be written with a capital letter. This rule honors the scientist by capitalizing the first letter of the unit's symbol derived from their name. For example, the unit of force is named after Isaac Newton, so its symbol is a capital 'N', while the unit of electric current, named after André-Marie Ampère, uses a capital 'A'. Remember, this applies only to the symbol, not the unit's name when written out in full.</p>
+<p><strong>Correct:</strong> N for newton, K for kelvin, A for ampere, C for coulomb</p>
+<p><strong>3. Symbols for all other units are written in small letters.</strong></p>
+<p>Rule number three states that symbols for all other units—those not named after scientists—are written in lowercase letters. This rule helps quickly distinguish between units named after people and all other basic units. For instance, while the unit for force, the newton, uses an uppercase 'N', fundamental units like meter and second use lowercase 'm' and 's'.</p>
+<p><strong>Examples:</strong> m for meter, s for second, kg for kilogram, cd for candela</p>
+<p><strong>4. One space is left between the last digit of a numeral and the symbol of a unit.</strong></p>
+<p>Rule number four is about spacing. You must leave one space between the last digit of the number and the unit symbol. This rule ensures clarity and prevents misreading by visually separating the quantity from its unit.</p>
+<p><strong>Correct:</strong> 10 kg, 5 N, 15 m
+<strong>Incorrect:</strong> 10kg, 5N, 15m</p>
+<p><strong>5. The units do not have plural forms.</strong></p>
+<p>Rule number five: Unit symbols do not have plural forms. Even if the value is greater than one, the symbol remains singular. This keeps the notation consistent and avoids confusion in scientific communication.</p>
+<p><strong>Correct:</strong> 6 metre, 14 kg, 20 second, 18 kelvin
+<strong>Incorrect:</strong> 6 metres, 14 kgs, 20 seconds, 18 kelvins</p>
+<p><strong>6. Full stop should not be used after the units.</strong></p>
+<p>Rule number six: Do not place a full stop (period) after a unit symbol, unless it appears at the very end of a sentence. This rule helps keep unit symbols clean and distinct from sentence punctuation.</p>
+<p><strong>Correct:</strong> 7 metre, 12 N, 25 kg
+<strong>Incorrect:</strong> 7 metre., 12 N., 25 kg. (unless at the end of a sentence)</p>
+<h3>7. No space is used between the symbols for units.</h3>
+<p>Rule seven concerns the spacing between symbols in a compound unit. When writing a unit derived from the multiplication of two or more base units, you do not add a space between their symbols. This creates a single, unambiguous symbol for the derived unit, distinguishing it from a sequence of separate units.</p>
+<p>For example, the unit for energy, the newton-meter, is written as <strong>Nm</strong> without a space, not "N m". Similarly, the unit for action, the joule-second, is written as <strong>J s</strong> (note: a space is required here as per rule 4 for separating the numerical value from the unit, but the symbols 'J' and 's' are separate entities; a combined unit like N·m for torque is written without a space as Nm).</p>
+<p><strong>Correct:</strong> 4 J s, 19 N m, 25 V A
+<strong>Incorrect:</strong> 4 Js, 19 Nm, 25 VA (This would incorrectly imply a single, non-standard unit symbol)</p>
+<h2>SI Prefixes</h2>
+<p>We use SI prefixes to handle very large or very small quantities, allowing us to express them without writing long strings of zeros. These prefixes are shorthand multipliers attached to base units.</p>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;"><strong>Factor</strong></th>
+<th style="text-align: left;"><strong>Name</strong></th>
+<th style="text-align: left;"><strong>Symbol</strong></th>
+<th style="text-align: left;"><strong>Factor</strong></th>
+<th style="text-align: left;"><strong>Name</strong></th>
+<th style="text-align: left;"><strong>Symbol</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;">$10^{24}$</td>
+<td style="text-align: left;">yotta</td>
+<td style="text-align: left;">Y</td>
+<td style="text-align: left;">$10^{-1}$</td>
+<td style="text-align: left;">deci</td>
+<td style="text-align: left;">d</td>
+</tr>
+<tr>
+<td style="text-align: left;">$10^{21}$</td>
+<td style="text-align: left;">zetta</td>
+<td style="text-align: left;">Z</td>
+<td style="text-align: left;">$10^{-2}$</td>
+<td style="text-align: left;">centi</td>
+<td style="text-align: left;">c</td>
+</tr>
+<tr>
+<td style="text-align: left;">$10^{18}$</td>
+<td style="text-align: left;">exa</td>
+<td style="text-align: left;">E</td>
+<td style="text-align: left;">$10^{-3}$</td>
+<td style="text-align: left;">milli</td>
+<td style="text-align: left;">m</td>
+</tr>
+<tr>
+<td style="text-align: left;">$10^{15}$</td>
+<td style="text-align: left;">peta</td>
+<td style="text-align: left;">P</td>
+<td style="text-align: left;">$10^{-6}$</td>
+<td style="text-align: left;">micro</td>
+<td style="text-align: left;">$\mu$</td>
+</tr>
+<tr>
+<td style="text-align: left;">$10^{12}$</td>
+<td style="text-align: left;">tera</td>
+<td style="text-align: left;">T</td>
+<td style="text-align: left;">$10^{-9}$</td>
+<td style="text-align: left;">nano</td>
+<td style="text-align: left;">n</td>
+</tr>
+<tr>
+<td style="text-align: left;">$10^{9}$</td>
+<td style="text-align: left;">giga</td>
+<td style="text-align: left;">G</td>
+<td style="text-align: left;">$10^{-12}$</td>
+<td style="text-align: left;">pico</td>
+<td style="text-align: left;">p</td>
+</tr>
+<tr>
+<td style="text-align: left;">$10^{6}$</td>
+<td style="text-align: left;">mega</td>
+<td style="text-align: left;">M</td>
+<td style="text-align: left;">$10^{-15}$</td>
+<td style="text-align: left;">femto</td>
+<td style="text-align: left;">f</td>
+</tr>
+<tr>
+<td style="text-align: left;">$10^{3}$</td>
+<td style="text-align: left;">kilo</td>
+<td style="text-align: left;">k</td>
+<td style="text-align: left;">$10^{-18}$</td>
+<td style="text-align: left;">atto</td>
+<td style="text-align: left;">a</td>
+</tr>
+<tr>
+<td style="text-align: left;">$10^{2}$</td>
+<td style="text-align: left;">hecto</td>
+<td style="text-align: left;">h</td>
+<td style="text-align: left;">$10^{-21}$</td>
+<td style="text-align: left;">zepto</td>
+<td style="text-align: left;">z</td>
+</tr>
+<tr>
+<td style="text-align: left;">$10^{1}$</td>
+<td style="text-align: left;">deka</td>
+<td style="text-align: left;">da</td>
+<td style="text-align: left;">$10^{-24}$</td>
+<td style="text-align: left;">yocto</td>
+<td style="text-align: left;">y</td>
+</tr>
+</tbody>
+</table>
+<h3>Use of SI Prefixes</h3>
+<p>Here are some examples of how these prefixes are used:</p>
+<ul>
+<li>$3\,\text{milliampere} = 3\,\mathrm{mA} = 3 \times 10^{-3}\,\mathrm{A}$</li>
+<li>$5\,\text{microvolt} = 5\,\mu\mathrm{V} = 5 \times 10^{-6}\,\mathrm{V}$</li>
+<li>$8\,\text{nanosecond} = 8\,\mathrm{ns} = 8 \times 10^{-9}\,\mathrm{s}$</li>
+<li>$6\,\text{picometre} = 6\,\mathrm{pm} = 6 \times 10^{-12}\,\mathrm{m}$</li>
+<li>$5\,\text{kilometre} = 5\,\mathrm{km} = 5 \times 10^{3}\,\mathrm{m}$</li>
+<li>$7\,\text{megawatt} = 7\,\mathrm{MW} = 7 \times 10^{6}\,\mathrm{W}$</li>
+</ul>
+<h2>Some Practical Units for Measuring Length</h2>
+<p>For measuring very small lengths, specific practical units are used.</p>
+<p><strong>Micron and Nanometer:</strong></p>
+<ul>
+<li>$1\,\text{micron} = 10^{-6}\,\mathrm{m}$</li>
+<li>$1\,\text{nanometer} = 10^{-9}\,\mathrm{m}$</li>
+</ul>
+<p>Bacteria are microscopic single-celled organisms typically measured in microns.</p>
+<p><img alt="a group of bacteria" src="media/slide19_e6_image.png" /></p>
+<p>Molecules, the fundamental building blocks of matter, are typically measured in nanometers.</p>
+<p><img alt="a molecule with blue and red balls" src="media/slide19_e0_image.png" /></p>
+<p><strong>Angstrom and Fermi:</strong>
+For atomic and nuclear scales, even smaller units are used.</p>
+<ul>
+<li>$1\,\text{angstrom} = 10^{-10}\,\mathrm{m}$</li>
+<li>$1\,\text{fermi} = 10^{-15}\,\mathrm{m}$</li>
+</ul>
+<p>Atoms are the fundamental building blocks of matter, and their size is on the scale of angstroms.</p>
+<p><img alt="an atomic structure with blue background" src="media/slide20_e1_image.png" /></p>
+<p>The nucleus is the incredibly dense core at the center of an atom. It is so small that we use the fermi to measure it.</p>
+<p><img alt="a blue circle with a blue ball in the middle" src="media/slide20_e0_image.png" /></p>
+<h3>Seven Dimensions of the World</h3>
+<p>Now let's discuss Dimensions. Every fundamental quantity corresponds to a dimension represented by a specific symbol in square brackets. The world of physics is built upon seven fundamental quantities, each with its own unique dimension. These dimensions, like length [L] or mass [M], are the basic building blocks we use to describe and measure every other physical property. When you see a quantity in square brackets, you're looking at its fundamental dimensional recipe.</p>
+<p>The fundamental quantities are:</p>
+<ul>
+<li>Length</li>
+<li>Mass</li>
+<li>Time</li>
+<li>Temperature</li>
+<li>Current</li>
+<li>Amount of substance</li>
+<li>Luminous intensity</li>
+</ul>
+<p>These are the seven base physical quantities in the International System of Units (SI). Each one has a unique dimensional symbol, like [L] for length, which we use to express and check the consistency of all other derived quantities in physics and engineering.</p>
+<p><strong>Dimensions:</strong> [L] [M] [T] [K] [A] [N] [J]</p>
+<p>These symbols represent the seven base dimensions of physical measurement, each corresponding to a fundamental quantity in science. For example, [L] is for length, [M] for mass, and [T] for time, providing a universal language to describe and analyze the physical world. By expressing any derived quantity, like speed or force, in these base dimensions, we can check the consistency of our equations and understand how different quantities relate.</p>
+<h3>Dimensions of a Physical Quantity</h3>
+<p>So, what are the 'dimensions of a physical quantity'? The dimensions of a physical quantity tell you how it is built from the fundamental base quantities like mass, length, and time. For example, speed has dimensions of length divided by time, which means it is derived from those two fundamental quantities. Essentially, it's the recipe of fundamental quantities that defines the derived one.</p>
+<p>The powers of fundamental quantities in a derived quantity are called dimensions of that quantity. This refers to the powers to which the fundamental quantities must be raised in order to represent a derived quantity.</p>
+<p>Think of dimensions as the fundamental "recipe" for a physical quantity. For example, speed is length divided by time, so its dimensions are length to the power of one and time to the power of negative one. These exponents—the powers in the recipe—are what we formally call the dimensions of that quantity.</p>
+<p>Let's derive the dimensions of density. Since Density is Mass divided by Volume, and Volume is length cubed, the dimensional formula becomes Mass divided by Length cubed. Dimensions tell us how a physical quantity is built from fundamental units like mass, length, and time. For density, you start with mass and divide by volume, and since volume is length multiplied by itself three times, its dimension is length cubed. Therefore, the dimensional formula condenses to mass divided by length cubed, or simply M L⁻³.</p>
+<p>$$
+\text{Density} = \frac{\text{Mass}}{\text{Volume}}
+$$</p>
+<p>$$
+= \frac{\text{Mass}}{\text{length} \times \text{breadth} \times \text{height}}
+$$</p>
+<p>$$
+\left[\text{Density}\right] = \frac{\left[\mathrm{M}\right]}{\left[\mathrm{L}\right] \times \left[\mathrm{L}\right] \times \left[\mathrm{L}\right]} = \frac{\left[\mathrm{M}\right]}{\left[\mathrm{L}^3\right]} = \left[\mathrm{M L^{-3}}\right]
+$$</p>
+<p>Hence the dimensions of density are 1 in mass and -3 in length.</p>
+<h3>Uses of Dimension</h3>
+<p>Why do we bother with dimensions? There are three main uses: To check if a physics equation is mathematically correct, to convert between different units, and to derive new formulas entirely. Dimensions are a powerful tool in physics because they allow you to verify the logical consistency of an equation—both sides must have the same fundamental units. Beyond checking for errors, you can also use dimensional analysis to systematically convert measurements from one unit system to another and even to predict the form of new equations by considering what units the answer must have.</p>
+<p>The three primary uses are:</p>
+<ol>
+<li>To check the correctness of an equation.</li>
+<li>To convert units.</li>
+<li>To derive a formula.</li>
+</ol>
+<p>Dimensions are a powerful tool in physics that go beyond just measuring things. They allow you to verify that the two sides of an equation represent the same physical quantity, help you systematically change from one unit system to another, and can even provide a roadmap for constructing new equations by ensuring the terms are dimensionally consistent.</p>
+<h4>To Check the Correctness of an Equation</h4>
+<p>First, let's look at checking the correctness of an equation. Checking the correctness of an equation often starts with dimensional analysis. This method verifies that each term in the equation has the same fundamental dimensions, like length or time. If the dimensions match across all terms, it's a strong indicator that the equation is physically plausible.</p>
+<p>Consider the equation of displacement,</p>
+<p>$$
+\Delta x = v_i t + \frac{1}{2} a t^2
+$$</p>
+<p>By writing the dimensions we get,</p>
+<p>$$
+\Delta \mathbf{x} = \text{displacement} = [\mathrm{L}]
+$$</p>
+<p>$$
+\mathrm{v_i t} = \text{velocity} \times \text{time} = \frac{\text{length}}{\text{time}} \times \text{time} = [\mathrm{L}]
+$$</p>
+<p>$$
+\mathrm{at}^2 = \text{acceleration} \times \text{time}^2 = \frac{\text{length}}{\text{time}^2} \times \text{time}^2 = [\mathrm{L}]
+$$</p>
+<p>The dimensions of each term are same, hence the equation is dimensionally correct. If we analyze the dimensions, we see that every term—displacement, velocity times time, and acceleration times time squared—all simplify to the dimension of Length [L]. Since the dimensions match, the equation is correct.</p>
+<p>This equation is checked using dimensional analysis, which ensures all terms share the same fundamental units. Here, displacement, velocity multiplied by time, and acceleration multiplied by time squared all reduce to the dimension of length. When every term in an equation has identical dimensions, it confirms the equation is dimensionally consistent, which is a necessary (but not always sufficient) test for correctness.</p>
+<h4>To Convert Units</h4>
+<p>Second, we can use dimensions to convert units. Suppose we want to convert Newtons (the SI unit of force) into Dynes (the CGS unit). We can use dimensional analysis to convert between measurement systems because the dimensions of a physical quantity, like force being $[\mathrm{LMT}^{-2}]$, remain the same regardless of the units. The conversion works by systematically replacing each SI base unit (meter, kilogram, second) with its CGS equivalent (centimeter, gram, second) and calculating the total numerical factor.</p>
+<p>Let us convert newton (SI unit of force) into dyne (CGS unit of force).</p>
+<p>The dimensions of force are $[\mathrm{LMT}^{-2}]$.</p>
+<p>So,
+$$
+1\,\text{newton} = (1\,\mathrm{m})(1\,\mathrm{kg})(1\,\mathrm{s})^{-2}
+$$</p>
+<p>and
+$$
+1\,\mathrm{dyne} = (1\,\mathrm{cm})(1\,\mathrm{g})(1\,\mathrm{s})^{-2}
+$$</p>
+<p>Thus,
+$$
+\frac{1\,\text{newton}}{1\,\text{dyne}} = \left( \frac{1\,\mathrm{m}}{1\,\mathrm{cm}} \right) \left( \frac{1\,\mathrm{kg}}{1\,\mathrm{g}} \right) \left( \frac{1\,\mathrm{s}}{1\,\mathrm{s}} \right)^{-2} = \left( \frac{100\,\mathrm{cm}}{1\,\mathrm{cm}} \right) \left( \frac{1000\,\mathrm{g}}{1\,\mathrm{g}} \right) \left( \frac{1\,\mathrm{s}}{1\,\mathrm{s}} \right)^{-2}
+$$</p>
+<p>$$
+= 100 \times 1000 = 10^5
+$$</p>
+<p>Therefore,
+$$
+1 \text{ newton} = 10^5 \text{ dyne}
+$$</p>
+<p>This is how we find that 1 newton equals $10^5$ dynes, since 1 m = 100 cm and 1 kg = 1000 g.</p>
+<h4>To Derive a Formula</h4>
+<p>Finally, we can use dimensions to derive a formula. We can use dimensional analysis to find the correct relationship between physical quantities when we know which factors are involved. By equating the dimensions on both sides of a proposed equation, we solve for unknown exponents, leading us to the formula's structure.</p>
+<p>Consider the time period $T$ of oscillation of a simple pendulum. It depends on length $l$ and acceleration due to gravity $g$.</p>
+<p>Imagine we know the period of a pendulum $T$ depends on length $l$ and gravity $g$, but we don't know the exact equation. We start by assuming the period $T$ is proportional to powers of its determining factors: length and gravity.</p>
+<p>Let us assume that,
+$$
+\mathrm{T} \propto l^{\mathrm{a}}\ g^{\mathrm{b}} \qquad \mathrm{or} \qquad \mathrm{T} = \mathrm{K}\ l^{\mathrm{a}}\ g^{\mathrm{b}}
+$$</p>
+<p>Here, $K$ is a constant which is dimensionless. In dimensional analysis, the constant $K$ is a pure number without any units. This means it doesn't depend on length, mass, or time, so its dimensional formula is $[\mathrm{L}^0\mathrm{M}^0\mathrm{T}^0]$. We include $K$ in the formula because dimensional analysis can only determine the <em>form</em> of the relationship between variables, not the exact numerical factor, which must be found by experiment.</p>
+<p>Now, we write the dimensions of each quantity:</p>
+<p>Dimensions of $\mathrm{T} = [\mathrm{L}^0 \mathrm{M}^0 \mathrm{T}^1]$</p>
+<p>Dimensions of $l = [\mathrm{L}^1 \mathrm{M}^0 \mathrm{T}^0]$</p>
+<p>Dimensions of $g = [\mathrm{L^1 M^0 T^{-2}}]$</p>
+<p>Substituting these into our assumed equation:
+$$
+\left[\mathrm{L}^0\mathrm{M}^0\mathrm{T}^1\right] = \mathrm{K} \left[\mathrm{L}^1\mathrm{M}^0\mathrm{T}^0\right]^{\mathrm{a}} \left[\mathrm{L}^1\mathrm{M}^0\mathrm{T}^{-2}\right]^{\mathrm{b}}
+$$</p>
+<p>$$
+= \mathrm{K} \left[ \mathrm{L}^{\mathrm{a}} \mathrm{M}^{\mathrm{0}} \mathrm{T}^{\mathrm{0}} \right] \left[ \mathrm{L}^{\mathrm{b}} \mathrm{M}^{\mathrm{0}} \mathrm{T}^{-2\mathrm{b}} \right]
+$$</p>
+<p>$$
+\left[ \mathrm{L}^0 \mathrm{M}^0 \mathrm{T}^1 \right] = \mathrm{K} \left[ \mathrm{L}^{a+b} \mathrm{M}^0 \mathrm{T}^{-2b} \right]
+$$</p>
+<p>For this equation to be dimensionally consistent, the exponents for $\mathrm{L}$ and $\mathrm{T}$ on both sides must be equal. The exponent for $\mathrm{M}$ is already $0$ on both sides.</p>
+<p>Therefore, we equate the exponents:
+$$
+\begin{array}{c c c} \text{a + b = 0} & \& & \text{- 2b = 1} \end{array}
+$$</p>
+<p>Solving these equations:
+$$
+\therefore \quad \mathrm{b} = -\frac{1}{2} \qquad \& \qquad \mathrm{a} = \frac{1}{2}
+$$</p>
+<p>Substituting the values of $a$ and $b$ back into the original assumption:
+$$
+\mathrm{T} = \mathrm{K} \, l^{1/2} \, g^{-1/2}
+$$</p>
+<p>$$
+\vdots \qquad \mathrm{T} = \mathrm{K} \sqrt{\frac{l}{g}}
+$$</p>
+<p>This method gives us the form $T = K\sqrt{l/g}$, where the dimensionless constant $K$ is determined by experiment (and for a simple pendulum, it turns out to be $2\pi$).</p>
+    </body>
+    </html>
+    

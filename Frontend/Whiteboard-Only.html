@@ -1,0 +1,988 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cassandra | Whiteboard Studio</title>
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" href="Assets/favicon.png">
+    
+    <!-- Google Fonts: Bricolage Grotesque -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,500;12..96,600;12..96,700&display=swap" rel="stylesheet">
+
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Supabase & QR Code -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+
+    <style>
+        /* CSS Variables & Brand Colors */
+        :root {
+            --primary: #0060e7;
+            --primary-dark: #004ba8;
+            --primary-light: #3082ff;
+            --primary-alpha: rgba(0, 96, 231, 0.1);
+            
+            --danger: #ef4444;
+            --danger-dark: #dc2626;
+            --danger-alpha: rgba(239, 68, 68, 0.1);
+
+            --warning: #f59e0b;
+            
+            --bg-body: #f4f7f9;
+            --bg-surface: #ffffff;
+            --bg-dark: #0f172a;
+            
+            --text-main: #0f172a;
+            --text-muted: #64748b;
+            
+            --border-color: #e2e8f0;
+            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            
+            --shadow-sm: 0 1px 2px rgba(0,0,0,0.05);
+            --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.05), 0 2px 4px -1px rgba(0,0,0,0.03);
+            --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.05), 0 4px 6px -2px rgba(0,0,0,0.03);
+            --shadow-xl: 0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04);
+        }
+
+        /* Reset & Base Styles */
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'Bricolage Grotesque', sans-serif;
+            background-color: var(--bg-body);
+            color: var(--text-main);
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* Utility Classes */
+        .hidden { display: none !important; }
+        .scale-95 { transform: scale(0.95); }
+        .scale-100 { transform: scale(1); }
+        .opacity-0 { opacity: 0; }
+        .opacity-100 { opacity: 1; }
+
+        /* Header Layout */
+        .app-header {
+            width: 100%; height: 72px;
+            background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--border-color);
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 0 2rem; z-index: 50; flex-shrink: 0;
+        }
+
+        .header-left { display: flex; align-items: center; gap: 2rem; }
+        .brand-logo { text-decoration: none; display: flex; align-items: center; }
+        .brand-logo img { height: 40px; width: auto; object-fit: contain; }
+
+        .top-nav {
+            display: flex; align-items: center; gap: 1.5rem;
+            border-left: 1px solid var(--border-color); padding-left: 1.5rem;
+        }
+        .nav-link {
+            text-decoration: none; color: var(--text-muted); font-weight: 600; font-size: 0.95rem;
+            display: flex; align-items: center; gap: 0.5rem; padding: 0.5rem 0.75rem;
+            border-radius: 8px; transition: var(--transition);
+        }
+        .nav-link i { font-size: 1.1rem; }
+        .nav-link:hover { color: var(--primary); background-color: var(--primary-alpha); }
+
+        /* Buttons */
+        .btn {
+            display: inline-flex; align-items: center; gap: 0.5rem; justify-content: center;
+            font-family: inherit; font-weight: 600; font-size: 0.95rem;
+            padding: 0.6rem 1.25rem; border-radius: 8px; border: none;
+            cursor: pointer; transition: var(--transition); text-decoration: none;
+        }
+        .btn:disabled { opacity: 0.6; cursor: not-allowed; }
+        .btn-primary { background-color: var(--primary); color: white; box-shadow: 0 4px 12px rgba(0, 96, 231, 0.2); }
+        .btn-primary:hover:not(:disabled) { background-color: var(--primary-dark); transform: translateY(-1px); }
+        .btn-danger { background-color: var(--danger); color: white; box-shadow: 0 4px 12px rgba(239, 68, 68, 0.2); border-radius: 50px; padding: 0.6rem 1.5rem; }
+        .btn-danger:hover:not(:disabled) { background-color: var(--danger-dark); transform: translateY(-1px) scale(1.02); }
+        .btn-outline-danger { background-color: transparent; color: var(--danger); border: 1px solid var(--danger); border-radius: 50px; }
+        .btn-outline-danger:hover:not(:disabled) { background-color: var(--danger-alpha); }
+        .btn-dark { background-color: var(--bg-dark); color: white; border-radius: 50px; padding: 0.6rem 1.5rem; }
+        .btn-dark:hover:not(:disabled) { background-color: #1e293b; transform: translateY(-1px); }
+        .btn-secondary { background-color: var(--bg-body); color: var(--text-main); border: 1px solid var(--border-color); }
+        .btn-secondary:hover { background-color: var(--border-color); }
+
+        /* Recording Indicator & Connection Status */
+        .recording-indicator {
+            display: flex; align-items: center; gap: 0.5rem;
+            background: white; padding: 0.4rem 1rem; border-radius: 50px;
+            border: 1px solid var(--border-color); box-shadow: var(--shadow-sm);
+        }
+        .pulse-dot {
+            width: 12px; height: 12px; background-color: var(--danger); border-radius: 50%;
+            box-shadow: 0 0 0 2px white, 0 0 0 4px var(--danger-alpha);
+            animation: pulse-dot 2s infinite cubic-bezier(0.4, 0, 0.6, 1);
+        }
+        .recording-timer { font-variant-numeric: tabular-nums; font-weight: 700; color: var(--danger); }
+        .connection-status { background: var(--warning); color: white; padding: 0.4rem 1rem; border-radius: 50px; font-weight: 600; font-size: 0.85rem; display: flex; align-items: center; gap: 0.5rem; }
+        @keyframes pulse-dot { 0%, 100% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.2); opacity: 0.7; } }
+
+        /* Main Area */
+        .main-content {
+            flex: 1; display: flex; flex-direction: column; align-items: center;
+            justify-content: center; padding: 1.5rem 2rem; position: relative;
+            overflow: hidden; background-color: var(--bg-body);
+        }
+
+        /* Initial State Card */
+        .status-card {
+            background: var(--bg-surface); border-radius: 20px; box-shadow: var(--shadow-xl);
+            padding: 3rem; text-align: center; max-width: 450px;
+            border: 1px solid var(--border-color); animation: float-up 0.6s ease-out;
+            display: flex; flex-direction: column; align-items: center; gap: 1rem;
+        }
+        .status-card h2 { font-size: 1.5rem; font-weight: 700; color: var(--text-main); }
+        .status-card p { color: var(--text-muted); line-height: 1.5; margin-bottom: 0.5rem;}
+        .icon-wrapper {
+            width: 80px; height: 80px; background: var(--primary-alpha); color: var(--primary);
+            border-radius: 50%; display: flex; align-items: center; justify-content: center;
+            font-size: 2rem; margin-bottom: 0.5rem;
+        }
+        @keyframes float-up { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* Slide / Whiteboard Container */
+        .slide-container {
+            width: 100%; height: 100%; display: flex; flex-direction: column;
+            max-width: 1400px; margin: 0 auto; position: relative;
+        }
+
+        /* Floating Controls */
+        .slide-controls-top {
+            display: flex; justify-content: space-between; align-items: center;
+            margin-bottom: 1rem; z-index: 50;
+        }
+        .slide-counter {
+            background: rgba(15, 23, 42, 0.7); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+            padding: 0.5rem 1.25rem; border-radius: 50px; font-weight: 600; font-size: 0.95rem;
+            color: #ffffff; box-shadow: 0 4px 15px rgba(0,0,0,0.1); border: 1px solid rgba(255,255,255,0.1);
+            letter-spacing: 0.5px;
+        }
+        .btn-glass {
+            background: rgba(15, 23, 42, 0.7); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255,255,255,0.1); color: #ffffff; padding: 0.5rem 1.25rem;
+            border-radius: 50px; font-weight: 600; font-size: 0.95rem; cursor: pointer;
+            display: flex; align-items: center; gap: 0.5rem; transition: var(--transition);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        .btn-glass:hover { background: rgba(255,255,255,0.15); border-color: rgba(255,255,255,0.3); transform: translateY(-1px); }
+
+        /* Main Viewport & Image */
+        .viewport {
+            flex: 1; position: relative; display: flex; align-items: center;
+            justify-content: center; width: 100%; height: 100%; min-height: 0;
+        }
+        .slide-image-wrapper {
+            position: relative; width: 100%; height: 100%; background: #000;
+            border-radius: 12px; box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.3);
+            overflow: hidden; display: flex; align-items: center; justify-content: center;
+        }
+        .wb-image { max-width: 100%; max-height: 100%; object-fit: contain; transition: opacity 0.3s; }
+
+        /* Navigation Bar (Always Visible) */
+        .slide-controls-bottom {
+            display: flex; justify-content: center; align-items: center;
+            gap: 2rem; padding: 1rem 0 0 0; margin-top: 1rem;
+        }
+        .slide-counter-bottom {
+            font-weight: 700; font-size: 1.1rem; color: var(--text-main);
+            min-width: 120px; text-align: center; font-variant-numeric: tabular-nums;
+        }
+        .btn-nav {
+            display: flex; align-items: center; gap: 0.5rem;
+            background: var(--bg-surface); color: var(--text-main);
+            border: 2px solid var(--border-color); border-radius: 8px;
+            padding: 0.75rem 1.5rem; font-weight: 600; font-size: 1rem;
+            cursor: pointer; transition: var(--transition);
+            font-family: inherit;
+        }
+        .btn-nav:hover:not(:disabled) {
+            background: var(--border-color); transform: translateY(-1px);
+        }
+        .btn-nav:disabled {
+            opacity: 0.5; cursor: not-allowed; background: var(--bg-body); color: var(--text-muted);
+        }
+
+        /* Overlays (Loading & Processing) */
+        .overlay-center {
+            position: absolute; inset: 0; background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(4px); display: flex; flex-direction: column;
+            align-items: center; justify-content: center; z-index: 40;
+            opacity: 0; pointer-events: none; transition: opacity 0.3s;
+        }
+        .overlay-center.active { opacity: 1; pointer-events: all; }
+        .spinner {
+            width: 48px; height: 48px; border: 4px solid rgba(255,255,255,0.2);
+            border-radius: 50%; border-top-color: white; animation: spin 1s ease-in-out infinite; margin-bottom: 1rem;
+        }
+        .spinner-blue { border-color: var(--primary-alpha); border-top-color: var(--primary); margin: 0 auto 1.5rem; }
+        .overlay-text { color: white; font-weight: 600; font-size: 1.1rem; letter-spacing: 0.5px; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* Awaiting Camera Placeholder Override */
+        #wb-placeholder { background: #000; }
+        #wb-placeholder i { font-size: 3rem; margin-bottom: 1rem; opacity: 0.5; color: white; }
+        #wb-placeholder h3 { font-size: 1.25rem; font-weight: 600; color: rgba(255,255,255,0.9); margin-bottom: 0.5rem;}
+        #wb-placeholder p { color: rgba(255,255,255,0.6); font-size: 0.95rem; max-width: 300px; line-height: 1.5;}
+
+        /* Modals & Overlays */
+        .modal-backdrop {
+            position: fixed; inset: 0; background: rgba(15, 23, 42, 0.6);
+            backdrop-filter: blur(4px); display: flex; align-items: center;
+            justify-content: center; z-index: 100; opacity: 0; pointer-events: none; transition: var(--transition);
+        }
+        .modal-backdrop.active { opacity: 1; pointer-events: all; }
+        .modal-box {
+            background: var(--bg-surface); border-radius: 20px; box-shadow: var(--shadow-xl);
+            width: 100%; max-width: 450px; padding: 2.5rem;
+            transform: scale(0.95) translateY(10px); transition: var(--transition); position: relative;
+        }
+        .modal-backdrop.active .modal-box { transform: scale(1) translateY(0); }
+        .modal-close-btn { position: absolute; top: 1.5rem; right: 1.5rem; background: none; border: none; font-size: 1.25rem; color: var(--text-muted); cursor: pointer; transition: var(--transition); }
+        .modal-close-btn:hover { color: var(--text-main); }
+        .modal-actions { display: flex; justify-content: flex-end; gap: 1rem; margin-top: 2rem;}
+
+        /* QR Code Custom Styling */
+        .qr-container { background: var(--bg-body); border: 2px dashed var(--border-color); padding: 1.5rem; border-radius: 16px; display: flex; justify-content: center; margin: 1.5rem 0; }
+        .url-box { background: var(--bg-body); padding: 0.75rem; border-radius: 8px; font-family: monospace; font-size: 0.85rem; color: var(--text-muted); word-break: break-all; user-select: all; border: 1px solid var(--border-color); text-align: center; }
+
+        /* Custom Alert Toast */
+        .custom-alert {
+            position: fixed; top: 6rem; right: 2rem; background: var(--text-main);
+            color: white; padding: 1rem 1.5rem; border-radius: 12px; box-shadow: var(--shadow-xl);
+            z-index: 1000; display: flex; align-items: center; gap: 1rem;
+            border-left: 4px solid var(--primary); transform: translateX(150%);
+            transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1); font-weight: 500;
+        }
+        .custom-alert.show { transform: translateX(0); }
+        .custom-alert.warning { border-left-color: var(--warning); }
+
+        /* True Fullscreen Overrides */
+        :fullscreen { background-color: black; }
+        :fullscreen .app-header { display: none; }
+        :fullscreen .main-content { padding: 0; background-color: black; }
+        :fullscreen .slide-container { max-width: 100%; width: 100vw; height: 100vh; justify-content: center; }
+        :fullscreen .slide-controls-top { position: absolute; top: 24px; left: 24px; right: 24px; margin-bottom: 0; }
+        :fullscreen .viewport { height: 100vh; width: 100vw; }
+        :fullscreen .slide-image-wrapper { border-radius: 0; border: none; box-shadow: none; background: #000; }
+        :fullscreen .nav-prev { left: 32px; }
+        :fullscreen .nav-next { right: 32px; }
+        :fullscreen .nav-arrow { width: 64px; height: 64px; font-size: 1.75rem; }
+        
+        /* Interactive Fullscreen Auto-hide Controls */
+        .fs-controls { transition: opacity 0.5s ease-in-out, transform 0.5s ease-in-out; opacity: 1; }
+        .fs-controls.idle { opacity: 0 !important; pointer-events: none; }
+        :fullscreen .slide-controls-top.idle { transform: translateY(-15px); }
+        :fullscreen .slide-controls-bottom.idle { transform: translateY(15px); }
+
+        /* Fullscreen overrides for bottom bar */
+        :fullscreen .slide-controls-bottom {
+            position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%);
+            background: rgba(15, 23, 42, 0.8); padding: 1rem 2rem; border-radius: 50px;
+            backdrop-filter: blur(10px); gap: 1.5rem; border: 1px solid rgba(255,255,255,0.1);
+            margin-top: 0; z-index: 100;
+        }
+        :fullscreen .slide-counter-bottom { color: white; }
+        :fullscreen .btn-nav { background: rgba(255,255,255,0.1); color: white; border-color: transparent; }
+        :fullscreen .btn-nav:hover:not(:disabled) { background: rgba(255,255,255,0.2); }
+
+    </style>
+</head>
+<body>
+
+    <!-- Header & Navigation -->
+    <header class="app-header">
+        <div class="header-left">
+            <a href="teacher-dashboard.html" class="brand-logo" id="logo-link">
+                <img src="Assets/Cassandra-Logo.png" alt="Cassandra" onerror="this.outerHTML='<h2 style=\'color: var(--primary); font-weight: 800; font-size: 1.5rem; margin: 0;\'>Cassandra.</h2>'">
+            </a>
+            
+            <nav class="top-nav">
+                <a href="teacher-dashboard.html" class="nav-link" id="dashboard-link">
+                    <i class="fas fa-home"></i> <span>Dashboard</span>
+                </a>
+            </nav>
+        </div>
+
+        <div class="header-right" style="display: flex; align-items: center; gap: 1.5rem;">
+            
+            <!-- Kept visible during recording to easily rescan if phone dies -->
+            <button id="connect-btn" class="btn btn-dark">
+                <i class="fas fa-mobile-alt"></i> Connect Camera
+            </button>
+
+            <!-- Offline Indicator -->
+            <div id="offline-indicator" class="connection-status hidden">
+                <i class="fas fa-wifi-slash"></i> Offline - Saving Locally
+            </div>
+
+            <!-- Recording Controls -->
+            <div style="display: flex; align-items: center; gap: 1rem;">
+                <div id="recording-status" class="recording-indicator hidden">
+                    <span class="pulse-dot"></span>
+                    <span class="text-sm font-semibold text-gray-700">Rec <span class="recording-timer" id="recording-timer">00:00</span></span>
+                </div>
+                
+                <button id="header-start-btn" class="btn btn-danger">
+                    <i class="fas fa-video"></i> Start Recording
+                </button>
+
+                <button id="end-lecture-btn" class="btn btn-outline-danger hidden">
+                    <i class="fas fa-stop-circle"></i> Stop
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        
+        <!-- Initial Setup State -->
+        <div id="initial-state" class="status-card">
+            <div class="icon-wrapper"><i class="fas fa-chalkboard"></i></div>
+            <h2>Whiteboard Mode</h2>
+            <p>Click <strong>"Start Recording"</strong> in the top right to begin your lecture. Make sure your phone camera is connected.</p>
+            <p style="font-size: 0.9rem; color: var(--primary); cursor: pointer; text-decoration: underline; margin-top: 0.5rem; font-weight: 500;" onclick="document.getElementById('connect-btn').click()">
+                Need to connect your phone? Click here.
+            </p>
+        </div>
+
+        <!-- Whiteboard View Area -->
+        <div id="wb-container" class="slide-container hidden">
+            
+            <!-- Top Floating Controls -->
+            <div class="slide-controls-top fs-controls" style="justify-content: flex-end;">
+                <button id="fullscreen-btn" class="btn-glass">
+                    <i class="fas fa-expand"></i> <span>Full Screen</span>
+                </button>
+            </div>
+
+            <!-- Main Viewport -->
+            <div class="viewport" id="main-viewport">
+                <div class="slide-image-wrapper">
+                    <!-- Image Display -->
+                    <img id="wb-image" class="wb-image hidden" alt="Whiteboard Capture">
+                    
+                    <!-- Placeholder when no image exists -->
+                    <div id="wb-placeholder" class="overlay-center active">
+                        <i class="fas fa-camera"></i>
+                        <h3>Awaiting Camera Upload</h3>
+                        <p>Take a picture on your connected phone. It will appear here instantly.</p>
+                    </div>
+
+                    <!-- Slide Loading Indicator -->
+                    <div id="slide-loading" class="overlay-center">
+                        <div class="spinner"></div>
+                        <span class="overlay-text">Syncing Board...</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Navigation Bar -->
+            <div class="slide-controls-bottom fs-controls">
+                <button id="prev-btn" class="btn-nav" disabled>
+                    <i class="fas fa-arrow-left"></i> Previous
+                </button>
+                <span id="board-counter" class="slide-counter-bottom">Board 1 / 1</span>
+                <button id="next-btn" class="btn-nav" disabled>
+                    Next <i class="fas fa-arrow-right"></i>
+                </button>
+            </div>
+        </div>
+    </main>
+
+    <!-- QR Code Modal -->
+    <div id="qr-modal" class="modal-backdrop">
+        <div class="modal-box" style="text-align: center;">
+            <button class="modal-close-btn" onclick="closeModal('qr-modal')"><i class="fas fa-times"></i></button>
+            <h2 style="font-size: 1.5rem; font-weight: 700; margin-bottom: 0.5rem; color: var(--text-main);">Connect Camera</h2>
+            <p style="color: var(--text-muted); font-size: 0.95rem; margin-bottom: 1rem;">
+                Scan this code with your phone's native camera to open the capture tool.
+            </p>
+            <div class="qr-container" id="qrcode-display"></div>
+            <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.5rem;">Or open this link on your phone:</p>
+            <div class="url-box" id="manual-url"></div>
+        </div>
+    </div>
+
+    <!-- End Lecture Confirmation Modal -->
+    <div id="end-modal" class="modal-backdrop">
+        <div class="modal-box">
+            <h2 id="modal-title" style="font-size: 1.5rem; font-weight: 700; margin-bottom: 1rem;">End Lecture?</h2>
+            
+            <div id="modal-content-confirm">
+                <p id="modal-desc" style="color: var(--text-muted); line-height: 1.6;">The audio for all boards will be finalized, processed, and saved to your library. This action cannot be undone.</p>
+                <div class="modal-actions">
+                    <button class="btn btn-secondary" onclick="closeModal('end-modal')">Cancel</button>
+                    <button id="modal-confirm-end-btn" class="btn btn-danger">Confirm End</button>
+                </div>
+            </div>
+
+            <div id="modal-content-processing" class="hidden" style="text-align: center; padding: 2rem 0;">
+                <div class="spinner spinner-blue"></div>
+                <h3 style="font-size: 1.25rem; font-weight: 700; margin-bottom: 0.5rem;">Processing Pipeline...</h3>
+                <p style="color: var(--text-muted);">Generating Notes & Extracting Math...</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // CONFIGURATION
+        const SUPABASE_URL = 'https://lchcfsgexlkjxrhfjrna.supabase.co'; 
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxjaGNmc2dleGxranhyaGZqcm5hIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2MDI4NDIxNywiZXhwIjoyMDc1ODYwMjE3fQ.u8xbJWho6qFVW5f7tmhtK9hq5X5ApQVC4QK04jfjj0k';
+        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        
+        let state = {
+            courseId: null,
+            lectureSessionId: `session_${Date.now()}`,
+            currentPosition: 1, // Board we are looking at/recording
+            totalImages: 0,
+            isRecording: false,
+            isProcessing: false,
+            pollInterval: null,
+            lastSyncHash: "",
+            isOnline: navigator.onLine
+        };
+
+        let timerInterval;
+        let recordingSeconds = 0;
+        let hideCursorTimer;
+        let navigationPendingUrl = null;
+
+        // Audio Variables
+        let mediaRecorder;
+        let audioChunks = [];
+        let audioStream;
+        let offlineAudioQueue = [];
+
+        // Elements
+        const ui = {
+            initialState: document.getElementById('initial-state'),
+            wbContainer: document.getElementById('wb-container'),
+            startBtn: document.getElementById('header-start-btn'),
+            endBtn: document.getElementById('end-lecture-btn'),
+            connectBtn: document.getElementById('connect-btn'),
+            wbImage: document.getElementById('wb-image'),
+            wbPlaceholder: document.getElementById('wb-placeholder'),
+            slideLoading: document.getElementById('slide-loading'),
+            prevBtn: document.getElementById('prev-btn'),
+            nextBtn: document.getElementById('next-btn'),
+            counter: document.getElementById('board-counter'),
+            recStatus: document.getElementById('recording-status'),
+            recTimer: document.getElementById('recording-timer'),
+            offlineInd: document.getElementById('offline-indicator'),
+            fullscreenBtn: document.getElementById('fullscreen-btn')
+        };
+
+        // Initialize Course ID
+        document.addEventListener('DOMContentLoaded', () => {
+            const urlParams = new URLSearchParams(window.location.search);
+            state.courseId = urlParams.get('id') || 'demo_course';
+        });
+
+        // --- 1. NETWORK & OFFLINE LOGIC ---
+        window.addEventListener('offline', () => {
+            state.isOnline = false;
+            ui.offlineInd.classList.remove('hidden');
+            if(state.isRecording) {
+                playLoudGentleAlert();
+                showCustomAlert('Internet Lost! Keep talking, audio is saving locally.', 'warning');
+            }
+        });
+
+        window.addEventListener('online', () => {
+            state.isOnline = true;
+            ui.offlineInd.classList.add('hidden');
+            showCustomAlert('Internet Restored! Syncing audio...');
+            processOfflineQueue();
+        });
+
+        function playLoudGentleAlert() {
+            const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            const osc1 = audioCtx.createOscillator();
+            const gainNode = audioCtx.createGain();
+            osc1.type = 'sine';
+            osc1.frequency.setValueAtTime(523.25, audioCtx.currentTime);
+            gainNode.gain.setValueAtTime(0, audioCtx.currentTime);
+            gainNode.gain.linearRampToValueAtTime(1, audioCtx.currentTime + 0.1); 
+            gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 1.5); 
+            osc1.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+            osc1.start();
+            osc1.stop(audioCtx.currentTime + 1.5);
+        }
+
+        // --- NEW: CLEAN OLD CLASS DATA ---
+        async function clearOldClassData(courseId, bucketName) {
+            try {
+                // Get all items (which should be folders representing old sessions) under the courseId
+                const { data: items, error: listError } = await supabaseClient.storage.from(bucketName).list(courseId);
+                if (listError) throw listError;
+                
+                if (!items || items.length === 0) return;
+
+                let filesToRemove = [];
+
+                for (const item of items) {
+                    const subPath = `${courseId}/${item.name}`;
+                    // Attempt to list contents inside this subPath (if it's a folder)
+                    const { data: subItems, error: subError } = await supabaseClient.storage.from(bucketName).list(subPath);
+                    
+                    if (!subError && subItems && subItems.length > 0) {
+                        subItems.forEach(file => {
+                            if(file.name !== '.emptyFolderPlaceholder') {
+                                filesToRemove.push(`${subPath}/${file.name}`);
+                            }
+                        });
+                    } else {
+                        // If it is just a file hanging directly in the courseId folder, mark it to remove
+                        filesToRemove.push(subPath);
+                    }
+                }
+
+                if (filesToRemove.length > 0) {
+                    const { error: removeError } = await supabaseClient.storage.from(bucketName).remove(filesToRemove);
+                    if (removeError) throw removeError;
+                    console.log(`Successfully cleared ${filesToRemove.length} old files from ${bucketName} for course: ${courseId}`);
+                }
+            } catch (err) {
+                console.error(`Failed to clear old data from ${bucketName}:`, err);
+            }
+        }
+
+        // --- SYNC PC POSITION TO SUPABASE ---
+        async function updateRemoteSyncState() {
+            if (!state.isOnline) return;
+            const stateData = JSON.stringify({ currentPosition: state.currentPosition });
+            const blob = new Blob([stateData], { type: 'application/json' });
+            const filePath = `${state.courseId}/${state.lectureSessionId}/sync_state.json`;
+            try {
+                // CACHE CONTROL: '0' to force Supabase CDN not to cache this tiny file
+                await supabaseClient.storage.from('lecture_images').upload(filePath, blob, {
+                    contentType: 'application/json',
+                    cacheControl: '0', 
+                    upsert: true
+                });
+            } catch (e) {
+                console.error("Failed to sync state to mobile:", e);
+            }
+        }
+
+        // --- 2. AUDIO RECORDING ---
+        async function initMicrophone() {
+            try {
+                audioStream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true } });
+                return true;
+            } catch (err) {
+                showCustomAlert('Microphone access denied. Please allow mic permissions.', 'warning');
+                return false;
+            }
+        }
+
+        function startAudioChunk() {
+            audioChunks = [];
+            mediaRecorder = new MediaRecorder(audioStream, { mimeType: 'audio/webm' });
+            
+            mediaRecorder.ondataavailable = e => { if (e.data.size > 0) audioChunks.push(e.data); };
+            
+            const slideNum = state.currentPosition;
+            
+            mediaRecorder.onstop = () => {
+                const blob = new Blob(audioChunks, { type: 'audio/webm' });
+                handleAudioUpload(slideNum, blob);
+            };
+
+            mediaRecorder.start();
+        }
+
+        async function handleAudioUpload(position, blob) {
+            const fileName = `${state.courseId}/${state.lectureSessionId}/wb_${position}_${Date.now()}.webm`;
+            if (!state.isOnline) {
+                offlineAudioQueue.push({ position, fileName, blob });
+                return;
+            }
+            try {
+                await supabaseClient.storage.from('lecture_audio').upload(fileName, blob);
+            } catch (error) { 
+                console.error('Audio upload failed:', error);
+                offlineAudioQueue.push({ position, fileName, blob }); 
+            }
+        }
+
+        async function processOfflineQueue() {
+            while (offlineAudioQueue.length > 0 && state.isOnline) {
+                const item = offlineAudioQueue.shift();
+                await handleAudioUpload(item.position, item.blob);
+            }
+        }
+
+        // --- 3. LECTURE CONTROL ---
+        async function startLecture() {
+            const hasMic = await initMicrophone();
+            if (!hasMic) return;
+
+            // Clean old data explicitly before starting a new session
+            ui.startBtn.disabled = true;
+            ui.startBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Preparing...';
+            
+            await clearOldClassData(state.courseId, 'lecture_audio');
+            await clearOldClassData(state.courseId, 'lecture_images');
+
+            state.isRecording = true;
+            state.currentPosition = 1;
+            state.totalImages = 0;
+            state.lastSyncHash = "";
+
+            updateRemoteSyncState();
+
+            ui.initialState.classList.add('hidden');
+            ui.wbContainer.classList.remove('hidden');
+            
+            ui.startBtn.classList.add('hidden');
+            // Reset button state in case they exit and restart later without refreshing
+            ui.startBtn.disabled = false;
+            ui.startBtn.innerHTML = '<i class="fas fa-video"></i> Start Recording';
+            
+            ui.recStatus.classList.remove('hidden');
+            ui.endBtn.classList.remove('hidden');
+
+            updateBoardView(); 
+            startTimer();
+            startPollingImages();
+            
+            startAudioChunk();
+            showCustomAlert("Recording started. Audio is auto-saving.");
+        }
+
+        async function processAndEndLecture() {
+            document.getElementById('modal-content-confirm').classList.add('hidden');
+            document.getElementById('modal-content-processing').classList.remove('hidden');
+            
+            state.isRecording = false;
+            clearInterval(timerInterval);
+            clearInterval(state.pollInterval);
+            
+            // CRITICAL FIX: Wait for the final audio chunk to upload BEFORE triggering pipeline
+            await new Promise((resolve) => {
+                if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+                    mediaRecorder.onstop = async () => {
+                        const blob = new Blob(audioChunks, { type: 'audio/webm' });
+                        await handleAudioUpload(state.currentPosition, blob);
+                        resolve();
+                    };
+                    mediaRecorder.stop();
+                } else {
+                    resolve();
+                }
+            });
+
+            if(audioStream) audioStream.getTracks().forEach(t => t.stop());
+
+            // --- 1. END SESSION ON RECORDING BACKEND (Mobile sync cleanup) ---
+            try {
+                // Update this API_URL once deployed if necessary
+                const API_URL = 'https://cassandra-whiteboard-only-mode-c7f8azb6fec9g3fx.canadacentral-01.azurewebsites.net/api';
+                await fetch(`${API_URL}/end_session`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ session_id: state.lectureSessionId, course_id: state.courseId })
+                });
+                console.log("Recording backend session ended.");
+            } catch (err) { 
+                console.error("Failed to notify recording backend:", err); 
+            }
+
+            // --- 2. TRIGGER AZURE PIPELINE (Notes Generation) ---
+            // Update this URL once deployed on Azure!
+            const AZURE_PIPELINE_URL = 'https://cassandra-whiteboard-only-pipeline-api-e4f5g8g6b3aqaecj.canadacentral-01.azurewebsites.net/api'; 
+            
+            try {
+                const response = await fetch(`${AZURE_PIPELINE_URL}/end_session`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        session_id: state.lectureSessionId, 
+                        course_id: state.courseId,
+                        mode: 'whiteboard_only'
+                    })
+                });
+                const result = await response.json();
+                console.log("Whiteboard Pipeline Triggered:", result);
+            } catch (err) { 
+                console.error("Failed to notify Azure pipeline backend:", err); 
+            }
+
+            // REDIRECT TO NOTES LIBRARY
+            setTimeout(() => {
+                closeModal('end-modal');
+                if (navigationPendingUrl) {
+                    showCustomAlert('Lecture saved. Redirecting...');
+                    setTimeout(() => window.location.href = navigationPendingUrl, 1000);
+                } else {
+                    showCustomAlert('Lecture finalized! Redirecting to Notes Library...');
+                    setTimeout(() => {
+                        window.location.href = `teacher-notes-library.html?id=${state.courseId}`;
+                    }, 250);
+                }
+            }, 1000);
+        }
+
+        // --- 4. IMAGE SYNCING & NAVIGATION ---
+        async function startPollingImages() {
+            const folderPath = `${state.courseId}/${state.lectureSessionId}`;
+            
+            state.pollInterval = setInterval(async () => {
+                if(!state.isOnline || state.isProcessing) return;
+
+                const { data, error } = await supabaseClient.storage.from('lecture_images').list(folderPath);
+                if (!data || error) return;
+
+                const images = data.filter(f => f.name.startsWith('wb_') && f.name.endsWith('.jpg'));
+                
+                let currentHash = "";
+                if (images.length > 0) {
+                    images.sort((a, b) => new Date(b.updated_at) - new Date(a.updated_at));
+                    currentHash = `${images.length}_${images[0].updated_at}`;
+                }
+
+                if (currentHash !== state.lastSyncHash && currentHash !== "") {
+                    const isNewImage = images.length > state.totalImages;
+                    
+                    state.totalImages = images.length;
+                    state.lastSyncHash = currentHash;
+                    state.isProcessing = true;
+                    
+                    if (state.isRecording && mediaRecorder && mediaRecorder.state !== 'inactive') {
+                        mediaRecorder.stop();
+                    }
+
+                    setTimeout(() => {
+                        if (isNewImage) {
+                            state.currentPosition = state.totalImages + 1; 
+                            updateRemoteSyncState(); 
+                        }
+
+                        state.isProcessing = false; 
+                        updateBoardView();
+                        
+                        if (state.isRecording) {
+                            startAudioChunk(); 
+                        }
+                    }, 300);
+                }
+            }, 2000);
+        }
+
+        async function updateBoardView() {
+            ui.counter.textContent = `Board ${state.currentPosition} / ${Math.max(state.totalImages, 1)}`;
+            
+            const canNav = !state.isProcessing;
+            ui.prevBtn.disabled = !canNav || state.currentPosition <= 1;
+            ui.nextBtn.disabled = !canNav || state.currentPosition > state.totalImages;
+
+            const placeholderTitle = document.querySelector('#wb-placeholder h3');
+            const placeholderDesc = document.querySelector('#wb-placeholder p');
+            if (state.isRecording) {
+                placeholderTitle.textContent = `Recording Board ${state.currentPosition} Audio`;
+                placeholderDesc.textContent = "Waiting for picture from connected phone...";
+            } else {
+                placeholderTitle.textContent = `Awaiting Camera Upload`;
+                placeholderDesc.textContent = "Take a picture on your connected phone.";
+            }
+
+            if (state.currentPosition <= state.totalImages && state.totalImages > 0) {
+                const imagePath = `${state.courseId}/${state.lectureSessionId}/wb_${state.currentPosition}.jpg`;
+                
+                ui.wbImage.classList.add('hidden');
+                ui.wbPlaceholder.classList.remove('active');
+                ui.slideLoading.classList.add('active');
+
+                const { data, error } = await supabaseClient.storage.from('lecture_images').createSignedUrl(imagePath, 3600);
+                
+                let url = '';
+                if (data && data.signedUrl) {
+                    url = data.signedUrl + `&t=${Date.now()}`;
+                } else {
+                    const { data: pubData } = supabaseClient.storage.from('lecture_images').getPublicUrl(imagePath);
+                    url = pubData.publicUrl + `?t=${Date.now()}`;
+                }
+                
+                const imgLoad = new Image();
+                imgLoad.onload = () => {
+                    ui.wbImage.src = url;
+                    ui.slideLoading.classList.remove('active');
+                    ui.wbImage.classList.remove('hidden');
+                };
+                imgLoad.onerror = () => {
+                    ui.slideLoading.classList.remove('active');
+                    ui.wbPlaceholder.classList.add('active');
+                };
+                imgLoad.src = url;
+            } else {
+                ui.wbImage.classList.add('hidden');
+                ui.wbPlaceholder.classList.add('active');
+                ui.slideLoading.classList.remove('active');
+            }
+        }
+
+        function navigateBoard(dir) {
+            if (dir === 'next' && state.currentPosition > state.totalImages) return;
+            if (dir === 'prev' && state.currentPosition <= 1) return;
+            if (state.isProcessing) return;
+
+            const newPosition = dir === 'next' ? state.currentPosition + 1 : state.currentPosition - 1;
+
+            if (!state.isRecording) {
+                state.currentPosition = newPosition;
+                updateRemoteSyncState();
+                updateBoardView();
+                return;
+            }
+
+            state.isProcessing = true;
+            if(mediaRecorder && mediaRecorder.state !== 'inactive') mediaRecorder.stop();
+            
+            setTimeout(() => {
+                state.currentPosition = newPosition;
+                state.isProcessing = false; 
+                updateRemoteSyncState();
+                updateBoardView();
+                startAudioChunk();
+            }, 300);
+        }
+
+        // --- 5. UI UTILITIES & MODALS ---
+        function toggleFullScreen() {
+            if (!document.fullscreenElement) {
+                ui.wbContainer.requestFullscreen().catch(err => console.log(err));
+            } else {
+                document.exitFullscreen();
+            }
+        }
+
+        function showControls() {
+            if (document.fullscreenElement) {
+                document.querySelectorAll('.fs-controls').forEach(el => el.classList.remove('idle'));
+                clearTimeout(hideCursorTimer);
+                hideCursorTimer = setTimeout(() => {
+                    document.querySelectorAll('.fs-controls').forEach(el => el.classList.add('idle'));
+                }, 3000);
+            }
+        }
+
+        document.addEventListener('mousemove', showControls);
+        document.addEventListener('click', showControls);
+        document.addEventListener('keydown', showControls);
+
+        document.addEventListener('fullscreenchange', () => {
+            if (document.fullscreenElement) {
+                ui.fullscreenBtn.innerHTML = `<i class="fas fa-compress"></i> <span>Exit</span>`;
+                ui.startBtn.classList.add('hidden');
+                showControls();
+            } else {
+                ui.fullscreenBtn.innerHTML = `<i class="fas fa-expand"></i> <span>Full Screen</span>`;
+                document.querySelectorAll('.fs-controls').forEach(el => el.classList.remove('idle'));
+                clearTimeout(hideCursorTimer);
+                if (!state.isRecording) ui.startBtn.classList.remove('hidden');
+            }
+        });
+
+        ui.connectBtn.addEventListener('click', () => {
+            const display = document.getElementById('qrcode-display');
+            const urlBox = document.getElementById('manual-url');
+            const mobileUrl = `https://cassandra-mobile-app-1.netlify.app/?course_id=${state.courseId}&session_id=${state.lectureSessionId}`;
+            
+            display.innerHTML = '';
+            new QRCode(display, { text: mobileUrl, width: 180, height: 180, colorDark: "#0f172a" });
+            urlBox.textContent = mobileUrl;
+            
+            document.getElementById('qr-modal').classList.add('active');
+        });
+
+        function openEndModal(type = 'end') {
+            document.getElementById('modal-content-confirm').classList.remove('hidden');
+            document.getElementById('modal-content-processing').classList.add('hidden');
+            
+            const title = document.getElementById('modal-title');
+            const desc = document.getElementById('modal-desc');
+            const confirmBtn = document.getElementById('modal-confirm-end-btn');
+
+            if (type === 'navigation') {
+                title.textContent = "Warning: Recording Active";
+                desc.textContent = "Leaving this page will immediately end and finalize the recording.";
+                confirmBtn.textContent = "Stop & Leave";
+            } else {
+                title.textContent = "End Lecture?";
+                desc.textContent = "The audio for all boards will be finalized, processed, and saved.";
+                confirmBtn.textContent = "Confirm End";
+                navigationPendingUrl = null;
+            }
+            document.getElementById('end-modal').classList.add('active');
+        }
+
+        function closeModal(id) { 
+            document.getElementById(id).classList.remove('active'); 
+            if(id === 'end-modal') navigationPendingUrl = null;
+        }
+
+        function interceptNavigation(e, targetUrl) {
+            if (state.isRecording) {
+                e.preventDefault();
+                navigationPendingUrl = targetUrl;
+                openEndModal('navigation');
+            }
+        }
+
+        function startTimer() {
+            recordingSeconds = 0;
+            timerInterval = setInterval(() => {
+                recordingSeconds++;
+                const mins = Math.floor(recordingSeconds / 60).toString().padStart(2, '0');
+                const secs = (recordingSeconds % 60).toString().padStart(2, '0');
+                ui.recTimer.textContent = `${mins}:${secs}`;
+            }, 1000);
+        }
+
+        function showCustomAlert(message, type = 'info') {
+            const alertBox = document.createElement('div');
+            alertBox.className = `custom-alert ${type === 'warning' ? 'warning' : ''}`;
+            const iconColor = type === 'warning' ? '#f59e0b' : '#60a5fa';
+            alertBox.innerHTML = `<i class="fas ${type === 'warning' ? 'fa-exclamation-triangle' : 'fa-sparkles'}" style="color: ${iconColor};"></i> <span>${message}</span>`;
+            document.body.appendChild(alertBox);
+            requestAnimationFrame(() => alertBox.classList.add('show'));
+            setTimeout(() => {
+                alertBox.classList.remove('show');
+                setTimeout(() => alertBox.remove(), 400);
+            }, 4000);
+        }
+
+        // Event Listeners
+        ui.startBtn.addEventListener('click', startLecture);
+        ui.endBtn.addEventListener('click', () => openEndModal('end'));
+        ui.prevBtn.addEventListener('click', () => navigateBoard('prev'));
+        ui.nextBtn.addEventListener('click', () => navigateBoard('next'));
+        ui.fullscreenBtn.addEventListener('click', toggleFullScreen);
+        document.getElementById('modal-confirm-end-btn').addEventListener('click', processAndEndLecture);
+        
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowRight' || e.key === 'ArrowDown' || e.key === ' ') navigateBoard('next');
+            if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') navigateBoard('prev');
+        });
+
+        document.getElementById('dashboard-link').addEventListener('click', (e) => interceptNavigation(e, 'teacher-dashboard.html'));
+        document.getElementById('logo-link').addEventListener('click', (e) => interceptNavigation(e, 'teacher-dashboard.html'));
+
+    </script>
+</body>
+</html>

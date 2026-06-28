@@ -1,0 +1,787 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cassandra | Hybrid Studio</title>
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" href="Assets/favicon.png">
+    
+    <!-- Google Fonts: Bricolage Grotesque -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,500;12..96,600;12..96,700&display=swap" rel="stylesheet">
+
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Supabase, PDF.js, QR Code -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <script>pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';</script>
+
+    <style>
+        /* CSS Variables & Brand Colors */
+        :root {
+            --primary: #0060e7; --primary-dark: #004ba8; --primary-alpha: rgba(0, 96, 231, 0.1);
+            --danger: #ef4444; --danger-dark: #dc2626; --danger-alpha: rgba(239, 68, 68, 0.1);
+            --warning: #f59e0b;
+            --bg-body: #f4f7f9; --bg-surface: #ffffff; --bg-dark: #0f172a;
+            --text-main: #0f172a; --text-muted: #64748b;
+            --border-color: #e2e8f0;
+            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.05);
+            --shadow-xl: 0 20px 25px -5px rgba(0,0,0,0.1);
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'Bricolage Grotesque', sans-serif; background: var(--bg-body); color: var(--text-main); height: 100vh; overflow: hidden; display: flex; flex-direction: column; }
+        .hidden { display: none !important; }
+
+        /* Header */
+        .app-header { height: 72px; background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(12px); border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; padding: 0 2rem; z-index: 50; flex-shrink: 0; }
+        .brand-logo { display: flex; align-items: center; text-decoration: none; }
+        .brand-logo img { height: 40px; }
+        .top-nav { display: flex; align-items: center; gap: 1.5rem; border-left: 1px solid var(--border-color); padding-left: 1.5rem; margin-left: 2rem;}
+        .nav-link { text-decoration: none; color: var(--text-muted); font-weight: 600; font-size: 0.95rem; display: flex; align-items: center; gap: 0.5rem; padding: 0.5rem; border-radius: 8px; transition: var(--transition); }
+        .nav-link:hover { color: var(--primary); background: var(--primary-alpha); }
+
+        /* Buttons & Badges */
+        .btn { display: inline-flex; align-items: center; gap: 0.5rem; justify-content: center; font-family: inherit; font-weight: 600; font-size: 0.95rem; padding: 0.6rem 1.25rem; border-radius: 8px; border: none; cursor: pointer; transition: var(--transition); }
+        .btn:disabled { opacity: 0.6; cursor: not-allowed; }
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-danger { background: var(--danger); color: white; border-radius: 50px; padding: 0.6rem 1.5rem; }
+        .btn-outline-danger { background: transparent; color: var(--danger); border: 1px solid var(--danger); border-radius: 50px; }
+        .btn-dark { background: var(--bg-dark); color: white; border-radius: 50px; }
+        
+        .recording-indicator { display: flex; align-items: center; gap: 0.5rem; background: white; padding: 0.4rem 1rem; border-radius: 50px; border: 1px solid var(--border-color); }
+        .pulse-dot { width: 12px; height: 12px; background: var(--danger); border-radius: 50%; animation: pulse 2s infinite; }
+        @keyframes pulse { 0%, 100% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.2); opacity: 0.7; } }
+        .recording-timer { font-variant-numeric: tabular-nums; font-weight: 700; color: var(--danger); }
+        .connection-status { background: var(--warning); color: white; padding: 0.4rem 1rem; border-radius: 50px; font-weight: 600; font-size: 0.85rem; }
+
+        /* Main Workspace (Split View) */
+        .main-content { flex: 1; padding: 1.5rem; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; }
+        
+        .workspace { width: 100%; height: 100%; max-width: 1600px; display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
+        
+        .panel { background: var(--bg-surface); border-radius: 16px; border: 1px solid var(--border-color); box-shadow: var(--shadow-md); display: flex; flex-direction: column; overflow: hidden; position: relative; }
+        .panel-header { padding: 1rem 1.5rem; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; background: #f8fafc; z-index: 10; }
+        .panel-title { font-weight: 700; display: flex; align-items: center; gap: 0.5rem; color: var(--text-main); }
+        .panel-counter { font-size: 0.9rem; font-weight: 600; color: var(--text-muted); background: var(--border-color); padding: 0.25rem 0.75rem; border-radius: 50px; }
+        
+        /* STRICT BOUNDARIES ADDED (min-height/width 0) */
+        .panel-body { flex: 1; background: #000; position: relative; display: flex; align-items: center; justify-content: center; overflow: hidden; min-height: 0; min-width: 0; }
+        .panel-controls { padding: 1rem; display: flex; justify-content: center; gap: 1rem; background: var(--bg-surface); border-top: 1px solid var(--border-color); z-index: 10; }
+        
+        .btn-nav { display: flex; align-items: center; gap: 0.5rem; background: transparent; color: var(--text-main); border: 2px solid var(--border-color); border-radius: 8px; padding: 0.5rem 1rem; font-weight: 600; cursor: pointer; transition: var(--transition); }
+        .btn-nav:hover:not(:disabled) { background: var(--border-color); }
+        .btn-nav:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        /* Fullscreen Slide Overrides */
+        #slide-panel:fullscreen { background-color: #000; border-radius: 0; border: none; width: 100vw; height: 100vh; margin: 0; padding: 0; }
+        #slide-panel:fullscreen .panel-header { position: absolute; top: 0; left: 0; right: 0; background: rgba(15, 23, 42, 0.8); border-bottom: 1px solid rgba(255,255,255,0.1); backdrop-filter: blur(10px); z-index: 50; }
+        #slide-panel:fullscreen .panel-title { color: white; }
+        #slide-panel:fullscreen .panel-counter { background: rgba(255,255,255,0.2); color: white; border: none; }
+        #slide-panel:fullscreen #fullscreen-btn { color: white !important; }
+        #slide-panel:fullscreen .panel-controls { position: absolute; bottom: 0; left: 0; right: 0; background: rgba(15, 23, 42, 0.8); border-top: 1px solid rgba(255,255,255,0.1); backdrop-filter: blur(10px); z-index: 50; }
+        #slide-panel:fullscreen .btn-nav { color: white; border-color: rgba(255,255,255,0.3); }
+        #slide-panel:fullscreen .btn-nav:hover:not(:disabled) { background: rgba(255,255,255,0.2); }
+
+        /* Auto-Hide Controls in Fullscreen */
+        .fs-controls { transition: transform 0.4s ease-in-out, opacity 0.4s ease-in-out; }
+        #slide-panel:fullscreen .panel-header.idle { transform: translateY(-100%); opacity: 0; pointer-events: none; }
+        #slide-panel:fullscreen .panel-controls.idle { transform: translateY(100%); opacity: 0; pointer-events: none; }
+
+        /* Viewport Elements (Absolute Positioning fix for Image Bounds) */
+        .slide-canvas { width: 100%; height: 100%; object-fit: contain; }
+        .wb-image { 
+            position: absolute; 
+            top: 0; left: 0; 
+            width: 100%; height: 100%; 
+            object-fit: contain; 
+            padding: 1rem; 
+            box-sizing: border-box; 
+        }
+        
+        .placeholder-state { position: absolute; inset: 0; background: #0f172a; display: flex; flex-direction: column; align-items: center; justify-content: center; color: white; text-align: center; padding: 2rem; }
+        .placeholder-state i { font-size: 3rem; margin-bottom: 1rem; opacity: 0.5; }
+        .placeholder-state h3 { font-size: 1.25rem; font-weight: 600; margin-bottom: 0.5rem; }
+        .placeholder-state p { opacity: 0.7; font-size: 0.95rem; max-width: 250px; line-height: 1.5; }
+
+        /* Overlays & Modals */
+        .overlay { position: absolute; inset: 0; background: rgba(0,0,0,0.7); backdrop-filter: blur(4px); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 40; opacity: 0; pointer-events: none; transition: 0.3s; }
+        .overlay.active { opacity: 1; pointer-events: all; }
+        .spinner { width: 40px; height: 40px; border: 4px solid rgba(255,255,255,0.2); border-radius: 50%; border-top-color: white; animation: spin 1s linear infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .spinner-blue { border-color: var(--primary-alpha); border-top-color: var(--primary); margin: 0 auto 1.5rem; }
+
+        .modal-backdrop { position: fixed; inset: 0; background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center; z-index: 100; opacity: 0; pointer-events: none; transition: var(--transition); }
+        .modal-backdrop.active { opacity: 1; pointer-events: all; }
+        .modal-box { background: var(--bg-surface); border-radius: 20px; box-shadow: var(--shadow-xl); width: 100%; max-width: 450px; padding: 2.5rem; transform: scale(0.95); transition: var(--transition); position: relative; }
+        .modal-backdrop.active .modal-box { transform: scale(1); }
+        .qr-container { background: var(--bg-body); border: 2px dashed var(--border-color); padding: 1.5rem; border-radius: 16px; display: flex; justify-content: center; margin: 1.5rem 0; }
+        .url-box { background: var(--bg-body); padding: 0.75rem; border-radius: 8px; font-family: monospace; font-size: 0.85rem; color: var(--text-muted); text-align: center; border: 1px solid var(--border-color); }
+
+        .status-card { background: var(--bg-surface); border-radius: 20px; padding: 3rem; text-align: center; max-width: 450px; border: 1px solid var(--border-color); display: flex; flex-direction: column; align-items: center; gap: 1rem; box-shadow: var(--shadow-xl); }
+
+        /* Custom Alert Toast */
+        .custom-alert { position: fixed; top: 6rem; right: 2rem; background: var(--text-main); color: white; padding: 1rem 1.5rem; border-radius: 12px; box-shadow: var(--shadow-xl); z-index: 1000; display: flex; align-items: center; gap: 1rem; border-left: 4px solid var(--primary); transform: translateX(150%); transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1); font-weight: 500; }
+        .custom-alert.show { transform: translateX(0); }
+        .custom-alert.warning { border-left-color: var(--warning); }
+
+        @media (max-width: 1024px) { .workspace { grid-template-columns: 1fr; grid-template-rows: 1fr 1fr; } }
+    </style>
+</head>
+<body>
+
+    <!-- Header -->
+    <header class="app-header">
+        <div style="display: flex; align-items: center;">
+            <a href="teacher-dashboard.html" class="brand-logo" id="logo-link">
+                <img src="Assets/Cassandra-Logo.png" alt="Cassandra" onerror="this.outerHTML='<h2 style=\'color: var(--primary); font-weight: 800; font-size: 1.5rem; margin: 0;\'>Cassandra.</h2>'">
+            </a>
+            <nav class="top-nav">
+                <a href="teacher-dashboard.html" class="nav-link" id="dashboard-link"><i class="fas fa-home"></i> Dashboard</a>
+            </nav>
+        </div>
+
+        <div style="display: flex; align-items: center; gap: 1.5rem;">
+            <button id="connect-btn" class="btn btn-dark"><i class="fas fa-mobile-alt"></i> Connect Camera</button>
+            <div id="offline-indicator" class="connection-status hidden"><i class="fas fa-wifi-slash"></i> Offline - Saving Locally</div>
+            
+            <div style="display: flex; align-items: center; gap: 1rem;">
+                <div id="recording-status" class="recording-indicator hidden">
+                    <span class="pulse-dot"></span> <span class="recording-timer" id="recording-timer">00:00</span>
+                </div>
+                <button id="header-start-btn" class="btn btn-danger hidden"><i class="fas fa-video"></i> Start Recording</button>
+                <button id="end-lecture-btn" class="btn btn-outline-danger hidden"><i class="fas fa-stop-circle"></i> Stop</button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        
+        <!-- Loading / Error States -->
+        <div id="loading-state" class="status-card">
+            <div class="spinner spinner-blue"></div>
+            <h2>Initializing Hybrid Studio</h2>
+            <p style="color: var(--text-muted)">Retrieving presentation slides and preparing workspace...</p>
+        </div>
+
+        <div id="error-state" class="status-card hidden">
+            <i class="fas fa-exclamation-circle" style="font-size: 3rem; color: var(--danger);"></i>
+            <h2>Slides Not Found</h2>
+            <p style="color: var(--text-muted)">Please ensure you have uploaded slides for this session.</p>
+        </div>
+
+        <!-- Hybrid Workspace -->
+        <div id="workspace" class="workspace hidden">
+            
+            <!-- Left Panel: Slides -->
+            <div class="panel" id="slide-panel">
+                <div class="panel-header fs-controls">
+                    <span class="panel-title"><i class="fas fa-file-pdf" style="color: var(--danger)"></i> Presentation</span>
+                    <div style="display: flex; align-items: center; gap: 0.5rem;">
+                        <span class="panel-counter" id="slide-counter">Slide 1 / 1</span>
+                        <button id="fullscreen-btn" style="background: transparent; border: none; cursor: pointer; color: var(--text-muted); font-size: 1.1rem; padding: 0.25rem; transition: var(--transition);" title="Toggle Full Screen">
+                            <i class="fas fa-expand"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="panel-body">
+                    <canvas id="slide-canvas" class="slide-canvas"></canvas>
+                    <div id="slide-loading" class="overlay active"><div class="spinner"></div></div>
+                </div>
+                <!-- Main Navigation Controls -->
+                <div class="panel-controls fs-controls">
+                    <button id="slide-prev" class="btn-nav"><i class="fas fa-arrow-left"></i> Prev Slide</button>
+                    <button id="slide-next" class="btn-nav">Next Slide <i class="fas fa-arrow-right"></i></button>
+                </div>
+            </div>
+
+            <!-- Right Panel: Whiteboard (Synchronized) -->
+            <div class="panel">
+                <div class="panel-header">
+                    <span class="panel-title"><i class="fas fa-chalkboard" style="color: var(--primary)"></i> Whiteboard</span>
+                    <span class="panel-counter" id="board-counter">Attached to Slide 1</span>
+                </div>
+                <div class="panel-body" style="border-bottom-left-radius: 16px; border-bottom-right-radius: 16px;">
+                    <img id="wb-image" class="wb-image hidden" alt="Whiteboard Capture">
+                    
+                    <div id="wb-placeholder" class="placeholder-state">
+                        <i class="fas fa-camera"></i>
+                        <h3 id="wb-ph-title">Awaiting Camera Upload</h3>
+                        <p id="wb-ph-desc">Take a picture on your connected phone to map a board to this slide.</p>
+                    </div>
+
+                    <div id="wb-loading" class="overlay"><div class="spinner"></div></div>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <!-- Global Processing Overlay (For audio transitions when switching slides) -->
+    <div id="transition-overlay" class="modal-backdrop" style="z-index: 900;">
+        <div style="color: white; text-align: center;">
+            <div class="spinner" style="margin: 0 auto 1rem;"></div>
+            <h3 style="font-weight: 600;">Saving Slide Chunk...</h3>
+        </div>
+    </div>
+
+    <!-- QR Code Modal -->
+    <div id="qr-modal" class="modal-backdrop">
+        <div class="modal-box" style="text-align: center;">
+            <button class="btn-nav" style="position: absolute; top: 1rem; right: 1rem; border: none;" onclick="closeModal('qr-modal')"><i class="fas fa-times"></i></button>
+            <h2 style="font-size: 1.5rem; font-weight: 700;">Connect Hybrid Camera</h2>
+            <p style="color: var(--text-muted); margin-top: 0.5rem;">Scan with your phone to link the camera.</p>
+            <div class="qr-container" id="qrcode-display"></div>
+            <div class="url-box" id="manual-url"></div>
+        </div>
+    </div>
+
+    <!-- End Modal -->
+    <div id="end-modal" class="modal-backdrop">
+        <div class="modal-box">
+            <h2 style="font-size: 1.5rem; font-weight: 700; margin-bottom: 1rem;">End Lecture?</h2>
+            <div id="modal-content-confirm">
+                <p style="color: var(--text-muted); line-height: 1.6; margin-bottom: 2rem;">Audio mapped to your slides and whiteboards will be finalized and saved. This cannot be undone.</p>
+                <div style="display: flex; justify-content: flex-end; gap: 1rem;">
+                    <button class="btn btn-outline-danger" onclick="closeModal('end-modal')">Cancel</button>
+                    <button id="confirm-end-btn" class="btn btn-danger">Confirm End</button>
+                </div>
+            </div>
+            <div id="modal-content-processing" class="hidden" style="text-align: center; padding: 1rem 0;">
+                <div class="spinner spinner-blue"></div>
+                <h3 style="font-weight: 700;">Processing Audio & Notes...</h3>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- CONFIGURATION ---
+        const API_URL = 'https://cassandra-slides-whiteboard-mode-recording-eaacbhf0fdhxaqcy.canadacentral-01.azurewebsites.net/api';
+        const SUPABASE_URL = 'https://lchcfsgexlkjxrhfjrna.supabase.co'; 
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxjaGNmc2dleGxranhyaGZqcm5hIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2MDI4NDIxNywiZXhwIjoyMDc1ODYwMjE3fQ.u8xbJWho6qFVW5f7tmhtK9hq5X5ApQVC4QK04jfjj0k'; // Replace with the actual anon key 
+        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        
+        let state = {
+            courseId: new URLSearchParams(window.location.search).get('id') || 'demo_course',
+            sessionId: `session_${Date.now()}`,
+            
+            // Slide-Centric State
+            pdfDoc: null,
+            currentSlide: 1,
+            totalSlides: 0,
+            lastImageHash: "", 
+            
+            // Global State
+            isRecording: false,
+            isTransitioning: false,
+            isOnline: navigator.onLine
+        };
+
+        // Audio System & Queue
+        let mediaRecorder;
+        let audioChunks = [];
+        let audioStream;
+        let offlineAudioQueue = [];
+        
+        // Timer
+        let timerInterval;
+        let recordingSeconds = 0;
+        let hideCursorTimer;
+        let navigationPendingUrl = null;
+
+        // Elements
+        const ui = {
+            loadingState: document.getElementById('loading-state'),
+            errorState: document.getElementById('error-state'),
+            workspace: document.getElementById('workspace'),
+            startBtn: document.getElementById('header-start-btn'),
+            endBtn: document.getElementById('end-lecture-btn'),
+            timer: document.getElementById('recording-timer'),
+            status: document.getElementById('recording-status'),
+            offlineInd: document.getElementById('offline-indicator'),
+            
+            slidePanel: document.getElementById('slide-panel'),
+            fullscreenBtn: document.getElementById('fullscreen-btn'),
+            canvas: document.getElementById('slide-canvas'),
+            ctx: document.getElementById('slide-canvas').getContext('2d'),
+            slideCounter: document.getElementById('slide-counter'),
+            slidePrev: document.getElementById('slide-prev'),
+            slideNext: document.getElementById('slide-next'),
+            slideLoading: document.getElementById('slide-loading'),
+            
+            wbImage: document.getElementById('wb-image'),
+            wbPh: document.getElementById('wb-placeholder'),
+            wbPhTitle: document.getElementById('wb-ph-title'),
+            wbCounter: document.getElementById('board-counter'),
+            wbLoading: document.getElementById('wb-loading'),
+            
+            transitionOverlay: document.getElementById('transition-overlay')
+        };
+
+        // --- 1. NETWORK & ALERTS (From Slides-Only) ---
+        window.addEventListener('offline', () => {
+            state.isOnline = false;
+            ui.offlineInd.classList.remove('hidden');
+            if(state.isRecording) {
+                playLoudGentleAlert();
+                showCustomAlert('Internet Lost! Keep talking, audio is saving locally.', 'warning');
+            }
+        });
+
+        window.addEventListener('online', () => {
+            state.isOnline = true;
+            ui.offlineInd.classList.add('hidden');
+            showCustomAlert('Internet Restored! Syncing audio...');
+            processOfflineQueue();
+        });
+
+        function playLoudGentleAlert() {
+            const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            const osc1 = audioCtx.createOscillator();
+            const gainNode = audioCtx.createGain();
+            osc1.type = 'sine'; osc1.frequency.setValueAtTime(523.25, audioCtx.currentTime);
+            gainNode.gain.setValueAtTime(0, audioCtx.currentTime);
+            gainNode.gain.linearRampToValueAtTime(1, audioCtx.currentTime + 0.1); 
+            gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 1.5); 
+            osc1.connect(gainNode); gainNode.connect(audioCtx.destination);
+            osc1.start(); osc1.stop(audioCtx.currentTime + 1.5);
+        }
+
+        function showCustomAlert(message, type = 'info') {
+            const alertBox = document.createElement('div');
+            alertBox.className = `custom-alert ${type === 'warning' ? 'warning' : ''}`;
+            const iconColor = type === 'warning' ? '#f59e0b' : '#60a5fa';
+            alertBox.innerHTML = `<i class="fas ${type === 'warning' ? 'fa-exclamation-triangle' : 'fa-sparkles'}" style="color: ${iconColor};"></i> <span>${message}</span>`;
+            document.body.appendChild(alertBox);
+            requestAnimationFrame(() => alertBox.classList.add('show'));
+            setTimeout(() => {
+                alertBox.classList.remove('show');
+                setTimeout(() => alertBox.remove(), 400);
+            }, 4000);
+        }
+
+        // --- NEW: CLEAN OLD CLASS DATA (Audio & Images) ---
+        async function clearOldClassData(courseId, bucketName) {
+            try {
+                const { data: items, error: listError } = await supabaseClient.storage.from(bucketName).list(courseId);
+                if (listError) throw listError;
+                
+                if (!items || items.length === 0) return;
+
+                let filesToRemove = [];
+
+                for (const item of items) {
+                    const subPath = `${courseId}/${item.name}`;
+                    const { data: subItems, error: subError } = await supabaseClient.storage.from(bucketName).list(subPath);
+                    
+                    if (!subError && subItems && subItems.length > 0) {
+                        subItems.forEach(file => {
+                            if(file.name !== '.emptyFolderPlaceholder') {
+                                filesToRemove.push(`${subPath}/${file.name}`);
+                            }
+                        });
+                    } else {
+                        filesToRemove.push(subPath);
+                    }
+                }
+
+                if (filesToRemove.length > 0) {
+                    const { error: removeError } = await supabaseClient.storage.from(bucketName).remove(filesToRemove);
+                    if (removeError) throw removeError;
+                    console.log(`Successfully cleared ${filesToRemove.length} old files from ${bucketName} for course: ${courseId}`);
+                }
+            } catch (err) {
+                console.error(`Failed to clear old data from ${bucketName}:`, err);
+            }
+        }
+
+        // --- 2. INITIALIZATION (Load PDF) ---
+        document.addEventListener('DOMContentLoaded', async () => {
+            if (!state.courseId) return ui.loadingState.classList.add('hidden'), ui.errorState.classList.remove('hidden');
+
+            try {
+                const { data, error } = await supabaseClient.storage.from('lecture_slides').download(`${state.courseId}_slides.pdf`);
+                if (error) throw error;
+
+                const pdfUrl = URL.createObjectURL(data);
+                const loadingTask = pdfjsLib.getDocument({ url: pdfUrl });
+                state.pdfDoc = await loadingTask.promise;
+                state.totalSlides = state.pdfDoc.numPages;
+                
+                ui.loadingState.classList.add('hidden');
+                ui.workspace.classList.remove('hidden');
+                ui.startBtn.classList.remove('hidden');
+                
+                await renderSlide(1);
+                await updateBoardView();
+                updateUI();
+            } catch (err) {
+                console.error("PDF Load Error:", err);
+                ui.loadingState.classList.add('hidden');
+                ui.errorState.classList.remove('hidden');
+            }
+        });
+
+        // --- 3. RENDERERS & IMAGE FETCHING ---
+        async function renderSlide(num) {
+            ui.slideLoading.classList.add('active');
+            try {
+                const page = await state.pdfDoc.getPage(num);
+                const viewport = page.getViewport({ scale: window.devicePixelRatio || 2 });
+                ui.canvas.height = viewport.height;
+                ui.canvas.width = viewport.width;
+                await page.render({ canvasContext: ui.ctx, viewport }).promise;
+            } catch(e) { console.error(e); }
+            ui.slideLoading.classList.remove('active');
+        }
+
+        async function updateBoardView() {
+            ui.wbCounter.textContent = `Attached to Slide ${state.currentSlide}`;
+            
+            if (state.isRecording) {
+                ui.wbPhTitle.textContent = `Recording Audio for Slide ${state.currentSlide}`;
+            } else {
+                ui.wbPhTitle.textContent = `Awaiting Camera Upload`;
+            }
+
+            const imagePath = `${state.courseId}/${state.sessionId}/wb_${state.currentSlide}.jpg`;
+            
+            ui.wbImage.classList.add('hidden');
+            ui.wbPh.classList.remove('hidden');
+            ui.wbLoading.classList.add('active');
+
+            // CRITICAL FIX: Dual-fetch strategy for public buckets
+            const { data, error } = await supabaseClient.storage.from('lecture_images').createSignedUrl(imagePath, 3600);
+            
+            let url = '';
+            if (data && data.signedUrl) {
+                url = data.signedUrl + `&t=${Date.now()}`;
+            } else {
+                const { data: pubData } = supabaseClient.storage.from('lecture_images').getPublicUrl(imagePath);
+                url = pubData.publicUrl + `?t=${Date.now()}`;
+            }
+            
+            const imgLoad = new Image();
+            imgLoad.onload = () => {
+                ui.wbImage.src = url;
+                ui.wbLoading.classList.remove('active');
+                ui.wbImage.classList.remove('hidden');
+                ui.wbPh.classList.add('hidden');
+            };
+            imgLoad.onerror = () => {
+                ui.wbLoading.classList.remove('active');
+                ui.wbImage.classList.add('hidden');
+                ui.wbPh.classList.remove('hidden');
+            };
+            imgLoad.src = url;
+        }
+
+        function updateUI() {
+            ui.slideCounter.textContent = `Slide ${state.currentSlide} / ${state.totalSlides}`;
+            ui.slidePrev.disabled = state.currentSlide <= 1 || state.isTransitioning;
+            ui.slideNext.disabled = state.currentSlide >= state.totalSlides || state.isTransitioning;
+        }
+
+        // --- FULLSCREEN CONTROLS ---
+        ui.fullscreenBtn.addEventListener('click', () => {
+            if (!document.fullscreenElement) {
+                ui.slidePanel.requestFullscreen().catch(err => console.log("Fullscreen request failed:", err));
+            } else {
+                document.exitFullscreen();
+            }
+        });
+
+        function showControls() {
+            if (document.fullscreenElement) {
+                document.querySelectorAll('.fs-controls').forEach(el => el.classList.remove('idle'));
+                clearTimeout(hideCursorTimer);
+                hideCursorTimer = setTimeout(() => {
+                    document.querySelectorAll('.fs-controls').forEach(el => el.classList.add('idle'));
+                }, 3000);
+            }
+        }
+
+        document.addEventListener('mousemove', showControls);
+        document.addEventListener('click', showControls);
+        document.addEventListener('keydown', showControls);
+
+        document.addEventListener('fullscreenchange', () => {
+            if (document.fullscreenElement) {
+                ui.fullscreenBtn.innerHTML = `<i class="fas fa-compress"></i>`;
+                showControls();
+            } else {
+                ui.fullscreenBtn.innerHTML = `<i class="fas fa-expand"></i>`;
+                document.querySelectorAll('.fs-controls').forEach(el => el.classList.remove('idle'));
+                clearTimeout(hideCursorTimer);
+            }
+        });
+
+        // --- 4. SLIDE-CENTRIC NAVIGATION & AUDIO CHUNKING ---
+        async function navigateSlide(direction) {
+            if (state.isTransitioning) return;
+            
+            const newSlide = direction === 'next' ? state.currentSlide + 1 : state.currentSlide - 1;
+            if (newSlide < 1 || newSlide > state.totalSlides) return;
+
+            if (!state.isRecording) {
+                state.currentSlide = newSlide;
+                state.lastImageHash = "";
+                await renderSlide(newSlide);
+                await updateBoardView();
+                updateRemoteSyncState(); 
+                updateUI();
+                return;
+            }
+
+            state.isTransitioning = true;
+            ui.transitionOverlay.classList.add('active');
+            updateUI();
+
+            if(mediaRecorder && mediaRecorder.state !== 'inactive') mediaRecorder.stop();
+
+            setTimeout(async () => {
+                state.currentSlide = newSlide;
+                state.lastImageHash = ""; // Reset hash to clear/fetch new board
+                
+                await renderSlide(newSlide);
+                await updateBoardView();
+                updateRemoteSyncState();
+                
+                startAudioChunk();
+                
+                state.isTransitioning = false;
+                ui.transitionOverlay.classList.remove('active');
+                
+                // CRITICAL FIX: Re-enable buttons after transition resolves
+                updateUI();
+            }, 350);
+        }
+
+        document.addEventListener('keydown', (e) => {
+            if (!state.pdfDoc || state.isTransitioning) return; 
+            if (e.key === 'ArrowRight' || e.key === 'ArrowDown' || e.key === ' ') navigateSlide('next');
+            if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') navigateSlide('prev');
+        });
+
+        async function initMicrophone() {
+            try { audioStream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true } }); return true; }
+            catch (e) { showCustomAlert('Microphone access required.', 'warning'); return false; }
+        }
+
+        async function handleAudioUpload(slideNum, audioBlob) {
+            const timestamp = Date.now();
+            
+            // Expected by backend as "slide_1"
+            const fileName = `${state.courseId}/${state.sessionId}/slide_${slideNum}_${timestamp}.webm`;
+
+            if (!state.isOnline) {
+                offlineAudioQueue.push({ slideNum, fileName, blob: audioBlob });
+                return;
+            }
+
+            try {
+                const { error } = await supabaseClient.storage.from('lecture_audio').upload(fileName, audioBlob, { upsert: true });
+                if (error) throw error;
+            } catch (error) {
+                console.error('Audio upload failed:', error);
+                offlineAudioQueue.push({ slideNum, fileName, blob: audioBlob });
+            }
+        }
+
+        async function processOfflineQueue() {
+            while (offlineAudioQueue.length > 0 && state.isOnline) {
+                const item = offlineAudioQueue.shift();
+                await handleAudioUpload(item.slideNum, item.blob);
+            }
+        }
+
+        function startAudioChunk() {
+            audioChunks = [];
+            mediaRecorder = new MediaRecorder(audioStream, { mimeType: 'audio/webm' });
+            
+            // Audio perfectly mapped to the current slide
+            const chunkSlide = state.currentSlide;
+            
+            mediaRecorder.ondataavailable = e => { if (e.data.size > 0) audioChunks.push(e.data); };
+            mediaRecorder.onstop = () => {
+                const blob = new Blob(audioChunks, { type: 'audio/webm' });
+                handleAudioUpload(chunkSlide, blob);
+            };
+            mediaRecorder.start();
+        }
+
+        // --- 5. RECORDING CONTROLS ---
+        ui.startBtn.addEventListener('click', async () => {
+            const hasMic = await initMicrophone();
+            if (!hasMic) return;
+
+            // Clear old data for Hybrid mode explicitly before starting a new session
+            ui.startBtn.disabled = true;
+            ui.startBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Preparing...';
+
+            await clearOldClassData(state.courseId, 'lecture_audio');
+            await clearOldClassData(state.courseId, 'lecture_images');
+
+            fetch(`${API_URL}/start_session`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ session_id: state.sessionId, course_id: state.courseId })
+            }).catch(e => console.log('Backend notification skipped.'));
+
+            state.isRecording = true;
+            ui.startBtn.disabled = false;
+            ui.startBtn.classList.add('hidden');
+            ui.startBtn.innerHTML = '<i class="fas fa-video"></i> Start Recording';
+            ui.status.classList.remove('hidden');
+            ui.endBtn.classList.remove('hidden');
+
+            updateRemoteSyncState();
+            await updateBoardView(); 
+            startAudioChunk();
+            startPollingImages();
+            
+            showCustomAlert("Recording started. Audio & Whiteboards are auto-saving.");
+
+            timerInterval = setInterval(() => {
+                recordingSeconds++;
+                ui.timer.textContent = `${Math.floor(recordingSeconds/60).toString().padStart(2,'0')}:${(recordingSeconds%60).toString().padStart(2,'0')}`;
+            }, 1000);
+        });
+
+        // --- 6. MOBILE SYNCING ---
+        async function updateRemoteSyncState() {
+            if (!state.isOnline) return;
+            const blob = new Blob([JSON.stringify({ currentPosition: state.currentSlide })], { type: 'application/json' });
+            try {
+                await supabaseClient.storage.from('lecture_images').upload(`${state.courseId}/${state.sessionId}/sync_state.json`, blob, { cacheControl: '0', upsert: true });
+            } catch(e) {}
+        }
+
+        async function startPollingImages() {
+            setInterval(async () => {
+                if(!state.isOnline || state.isTransitioning) return;
+                const { data } = await supabaseClient.storage.from('lecture_images').list(`${state.courseId}/${state.sessionId}`);
+                if(!data) return;
+
+                const currentImg = data.find(f => f.name === `wb_${state.currentSlide}.jpg`);
+                
+                if (currentImg && currentImg.updated_at !== state.lastImageHash) {
+                    state.lastImageHash = currentImg.updated_at;
+                    updateBoardView(); 
+                }
+            }, 2000);
+        }
+
+        // --- 7. EVENT LISTENERS ---
+        ui.slidePrev.addEventListener('click', () => navigateSlide('prev'));
+        ui.slideNext.addEventListener('click', () => navigateSlide('next'));
+
+        document.getElementById('connect-btn').addEventListener('click', () => {
+            const display = document.getElementById('qrcode-display');
+            const mobileUrl = `https://cassandra-mobile-app-2.netlify.app/?course_id=${state.courseId}&session_id=${state.sessionId}`;
+            display.innerHTML = '';
+            new QRCode(display, { text: mobileUrl, width: 180, height: 180 });
+            document.getElementById('manual-url').textContent = mobileUrl;
+            document.getElementById('qr-modal').classList.add('active');
+        });
+
+        ui.endBtn.addEventListener('click', () => {
+            document.getElementById('modal-content-confirm').classList.remove('hidden');
+            document.getElementById('modal-content-processing').classList.add('hidden');
+            document.getElementById('end-modal').classList.add('active');
+            navigationPendingUrl = null;
+        });
+
+        function closeModal(id) { 
+            document.getElementById(id).classList.remove('active'); 
+            if(id === 'end-modal') navigationPendingUrl = null;
+        }
+
+        function interceptNavigation(e, targetUrl) {
+            if (state.isRecording) {
+                e.preventDefault();
+                navigationPendingUrl = targetUrl;
+                document.getElementById('modal-content-confirm').classList.remove('hidden');
+                document.getElementById('modal-content-processing').classList.add('hidden');
+                document.getElementById('end-modal').classList.add('active');
+            }
+        }
+
+        document.getElementById('dashboard-link').addEventListener('click', (e) => interceptNavigation(e, 'teacher-dashboard.html'));
+        document.getElementById('logo-link').addEventListener('click', (e) => interceptNavigation(e, 'teacher-dashboard.html'));
+
+        document.getElementById('confirm-end-btn').addEventListener('click', async () => {
+            document.getElementById('modal-content-confirm').classList.add('hidden');
+            document.getElementById('modal-content-processing').classList.remove('hidden');
+            
+            state.isRecording = false;
+            clearInterval(timerInterval);
+
+            // Wait for final chunk upload
+            await new Promise((resolve) => {
+                if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+                    mediaRecorder.onstop = async () => {
+                        const blob = new Blob(audioChunks, { type: 'audio/webm' });
+                        await handleAudioUpload(state.currentSlide, blob);
+                        resolve();
+                    };
+                    mediaRecorder.stop();
+                } else {
+                    resolve();
+                }
+            });
+
+            if(audioStream) audioStream.getTracks().forEach(t => t.stop());
+
+            // --- 1. END SESSION ON RECORDING BACKEND ---
+            try {
+                await fetch(`${API_URL}/end_session`, {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ session_id: state.sessionId, course_id: state.courseId })
+                });
+            } catch(e) { console.error("Failed to call recording backend"); }
+
+            // --- 2. TRIGGER AZURE PIPELINE (Notes Generation) ---
+            // Replace with your actual Azure pipeline URL for the Hybrid setup
+            const AZURE_PIPELINE_URL = 'https://cassandra-slides-whiteboard-pipeline-api-b6gghshgfmfyg4gb.canadacentral-01.azurewebsites.net/api'; 
+            
+            try {
+                const response = await fetch(`${AZURE_PIPELINE_URL}/end_session`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        session_id: state.sessionId, 
+                        course_id: state.courseId,
+                        mode: 'slides_and_whiteboard'
+                    })
+                });
+                const result = await response.json();
+                console.log("Hybrid Pipeline Triggered:", result);
+            } catch (err) { 
+                console.error("Failed to notify Azure pipeline backend:", err); 
+            }
+
+            // Redirect securely to Notes Library
+            setTimeout(() => {
+                closeModal('end-modal');
+                if (navigationPendingUrl) {
+                    showCustomAlert('Lecture saved. Redirecting...');
+                    setTimeout(() => window.location.href = navigationPendingUrl, 1000);
+                } else {
+                    showCustomAlert('Lecture finalized! Redirecting to Notes Library...');
+                    setTimeout(() => {
+                        window.location.href = `teacher-notes-library.html?id=${state.courseId}`;
+                    }, 250); 
+                }
+            }, 1000);
+        });
+    </script>
+</body>
+</html>
